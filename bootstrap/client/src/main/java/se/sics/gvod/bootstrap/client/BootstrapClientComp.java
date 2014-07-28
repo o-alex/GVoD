@@ -17,13 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.server;
-
-import se.sics.kompics.Init;
+package se.sics.gvod.bootstrap.client;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapServerInit extends Init<BootstrapServerComp> {
+public class BootstrapClientComp {
     
 }

@@ -17,25 +17,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.server;
+package se.sics.gvod.system;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
-import se.sics.kompics.network.Network;
-import se.sics.kompics.timer.Timer;
+import se.sics.kompics.Init;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapServer extends ComponentDefinition {
-    private static final Logger log = LoggerFactory.getLogger(BootstrapServer.class);
+public class VoDInit extends Init<VoDComp>{
     
-    private Positive<Network> network = requires(Network.class);
-    private Positive<Timer> timer = requires(Timer.class);
-    
-    public BootstrapServer(BootstrapServerInit init) {
-        log.debug("init");
-    }
 }

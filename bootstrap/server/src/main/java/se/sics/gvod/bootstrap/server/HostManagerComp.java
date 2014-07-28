@@ -16,14 +16,36 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.bootstrap.server;
 
-import se.sics.kompics.Init;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import se.sics.kompics.Component;
+import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.Positive;
+import se.sics.kompics.Start;
+import se.sics.kompics.network.Network;
+import se.sics.kompics.timer.Timer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapServerInit extends Init<BootstrapServerComp> {
-    
+public class HostManagerComp extends ComponentDefinition {
+
+    private static final Logger log = LoggerFactory.getLogger(HostManagerComp.class);
+
+    private Positive<Network> network = requires(Network.class);
+    private Positive<Timer> timer = requires(Timer.class);
+
+    private Component server;
+
+    public HostManagerComp(HostManagerInit init) {
+        log.debug("init");
+        this.server = create(BootstrapServerComp.class, new BootstrapServerInit());
+
+        connect(server.getNegative(Network.class), network);
+        connect(server.getNegative(Timer.class), timer);
+
+        trigger(Start.event, server.control());
+    }
 }

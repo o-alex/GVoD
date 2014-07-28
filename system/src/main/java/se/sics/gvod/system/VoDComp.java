@@ -16,36 +16,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.bootstrap.server;
+package se.sics.gvod.system;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Positive;
-import se.sics.kompics.Start;
 import se.sics.kompics.network.Network;
-import se.sics.kompics.timer.Timer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class HostManager extends ComponentDefinition {
+public class VoDComp extends ComponentDefinition {
 
-    private static final Logger log = LoggerFactory.getLogger(HostManager.class);
+    private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
 
     private Positive<Network> network = requires(Network.class);
-    private Positive<Timer> timer = requires(Timer.class);
-
-    private Component server;
-
-    public HostManager(HostManagerInit init) {
-        log.debug("init");
-        this.server = create(BootstrapServer.class, new BootstrapServerInit());
-
-        connect(server.getNegative(Network.class), network);
-        connect(server.getNegative(Timer.class), timer);
-
-        trigger(Start.event, server.control());
+    
+    public VoDComp(VoDInit init) {
+        
     }
 }

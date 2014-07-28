@@ -6,6 +6,7 @@
         <artifactId>GVoD</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
+    <name>System</name>
     <artifactId>system</artifactId>
     <packaging>jar</packaging>
     <properties>

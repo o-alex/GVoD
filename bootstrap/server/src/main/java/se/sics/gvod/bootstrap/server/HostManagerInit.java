@@ -24,7 +24,7 @@ import se.sics.kompics.Init;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class HostManagerInit extends Init<HostManager> {
+public class HostManagerInit extends Init<HostManagerComp> {
     
     public HostManagerInit() {
     }

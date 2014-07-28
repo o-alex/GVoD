@@ -46,7 +46,7 @@ public class Launcher extends ComponentDefinition {
             Address netSelf = new Address(configuration.getIp(), configuration.getPort(), 0);
             network = create(NettyNetwork.class, new NettyNetworkInit(netSelf));
             timer = create(JavaTimer.class, Init.NONE);
-            manager = create(HostManager.class, new HostManagerInit());
+            manager = create(HostManagerComp.class, new HostManagerInit());
 
             connect(manager.getNegative(Network.class), network.getPositive(Network.class));
             connect(manager.getNegative(Timer.class), timer.getPositive(Timer.class));
