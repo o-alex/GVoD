@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2009 Swedish Institute of Computer Science (SICS) Copyright (C)
  * 2009 Royal Institute of Technology (KTH)
@@ -17,25 +16,30 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.bootstrap.server;
+package se.sics.gvod.simulation;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import se.sics.gvod.simulation.util.UniformRandomModel;
+import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Handler;
-import se.sics.kompics.Positive;
+import se.sics.kompics.Start;
 import se.sics.kompics.network.Network;
+import se.sics.kompics.p2p.simulator.P2pSimulator;
+import se.sics.kompics.p2p.simulator.P2pSimulatorInit;
+import se.sics.kompics.timer.Timer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapServerComp extends ComponentDefinition {
+public class Launcher extends ComponentDefinition {
 
-    private static final Logger log = LoggerFactory.getLogger(BootstrapServerComp.class);
-
-    private Positive<Network> network = requires(Network.class);
-
-    public BootstrapServerComp(BootstrapServerInit event) {
-        log.debug("init");
+    {
+        P2pSimulator.setSimulationPortType(VodExperiment.class);
+        Component simulator = create(P2pSimulator.class,
+                new P2pSimulatorInit(Main.scheduler, Main.scenario, new UniformRandomModel(1, 10)));
+        Component simManager = create(SimManagerComp.class,
+                new SimManagerInit());
+        connect(simManager.getNegative(Network.class), simulator.getPositive(Network.class));
+        connect(simManager.getNegative(Timer.class), simulator.getPositive(Timer.class));
+        connect(simManager.getNegative(VodExperiment.class), simulator.getPositive(VodExperiment.class));
     }
 }

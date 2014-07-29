@@ -16,8 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
-package se.sics.gvod.bootstrap.server;
+package se.sics.gvod.system;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -28,56 +27,61 @@ import java.net.UnknownHostException;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class HostConfiguration {
-    public final Integer id;  
+
     public final Config config;
-    
+    public final int id;
+
     private HostConfiguration(Config config, int id) {
         this.config = config;
         this.id = id;
     }
-    
+
     public InetAddress getIp() throws UnknownHostException {
         return InetAddress.getLocalHost();
     }
-    
+
     public int getPort() {
-        return Integer.valueOf(config.getString("bootstrap.address.port"));
+        return Integer.valueOf(config.getString("vod.address.port"));
     }
-    
-    public int getSeed() {
-        return Integer.valueOf(config.getString("bootstrap.seed"));
+
+    public int getId() {
+        return Integer.valueOf(config.getString("vod.address.id"));
     }
-    
+
     public static class Builder {
-        private Config config = null;
+
+        private Config config;
         private Integer id = null;
+
         public Builder() {
             loadDefault();
         }
-        
+
         private void loadDefault() {
             this.config = ConfigFactory.load();
         }
-        
+
         public Builder loadConfig(String configFile) {
             this.config = ConfigFactory.load(configFile);
             return this;
         }
-        
+
         public Builder setId(int id) {
             this.id = id;
             return this;
         }
-        
+
         public HostConfiguration finalise() throws ConfigException {
-            if(id == null) {
+            if (id == null) {
                 throw new ConfigException("id not set");
             }
             return new HostConfiguration(config, id);
         }
+
     }
-    
+
     public static class ConfigException extends Exception {
+
         public ConfigException(String msg) {
             super(msg);
         }

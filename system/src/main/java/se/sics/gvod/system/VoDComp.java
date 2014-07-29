@@ -34,6 +34,6 @@ public class VoDComp extends ComponentDefinition {
     private Positive<Network> network = requires(Network.class);
     
     public VoDComp(VoDInit init) {
-        
+        log.debug("init");
     }
 }

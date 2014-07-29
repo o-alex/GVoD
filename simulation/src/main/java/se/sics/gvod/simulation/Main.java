@@ -17,23 +17,41 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.client;
+package se.sics.gvod.simulation;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
-import se.sics.kompics.network.Network;
+import se.sics.kompics.Kompics;
+import se.sics.kompics.Scheduler;
+import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
+import se.sics.kompics.simulation.SimulatorScheduler;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapClientComp extends ComponentDefinition {
-    private static final Logger log = LoggerFactory.getLogger(BootstrapClientComp.class);
+
+public class Main {
+    public static SimulatorScheduler scheduler;
+    public static SimulationScenario scenario;
+    public static long seed;
     
-    private Positive<Network> network = requires(Network.class);
+    public static void main(String[] args) {
+        long seed = 12;
+        start();
+        try {
+            Kompics.waitForTermination();
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex.getMessage());
+        }
+    }
+
+    public static void stop() {
+        Kompics.shutdown();
+    }
     
-    public BootstrapClientComp(BootstrapClientInit init) {
+    public static void start() {
+        scheduler = new SimulatorScheduler();
+        scenario = ScenarioGen.simpleBoot(seed);
         
+        Kompics.setScheduler(scheduler);
+        Kompics.createAndStart(Launcher.class, 1);
     }
 }

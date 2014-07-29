@@ -41,11 +41,10 @@ public class HostManagerComp extends ComponentDefinition {
 
     public HostManagerComp(HostManagerInit init) {
         log.debug("init");
-        this.server = create(BootstrapServerComp.class, new BootstrapServerInit());
+        server = create(BootstrapServerComp.class, new BootstrapServerInit());
 
         connect(server.getNegative(Network.class), network);
-        connect(server.getNegative(Timer.class), timer);
-
+        
         trigger(Start.event, server.control());
     }
 }

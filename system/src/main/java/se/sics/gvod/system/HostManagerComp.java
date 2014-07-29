@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2009 Swedish Institute of Computer Science (SICS) Copyright (C)
  * 2009 Royal Institute of Technology (KTH)
@@ -17,25 +16,35 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.bootstrap.server;
+
+package se.sics.gvod.system;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Handler;
 import se.sics.kompics.Positive;
+import se.sics.kompics.Start;
 import se.sics.kompics.network.Network;
+import se.sics.kompics.timer.Timer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapServerComp extends ComponentDefinition {
-
-    private static final Logger log = LoggerFactory.getLogger(BootstrapServerComp.class);
+public class HostManagerComp extends ComponentDefinition {
+    private static final Logger log = LoggerFactory.getLogger(HostManagerComp.class);
 
     private Positive<Network> network = requires(Network.class);
+    private Positive<Timer> timer = requires(Timer.class);
 
-    public BootstrapServerComp(BootstrapServerInit event) {
+    private Component system;
+
+    public HostManagerComp(HostManagerInit init) {
         log.debug("init");
+        this.system = create(VoDComp.class, new VoDInit());
+
+        connect(system.getNegative(Network.class), network);
+
+        trigger(Start.event, system.control());
     }
 }

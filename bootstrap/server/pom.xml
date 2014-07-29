@@ -8,6 +8,7 @@
     </parent>
     <name>Bootstrap Server</name>
     <artifactId>server</artifactId>
+    <groupId>se.sics.gvod.bootstrap</groupId>
     <packaging>jar</packaging>
     <dependencies>
         
