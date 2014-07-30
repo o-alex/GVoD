@@ -16,24 +16,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.sics.gvod.net.VodNetwork;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
+package se.sics.gvod.simulation.core.network;
+
+import se.sics.gvod.net.msgs.RewriteableMsg;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDComp extends ComponentDefinition {
+/**
+ * The <code>NetworkModel</code> class.
+ * 
+ * @author Cosmin Arad <cosmin@sics.se>
+ * @version $Id: NetworkModel.java 2362 2010-04-27 13:36:43Z jdowling $
+ */
+public interface NetworkModel {
 
-    private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
-
-    private Positive<VodNetwork> network = requires(VodNetwork.class);
-    
-    public VoDComp(VoDInit init) {
-        log.debug("init");
-    }
+	public long getLatencyMs(RewriteableMsg message);
 }

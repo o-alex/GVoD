@@ -16,20 +16,29 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.simulation;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.filters.MsgDestFilterNodeId;
+import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
+import se.sics.gvod.simulation.cmd.system.StartVodPeerCmd;
+import se.sics.gvod.simulation.cmd.system.StopBSCmd;
+import se.sics.gvod.simulation.cmd.system.StopVodPeerCmd;
+import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
+import se.sics.kompics.Kompics;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
-import se.sics.kompics.network.Network;
-import se.sics.kompics.timer.Timer;
+import se.sics.kompics.Stop;
+import se.sics.kompics.Stopped;
+import se.sics.kompics.p2p.experiment.dsl.events.TerminateExperiment;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -38,40 +47,138 @@ public class SimManagerComp extends ComponentDefinition {
 
     private static final Logger log = LoggerFactory.getLogger(SimManagerComp.class);
 
-    private Positive<Network> network = requires(Network.class);
+    private Positive<VodNetwork> network = requires(VodNetwork.class);
     private Positive<Timer> timer = requires(Timer.class);
     private Positive<VodExperiment> experiment = requires(VodExperiment.class);
 
     private HashMap<Integer, Component> systemComp;
-    
+
     public SimManagerComp(SimManagerInit init) {
         log.debug("init");
         systemComp = new HashMap<Integer, Component>();
-        
+
         subscribe(handleStartBS, experiment);
+        subscribe(handleStopBS, experiment);
+        subscribe(handleStartVodPeer, experiment);
+        subscribe(handleStopVodPeer, experiment);
+        subscribe(handleTerminate, experiment);
     }
-    
+
     public Handler<StartBSCmd> handleStartBS = new Handler<StartBSCmd>() {
 
         @Override
-        public void handle(StartBSCmd event) {
-            log.info("starting bootstrap server");
+        public void handle(final StartBSCmd start) {
+            log.info("bootstrap server - id {} - starting...", start.id);
             try {
+                InetAddress ip = InetAddress.getLocalHost();
                 se.sics.gvod.bootstrap.server.HostConfiguration bsConfig = new se.sics.gvod.bootstrap.server.HostConfiguration.Builder().
-                        loadConfig("bootstrap.conf").setId(event.id).finalise();
+                        loadConfig("bootstrap.conf").setId(start.id).setIp(ip).finalise();
                 
-                Component bs = create(se.sics.gvod.bootstrap.server.HostManagerComp.class, 
+                final Component bs = create(se.sics.gvod.bootstrap.server.HostManagerComp.class,
                         new se.sics.gvod.bootstrap.server.HostManagerInit(bsConfig));
-                systemComp.put(event.id, bs);
-                
-                connect(bs.getNegative(Network.class), network);
+                systemComp.put(start.id, bs);
+
+                connect(bs.getNegative(VodNetwork.class), network, new MsgDestFilterNodeId(start.id));
                 connect(bs.getNegative(Timer.class), timer);
-                
+
                 trigger(Start.event, bs.control());
             } catch (se.sics.gvod.bootstrap.server.HostConfiguration.ConfigException ex) {
                 log.error("error loading bootstrap server configuration");
                 throw new RuntimeException(ex);
+            } catch (UnknownHostException ex) {
+                log.error("error getting localhost ip");
+                throw new RuntimeException(ex);
             }
         }
     };
-} 
+
+    public Handler<StopBSCmd> handleStopBS = new Handler<StopBSCmd>() {
+
+        @Override
+        public void handle(final StopBSCmd stop) {
+            if (!systemComp.containsKey(stop.id)) {
+                log.error("bootstrap server - id {} - cannot stop that which is not started", stop.id);
+                throw new RuntimeException("cannot stop that which is not started");
+            }
+            log.info("bootstrap server - id {} - stopping...", stop.id);
+
+            final Component bs = systemComp.remove(stop.id);
+            disconnect(bs.getNegative(VodNetwork.class), network);
+            disconnect(bs.getNegative(Timer.class), timer);
+            
+            Handler<Stopped> handleStopped = new Handler<Stopped>() {
+
+                @Override
+                public void handle(Stopped stopped) {
+                    log.debug("bootstrap server - id {} - cleaning", stop.id);
+                    destroy(bs);
+                    unsubscribe(this, control);
+                }
+            };
+            
+            subscribe(handleStopped, control);
+            trigger(Stop.event, bs.control());
+        }
+    }; 
+    
+    public Handler<StartVodPeerCmd> handleStartVodPeer = new Handler<StartVodPeerCmd>() {
+
+        @Override
+        public void handle(final StartVodPeerCmd start) {
+            log.info("vod peer - id {} - starting...", start.id);
+            try {
+                se.sics.gvod.system.HostConfiguration bsConfig = new se.sics.gvod.system.HostConfiguration.Builder().
+                        loadConfig("vod.conf").setId(start.id).finalise();
+
+                final Component bs = create(se.sics.gvod.system.HostManagerComp.class,
+                        new se.sics.gvod.system.HostManagerInit(bsConfig));
+                systemComp.put(start.id, bs);
+
+                connect(bs.getNegative(VodNetwork.class), network, new MsgDestFilterNodeId(start.id));
+                connect(bs.getNegative(Timer.class), timer);
+
+                trigger(Start.event, bs.control());
+            } catch (se.sics.gvod.system.HostConfiguration.ConfigException ex) {
+                log.error("error loading vod peer configuration");
+                throw new RuntimeException(ex);
+            }
+        }
+    };
+
+    public Handler<StopVodPeerCmd> handleStopVodPeer = new Handler<StopVodPeerCmd>() {
+
+        @Override
+        public void handle(final StopVodPeerCmd stop) {
+            if (!systemComp.containsKey(stop.id)) {
+                log.error("vod peer - id {} - cannot stop that which is not started", stop.id);
+                throw new RuntimeException("cannot stop that which is not started");
+            }
+            log.info("vod peer - id {} - stopping...", stop.id);
+
+            final Component vodPeer = systemComp.remove(stop.id);
+            disconnect(vodPeer.getNegative(VodNetwork.class), network);
+            disconnect(vodPeer.getNegative(Timer.class), timer);
+            
+            Handler<Stopped> handleStopped = new Handler<Stopped>() {
+
+                @Override
+                public void handle(Stopped stopped) {
+                    log.debug("vodPeer - id {} - cleaning", stop.id);
+                    destroy(vodPeer);
+                    unsubscribe(this, control);
+                }
+            };
+            
+            subscribe(handleStopped, control);
+            trigger(Stop.event, vodPeer.control());
+        }
+    }; 
+    
+    Handler<TerminateExperiment> handleTerminate = new Handler<TerminateExperiment>() {
+        @Override
+        public void handle(TerminateExperiment event) {
+            log.info("terminate experiment.");
+            Kompics.forceShutdown();
+        }
+    };
+}

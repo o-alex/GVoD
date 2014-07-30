@@ -16,7 +16,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system;
+
+package se.sics.gvod.bootstrap.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,13 +28,12 @@ import se.sics.kompics.Positive;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDComp extends ComponentDefinition {
-
-    private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
-
+public class BootstrapComp extends ComponentDefinition {
+    private static final Logger log = LoggerFactory.getLogger(BootstrapComp.class);
+    
     private Positive<VodNetwork> network = requires(VodNetwork.class);
     
-    public VoDComp(VoDInit init) {
+    public BootstrapComp(BootstrapInit init) {
         log.debug("init");
     }
 }

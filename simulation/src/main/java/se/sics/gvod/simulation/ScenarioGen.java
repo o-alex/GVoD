@@ -18,7 +18,12 @@
  */
 package se.sics.gvod.simulation;
 
+import java.util.Random;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
+import se.sics.gvod.simulation.cmd.system.StartVodPeerCmd;
+import se.sics.gvod.simulation.cmd.system.StopBSCmd;
+import se.sics.gvod.simulation.cmd.system.StopVodPeerCmd;
+import se.sics.gvod.simulation.util.IntegerUniformDistribution;
 import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
 import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation1;
 import se.sics.kompics.p2p.experiment.dsl.distribution.ConstantDistribution;
@@ -34,24 +39,77 @@ public class ScenarioGen {
 
                 @Override
                 public StartBSCmd generate(Integer id) {
-                    System.out.println("A");
                     return new StartBSCmd(id);
                 }
             };
     
-    public static SimulationScenario simpleBoot(long seed) {
+    static Operation1<StopBSCmd, Integer> stopBootstrapServer
+            = new Operation1<StopBSCmd, Integer>() {
+
+                @Override
+                public StopBSCmd generate(Integer id) {
+                    return new StopBSCmd(id);
+                }
+            };
+    static Operation1<StartVodPeerCmd, Integer> startVodPeer
+            = new Operation1<StartVodPeerCmd, Integer>() {
+
+                @Override
+                public StartVodPeerCmd generate(Integer id) {
+                    return new StartVodPeerCmd(id);
+                }
+            };
+    
+    static Operation1<StopVodPeerCmd, Integer> stopVodPeer
+            = new Operation1<StopVodPeerCmd, Integer>() {
+
+                @Override
+                public StopVodPeerCmd generate(Integer id) {
+                    return new StopVodPeerCmd(id);
+                }
+            };
+    
+    public static SimulationScenario simpleBoot(final long seed, int peers) {
         SimulationScenario scen = new SimulationScenario() {
             {
+                final Random rand = new Random(seed);
                 final Distribution<Integer> bootstrapIdDist = new ConstantDistribution<>(Integer.class, 0);
+                final Distribution<Integer> vodPeerIdDist = new ConstantDistribution<>(Integer.class, 1);
+//                final Distribution<Integer> vodPeerIdDist = new IntegerUniformDistribution(1, 65535, rand);
+                
                 StochasticProcess startBootstrapServerProc = new StochasticProcess() {
                     {
+                        eventInterArrivalTime(constant(1000));
+                        raise(1, startBootstrapServer, bootstrapIdDist);
+                    }
+                };
+
+                StochasticProcess startVodPeersProc = new StochasticProcess() {
+                    {
+                        eventInterArrivalTime(constant(1000));
+                        raise(1, startVodPeer, vodPeerIdDist);
+                    }
+                };
+                
+                StochasticProcess stopVodPeersProc = new StochasticProcess() {
+                    {
+                        eventInterArrivalTime(constant(1000));
+                        raise(1, stopVodPeer, vodPeerIdDist);
+                    }
+                };
+                
+                StochasticProcess stopBootstrapServerProc = new StochasticProcess() {
+                    {
                         eventInterArrivalTime(constant(0));
-                        raise(2, startBootstrapServer, bootstrapIdDist);
+                        raise(1, stopBootstrapServer, bootstrapIdDist);
                     }
                 };
 
                 startBootstrapServerProc.start();
-                terminateAfterTerminationOf(10 * 1000, startBootstrapServerProc);
+                startVodPeersProc.startAfterTerminationOf(1000, startBootstrapServerProc);
+                stopVodPeersProc.startAfterTerminationOf(1000, startVodPeersProc);
+                stopBootstrapServerProc.startAfterTerminationOf(1000, stopVodPeersProc);
+                terminateAfterTerminationOf(1000, stopBootstrapServerProc);
             }
         };
 

@@ -17,37 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.simulation.util;
+package se.sics.gvod.simulation.cmd.system;
 
-import java.util.Random;
-import se.sics.kompics.network.Message;
-import se.sics.kompics.network.model.common.NetworkModel;
+import se.sics.gvod.simulation.cmd.SystemCmd;
 
 /**
- * @author Lars Kroll <lkroll@sics.se>
+ * @author Alex Ormenisan <aaor@sics.se>
  */
-public class UniformRandomModel implements NetworkModel {
+public class StopBSCmd implements SystemCmd {
+    public final int id;
     
-    private final long min;
-    private final long max;
-    private final long diff;
-    private final Random rand;
-    
-    public UniformRandomModel(long min, long max) {
-        this(min, max, new Random(1));
+    public StopBSCmd(int id) {
+        this.id = id;
     }
-    
-    public UniformRandomModel(long min, long max, Random rand) {
-        this.min = min;
-        this.max = max;
-        this.diff = max - min;
-        this.rand = rand;
-    }
-
-    @Override
-    public long getLatencyMs(Message message) {
-        return min + (long)Math.floor(rand.nextDouble() * diff);
-    }
-    
-    
 }

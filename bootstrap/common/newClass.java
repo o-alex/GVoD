@@ -17,23 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.client;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
-import se.sics.kompics.network.Network;
-
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapClientComp extends ComponentDefinition {
-    private static final Logger log = LoggerFactory.getLogger(BootstrapClientComp.class);
+public class newClass {
     
-    private Positive<Network> network = requires(Network.class);
-    
-    public BootstrapClientComp(BootstrapClientInit init) {
-        
-    }
 }

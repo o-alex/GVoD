@@ -16,24 +16,32 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.sics.gvod.net.VodNetwork;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
+package se.sics.gvod.simulation.util;
+
+import java.util.Random;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDComp extends ComponentDefinition {
+public class DistributionTest {
 
-    private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
-
-    private Positive<VodNetwork> network = requires(VodNetwork.class);
+    @Test
+    public void testIntUDist1() {
+        IntegerUniformDistribution dist = new IntegerUniformDistribution(1, 1, new Random());
+        Assert.assertEquals((Integer)1, dist.draw());
+    }
     
-    public VoDComp(VoDInit init) {
-        log.debug("init");
+    @Test
+    public void testIntUDist2() {
+        int min = 100;
+        int max = 1000;
+        IntegerUniformDistribution dist = new IntegerUniformDistribution(min, max, new Random());
+        for(int i = 0; i < 100000; i++) {
+            int draw = dist.draw();
+            Assert.assertTrue("" + draw, min <= draw && draw <= max);
+        }
     }
 }

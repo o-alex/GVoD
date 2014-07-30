@@ -23,25 +23,18 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import se.sics.gvod.address.Address;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class HostConfiguration {
-    public final Integer id;  
+    public final Address self; 
     public final Config config;
     
-    private HostConfiguration(Config config, int id) {
+    private HostConfiguration(Config config, Address self) {
         this.config = config;
-        this.id = id;
-    }
-    
-    public InetAddress getIp() throws UnknownHostException {
-        return InetAddress.getLocalHost();
-    }
-    
-    public int getPort() {
-        return Integer.valueOf(config.getString("bootstrap.address.port"));
+        this.self = self;
     }
     
     public int getSeed() {
@@ -51,6 +44,8 @@ public class HostConfiguration {
     public static class Builder {
         private Config config = null;
         private Integer id = null;
+        private InetAddress ip;
+        
         public Builder() {
             loadDefault();
         }
@@ -69,11 +64,17 @@ public class HostConfiguration {
             return this;
         }
         
+        public Builder setIp(InetAddress ip) {
+            this.ip = ip;
+            return this;
+        }
+        
         public HostConfiguration finalise() throws ConfigException {
-            if(id == null) {
-                throw new ConfigException("id not set");
+            if(id == null || ip == null) {
+                throw new ConfigException("incomplete configuration");
             }
-            return new HostConfiguration(config, id);
+            int port = config.getInt("bootstrap.address.port");
+            return new HostConfiguration(config, new Address(ip, port, id));
         }
     }
     

@@ -18,14 +18,13 @@
  */
 package se.sics.gvod.simulation;
 
-import se.sics.gvod.simulation.util.UniformRandomModel;
+import se.sics.gvod.net.VodNetwork;
+import se.sics.gvod.simulation.core.P2pSimulator;
+import se.sics.gvod.simulation.core.P2pSimulatorInit;
+import se.sics.gvod.simulation.core.network.UniformRandomModel;
+import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Start;
-import se.sics.kompics.network.Network;
-import se.sics.kompics.p2p.simulator.P2pSimulator;
-import se.sics.kompics.p2p.simulator.P2pSimulatorInit;
-import se.sics.kompics.timer.Timer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -38,7 +37,7 @@ public class Launcher extends ComponentDefinition {
                 new P2pSimulatorInit(Main.scheduler, Main.scenario, new UniformRandomModel(1, 10)));
         Component simManager = create(SimManagerComp.class,
                 new SimManagerInit());
-        connect(simManager.getNegative(Network.class), simulator.getPositive(Network.class));
+        connect(simManager.getNegative(VodNetwork.class), simulator.getPositive(VodNetwork.class));
         connect(simManager.getNegative(Timer.class), simulator.getPositive(Timer.class));
         connect(simManager.getNegative(VodExperiment.class), simulator.getPositive(VodExperiment.class));
     }

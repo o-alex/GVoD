@@ -17,13 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.client;
+package se.sics.gvod.simulation.cmd.system;
 
-import se.sics.kompics.Init;
+import se.sics.gvod.simulation.cmd.SystemCmd;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapClientInit extends Init<BootstrapClientComp> {
+public class StopVodPeerCmd implements SystemCmd {
+    public final int id;
     
+    public StopVodPeerCmd(int id) {
+        this.id = id;
+    }
 }

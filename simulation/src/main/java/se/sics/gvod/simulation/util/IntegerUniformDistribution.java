@@ -16,24 +16,39 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system;
+package se.sics.gvod.simulation.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.sics.gvod.net.VodNetwork;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
+import java.util.Random;
+import se.sics.kompics.p2p.experiment.dsl.distribution.Distribution;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDComp extends ComponentDefinition {
+public class IntegerUniformDistribution extends Distribution<Integer> {
 
-    private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
+    private final Random random;
+    private final Integer min;
+    private final Integer max;
 
-    private Positive<VodNetwork> network = requires(VodNetwork.class);
-    
-    public VoDComp(VoDInit init) {
-        log.debug("init");
+    public IntegerUniformDistribution(int min, int max, Random random) {
+        super(Distribution.Type.UNIFORM, Integer.class);
+        if (min < 0 || max < 0) {
+            throw new RuntimeException("I can only generate positive numbers");
+        }
+        this.random = random;
+        if (min > max) {
+            this.min = max;
+            this.max = min;
+        } else {
+            this.min = min;
+            this.max = max;
+        }
+    }
+
+    @Override
+    public final Integer draw() {
+        int u = random.nextInt(max - min + 1);
+        u += min;
+        return u;
     }
 }

@@ -16,24 +16,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.sics.gvod.net.VodNetwork;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
+package se.sics.gvod.simulation.cmd.system;
+
+import se.sics.gvod.simulation.cmd.SystemCmd;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDComp extends ComponentDefinition {
-
-    private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
-
-    private Positive<VodNetwork> network = requires(VodNetwork.class);
+public class StartVodPeerCmd implements SystemCmd {
+    public final int id;
     
-    public VoDComp(VoDInit init) {
-        log.debug("init");
+    public StartVodPeerCmd(int id) {
+        this.id = id;
     }
 }

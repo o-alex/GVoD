@@ -3,12 +3,11 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>se.sics.gvod</groupId>
-        <artifactId>bootstrap</artifactId>
+        <artifactId>GVoD</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <name>Bootstrap Client</name>
-    <groupId>se.sics.gvod.bootstrap</groupId>
-    <artifactId>client</artifactId>
+    <name>Common</name>
+    <artifactId>common</artifactId>
     <packaging>jar</packaging>
     <properties>
         <maven.compiler.source>1.7</maven.compiler.source>

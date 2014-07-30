@@ -16,24 +16,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.sics.gvod.net.VodNetwork;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
+package se.sics.gvod.common.network;
+
+import se.sics.gvod.net.msgs.DirectMsg;
+import se.sics.kompics.ChannelFilter;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDComp extends ComponentDefinition {
+public class DirectMsgFilterNodeId extends ChannelFilter<DirectMsg, Integer> {
 
-    private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
+    public DirectMsgFilterNodeId(int id) {
+        super(DirectMsg.class, id, true);
+    }
 
-    private Positive<VodNetwork> network = requires(VodNetwork.class);
-    
-    public VoDComp(VoDInit init) {
-        log.debug("init");
+
+    @Override
+    public Integer getValue(DirectMsg event) {
+        return event.getDestination().getId();
     }
 }

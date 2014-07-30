@@ -21,10 +21,10 @@ package se.sics.gvod.bootstrap.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.address.Address;
+import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Handler;
 import se.sics.kompics.Positive;
-import se.sics.kompics.network.Network;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -33,9 +33,11 @@ public class BootstrapServerComp extends ComponentDefinition {
 
     private static final Logger log = LoggerFactory.getLogger(BootstrapServerComp.class);
 
-    private Positive<Network> network = requires(Network.class);
+    private Positive<VodNetwork> network = requires(VodNetwork.class);
+    private final HostConfiguration config;
 
-    public BootstrapServerComp(BootstrapServerInit event) {
+    public BootstrapServerComp(BootstrapServerInit init) {
         log.debug("init");
+        this.config = init.config;
     }
 }

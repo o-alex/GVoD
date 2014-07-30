@@ -21,12 +21,14 @@ package se.sics.gvod.system;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.bootstrap.client.BootstrapComp;
+import se.sics.gvod.bootstrap.client.BootstrapInit;
+import se.sics.gvod.net.VodNetwork;
+import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
-import se.sics.kompics.network.Network;
-import se.sics.kompics.timer.Timer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -34,17 +36,19 @@ import se.sics.kompics.timer.Timer;
 public class HostManagerComp extends ComponentDefinition {
     private static final Logger log = LoggerFactory.getLogger(HostManagerComp.class);
 
-    private Positive<Network> network = requires(Network.class);
+    private Positive<VodNetwork> network = requires(VodNetwork.class);
     private Positive<Timer> timer = requires(Timer.class);
 
-    private Component system;
+    private Component vod;
+    private Component bootstrapClient;
+    
 
     public HostManagerComp(HostManagerInit init) {
         log.debug("init");
-        this.system = create(VoDComp.class, new VoDInit());
+        this.vod = create(VoDComp.class, new VoDInit());
+        this.bootstrapClient = create(BootstrapComp.class, new BootstrapInit());
 
-        connect(system.getNegative(Network.class), network);
-
-        trigger(Start.event, system.control());
+        connect(vod.getNegative(VodNetwork.class), network);
+        connect(bootstrapClient.getNegative(VodNetwork.class), network);
     }
 }

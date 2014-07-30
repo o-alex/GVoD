@@ -25,5 +25,9 @@ import se.sics.kompics.Init;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class HostManagerInit extends Init<HostManagerComp> {
+    public final HostConfiguration config;
     
+    public HostManagerInit(HostConfiguration config) {
+        this.config = config;
+    }
 }

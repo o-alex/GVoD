@@ -17,41 +17,42 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.simulation;
+package se.sics.gvod.simulation.core;
 
-import se.sics.kompics.Kompics;
-import se.sics.kompics.Scheduler;
+import se.sics.gvod.simulation.core.network.NetworkModel;
+import se.sics.kompics.Init;
 import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
 import se.sics.kompics.simulation.SimulatorScheduler;
 
 /**
- * @author Alex Ormenisan <aaor@sics.se>
+ * The <code>P2pSimulatorInit</code> class.
+ * 
+ * @author Cosmin Arad <cosmin@sics.se>
+ * @version $Id$
  */
+public final class P2pSimulatorInit extends Init {
 
-public class Main {
-    public static SimulatorScheduler scheduler;
-    public static SimulationScenario scenario;
-    public static long seed;
-    
-    public static void main(String[] args) {
-        long seed = 12;
-        start();
-        try {
-            Kompics.waitForTermination();
-        } catch (InterruptedException ex) {
-            throw new RuntimeException(ex.getMessage());
-        }
-    }
+	private final SimulatorScheduler scheduler;
+	private final SimulationScenario scenario;
+	private final NetworkModel networkModel;
 
-    public static void stop() {
-        Kompics.shutdown();
-    }
-    
-    public static void start() {
-        scheduler = new SimulatorScheduler();
-        scenario = ScenarioGen.simpleBoot(seed, 10);
-        
-        Kompics.setScheduler(scheduler);
-        Kompics.createAndStart(Launcher.class, 1);
-    }
+	public P2pSimulatorInit(SimulatorScheduler scheduler,
+			SimulationScenario scenario, NetworkModel networkModel) {
+		super();
+		this.scheduler = scheduler;
+		this.scenario = scenario;
+		this.networkModel = networkModel;
+	}
+
+	public final SimulatorScheduler getScheduler() {
+		return scheduler;
+	}
+
+	public final SimulationScenario getScenario() {
+		return scenario;
+	}
+
+	public final NetworkModel getNetworkModel() {
+		return networkModel;
+	}
 }

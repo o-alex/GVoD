@@ -19,6 +19,7 @@
 
 package se.sics.gvod.bootstrap.server;
 
+import se.sics.gvod.address.Address;
 import se.sics.kompics.Init;
 
 
@@ -26,5 +27,9 @@ import se.sics.kompics.Init;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class BootstrapServerInit extends Init<BootstrapServerComp> {
+    public final HostConfiguration config;
     
+    public BootstrapServerInit(HostConfiguration config) {
+        this.config = config;
+    }
 }
