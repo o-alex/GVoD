@@ -16,19 +16,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.bootstrap.client;
 
+import se.sics.gvod.bootstrap.client.msg.BootstrapMsg;
 import se.sics.kompics.PortType;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class BootstrapPort extends PortType {
+
     {
-//        negative(BootstrapRequest.class);
+        negative(BootstrapMsg.Request.class);
+        positive(BootstrapMsg.Response.class);
 //        negative(BootstrapHeartbeat.class);
-//        positive(BootstrapResponse.class);
+
 //        negative(BootstrapHelperHb.class);
 //        negative(AddOverlayRequest.class);
 //        positive(AddOverlayResponse.class);

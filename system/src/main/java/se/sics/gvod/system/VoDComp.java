@@ -20,6 +20,7 @@ package se.sics.gvod.system;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.bootstrap.client.BootstrapPort;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Positive;
@@ -32,6 +33,7 @@ public class VoDComp extends ComponentDefinition {
     private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
 
     private Positive<VodNetwork> network = requires(VodNetwork.class);
+    private Positive<BootstrapPort> bootstrap = requires(BootstrapPort.class);
     
     public VoDComp(VoDInit init) {
         log.debug("init");

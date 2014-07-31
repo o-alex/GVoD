@@ -23,12 +23,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapComp;
 import se.sics.gvod.bootstrap.client.BootstrapInit;
+import se.sics.gvod.bootstrap.client.BootstrapPort;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Positive;
-import se.sics.kompics.Start;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -50,5 +50,6 @@ public class HostManagerComp extends ComponentDefinition {
 
         connect(vod.getNegative(VodNetwork.class), network);
         connect(bootstrapClient.getNegative(VodNetwork.class), network);
+        connect(vod.getNegative(BootstrapPort.class), bootstrapClient.getPositive(BootstrapPort.class));
     }
 }

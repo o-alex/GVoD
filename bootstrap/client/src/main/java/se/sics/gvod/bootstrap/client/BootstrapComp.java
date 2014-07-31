@@ -21,8 +21,11 @@ package se.sics.gvod.bootstrap.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.bootstrap.client.msg.BootstrapMsg;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.Handler;
+import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 
 /**
@@ -32,8 +35,20 @@ public class BootstrapComp extends ComponentDefinition {
     private static final Logger log = LoggerFactory.getLogger(BootstrapComp.class);
     
     private Positive<VodNetwork> network = requires(VodNetwork.class);
+    private Negative<BootstrapPort> bootstrap = provides(BootstrapPort.class);
     
     public BootstrapComp(BootstrapInit init) {
         log.debug("init");
+        
+        subscribe(handleBootstrapRequest, bootstrap);
     }
+    
+    public Handler<BootstrapMsg.Request> handleBootstrapRequest = new Handler<BootstrapMsg.Request>() {
+
+        @Override
+        public void handle(BootstrapMsg.Request event) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
+    };
 }

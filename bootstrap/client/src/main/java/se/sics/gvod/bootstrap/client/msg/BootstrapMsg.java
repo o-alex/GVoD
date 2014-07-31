@@ -17,10 +17,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+package se.sics.gvod.bootstrap.client.msg;
+
+import se.sics.kompics.KompicsEvent;
+
 /**
  *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class newClass {
+public class BootstrapMsg {
+    public static class Request implements KompicsEvent {
+        
+    }
     
+    public static class Response implements KompicsEvent {
+        
+    }
 }
