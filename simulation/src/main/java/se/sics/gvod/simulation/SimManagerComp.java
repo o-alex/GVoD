@@ -23,6 +23,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.common.network.filters.NodeIdFilter;
 import se.sics.gvod.filters.MsgDestFilterNodeId;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
@@ -74,14 +75,14 @@ public class SimManagerComp extends ComponentDefinition {
                 se.sics.gvod.bootstrap.server.HostConfiguration bsConfig = new se.sics.gvod.bootstrap.server.HostConfiguration.Builder().
                         loadConfig("bootstrap.conf").setId(start.id).setIp(ip).finalise();
                 
-                final Component bs = create(se.sics.gvod.bootstrap.server.HostManagerComp.class,
+                final Component vodPeerHost = create(se.sics.gvod.bootstrap.server.HostManagerComp.class,
                         new se.sics.gvod.bootstrap.server.HostManagerInit(bsConfig));
-                systemComp.put(start.id, bs);
+                systemComp.put(start.id, vodPeerHost);
 
-                connect(bs.getNegative(VodNetwork.class), network, new MsgDestFilterNodeId(start.id));
-                connect(bs.getNegative(Timer.class), timer);
+                connect(vodPeerHost.getNegative(VodNetwork.class), network, new NodeIdFilter(start.id));
+                connect(vodPeerHost.getNegative(Timer.class), timer);
 
-                trigger(Start.event, bs.control());
+                trigger(Start.event, vodPeerHost.control());
             } catch (se.sics.gvod.bootstrap.server.HostConfiguration.ConfigException ex) {
                 log.error("error loading bootstrap server configuration");
                 throw new RuntimeException(ex);
@@ -102,22 +103,22 @@ public class SimManagerComp extends ComponentDefinition {
             }
             log.info("bootstrap server - id {} - stopping...", stop.id);
 
-            final Component bs = systemComp.remove(stop.id);
-            disconnect(bs.getNegative(VodNetwork.class), network);
-            disconnect(bs.getNegative(Timer.class), timer);
+            final Component vodPeerHost = systemComp.remove(stop.id);
+            disconnect(vodPeerHost.getNegative(VodNetwork.class), network);
+            disconnect(vodPeerHost.getNegative(Timer.class), timer);
             
             Handler<Stopped> handleStopped = new Handler<Stopped>() {
 
                 @Override
                 public void handle(Stopped stopped) {
                     log.debug("bootstrap server - id {} - cleaning", stop.id);
-                    destroy(bs);
+                    destroy(vodPeerHost);
                     unsubscribe(this, control);
                 }
             };
             
             subscribe(handleStopped, control);
-            trigger(Stop.event, bs.control());
+            trigger(Stop.event, vodPeerHost.control());
         }
     }; 
     
@@ -130,14 +131,14 @@ public class SimManagerComp extends ComponentDefinition {
                 se.sics.gvod.system.HostConfiguration bsConfig = new se.sics.gvod.system.HostConfiguration.Builder().
                         loadConfig("vod.conf").setId(start.id).finalise();
 
-                final Component bs = create(se.sics.gvod.system.HostManagerComp.class,
+                final Component vodPeerHost = create(se.sics.gvod.system.HostManagerComp.class,
                         new se.sics.gvod.system.HostManagerInit(bsConfig));
-                systemComp.put(start.id, bs);
+                systemComp.put(start.id, vodPeerHost);
 
-                connect(bs.getNegative(VodNetwork.class), network, new MsgDestFilterNodeId(start.id));
-                connect(bs.getNegative(Timer.class), timer);
+                connect(vodPeerHost.getNegative(VodNetwork.class), network, new NodeIdFilter(start.id));
+                connect(vodPeerHost.getNegative(Timer.class), timer);
 
-                trigger(Start.event, bs.control());
+                trigger(Start.event, vodPeerHost.control());
             } catch (se.sics.gvod.system.HostConfiguration.ConfigException ex) {
                 log.error("error loading vod peer configuration");
                 throw new RuntimeException(ex);
@@ -155,22 +156,22 @@ public class SimManagerComp extends ComponentDefinition {
             }
             log.info("vod peer - id {} - stopping...", stop.id);
 
-            final Component vodPeer = systemComp.remove(stop.id);
-            disconnect(vodPeer.getNegative(VodNetwork.class), network);
-            disconnect(vodPeer.getNegative(Timer.class), timer);
+            final Component vodPeerHost = systemComp.remove(stop.id);
+            disconnect(vodPeerHost.getNegative(VodNetwork.class), network);
+            disconnect(vodPeerHost.getNegative(Timer.class), timer);
             
             Handler<Stopped> handleStopped = new Handler<Stopped>() {
 
                 @Override
                 public void handle(Stopped stopped) {
                     log.debug("vodPeer - id {} - cleaning", stop.id);
-                    destroy(vodPeer);
+                    destroy(vodPeerHost);
                     unsubscribe(this, control);
                 }
             };
             
             subscribe(handleStopped, control);
-            trigger(Stop.event, vodPeer.control());
+            trigger(Stop.event, vodPeerHost.control());
         }
     }; 
     

@@ -21,9 +21,11 @@ package se.sics.gvod.bootstrap.server;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.sics.gvod.address.Address;
+import se.sics.gvod.bootstrap.common.msg.BootstrapNetMsg;
+import se.sics.gvod.bootstrap.server.peerManager.SimpleVodPeerManager;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.Handler;
 import se.sics.kompics.Positive;
 
 /**
@@ -36,8 +38,24 @@ public class BootstrapServerComp extends ComponentDefinition {
     private Positive<VodNetwork> network = requires(VodNetwork.class);
     private final HostConfiguration config;
 
+    private final VodPeerManager peerManager;
     public BootstrapServerComp(BootstrapServerInit init) {
         log.debug("init");
         this.config = init.config;
+        this.peerManager = new SimpleVodPeerManager(config.getVodPeerManagerConfig());
+        
+        subscribe(handleBootstrapRequest, network);
     }
+    
+    public Handler<BootstrapNetMsg.Request> handleBootstrapRequest = new Handler<BootstrapNetMsg.Request> () {
+
+        @Override
+        public void handle(BootstrapNetMsg.Request netReq) {
+            log.debug("received {}", netReq.toString());
+            BootstrapNetMsg.Response netResp = netReq.getResponse();
+            log.debug("sending {}", netResp.toString());
+            trigger(netResp, network);
+        }
+        
+    };
 }

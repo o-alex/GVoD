@@ -24,7 +24,7 @@ import se.sics.kompics.PortType;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapPort extends PortType {
+public class BootstrapClientPort extends PortType {
 
     {
         negative(BootstrapMsg.Request.class);

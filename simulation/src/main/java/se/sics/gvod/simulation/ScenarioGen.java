@@ -23,7 +23,6 @@ import se.sics.gvod.simulation.cmd.system.StartBSCmd;
 import se.sics.gvod.simulation.cmd.system.StartVodPeerCmd;
 import se.sics.gvod.simulation.cmd.system.StopBSCmd;
 import se.sics.gvod.simulation.cmd.system.StopVodPeerCmd;
-import se.sics.gvod.simulation.util.IntegerUniformDistribution;
 import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
 import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation1;
 import se.sics.kompics.p2p.experiment.dsl.distribution.ConstantDistribution;
@@ -107,9 +106,7 @@ public class ScenarioGen {
 
                 startBootstrapServerProc.start();
                 startVodPeersProc.startAfterTerminationOf(1000, startBootstrapServerProc);
-                stopVodPeersProc.startAfterTerminationOf(1000, startVodPeersProc);
-                stopBootstrapServerProc.startAfterTerminationOf(1000, stopVodPeersProc);
-                terminateAfterTerminationOf(1000, stopBootstrapServerProc);
+                terminateAfterTerminationOf(1000*1000, startVodPeersProc);
             }
         };
 

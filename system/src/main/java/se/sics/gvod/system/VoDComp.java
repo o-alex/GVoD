@@ -20,10 +20,13 @@ package se.sics.gvod.system;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.sics.gvod.bootstrap.client.BootstrapPort;
+import se.sics.gvod.bootstrap.client.BootstrapClientPort;
+import se.sics.gvod.bootstrap.client.msg.BootstrapMsg;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.Handler;
 import se.sics.kompics.Positive;
+import se.sics.kompics.Start;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -33,9 +36,21 @@ public class VoDComp extends ComponentDefinition {
     private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
 
     private Positive<VodNetwork> network = requires(VodNetwork.class);
-    private Positive<BootstrapPort> bootstrap = requires(BootstrapPort.class);
+    private Positive<BootstrapClientPort> bootstrap = requires(BootstrapClientPort.class);
     
     public VoDComp(VoDInit init) {
         log.debug("init");
+        
+        subscribe(handleStart, control);
     }
+    
+    public Handler<Start> handleStart = new Handler<Start>() {
+
+        @Override
+        public void handle(Start event) {
+            BootstrapMsg.Request req = new BootstrapMsg.Request();
+            log.debug("sending {}", req.toString());
+            trigger(req, bootstrap);
+        }
+    };
 }

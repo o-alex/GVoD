@@ -22,30 +22,27 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import se.sics.gvod.address.Address;
+import se.sics.gvod.bootstrap.client.BootstrapClientConfig;
+import se.sics.kompics.ConfigurationException;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class HostConfiguration {
 
-    public final Config config;
-    public final int id;
+    private final Config config;
+    public final Address self;
+    public final Address bootstrapServer;
 
-    private HostConfiguration(Config config, int id) {
+    private HostConfiguration(Config config, Address self, Address bootstrapServer) {
         this.config = config;
-        this.id = id;
+        this.self = self;
+        this.bootstrapServer = bootstrapServer;
     }
-
-    public InetAddress getIp() throws UnknownHostException {
-        return InetAddress.getLocalHost();
-    }
-
-    public int getPort() {
-        return Integer.valueOf(config.getString("vod.address.port"));
-    }
-
-    public int getId() {
-        return Integer.valueOf(config.getString("vod.address.id"));
+    
+    public BootstrapClientConfig getBootstrapClientConfig() {
+        return new BootstrapClientConfig(self, bootstrapServer);
     }
 
     public static class Builder {
@@ -72,10 +69,23 @@ public class HostConfiguration {
         }
 
         public HostConfiguration finalise() throws ConfigException {
-            if (id == null) {
-                throw new ConfigException("id not set");
-            }
-            return new HostConfiguration(config, id);
+            try {
+                Address self = new Address(
+                        InetAddress.getByName(config.getString("vod.address.ip")),
+                        config.getInt("vod.address.port"),
+                        id == null ? config.getInt("vod.address.id") : id
+                );
+                
+                Address bootstrapServer = new Address(
+                        InetAddress.getByName(config.getString("bootstrap.address.ip")),
+                        config.getInt("bootstrap.address.port"),
+                        config.getInt("bootstrap.address.id")
+                );
+                
+                return new HostConfiguration(config, self, bootstrapServer);
+            } catch (UnknownHostException | com.typesafe.config.ConfigException ex) {
+                throw new ConfigException(ex);
+            } 
         }
 
     }
@@ -84,6 +94,10 @@ public class HostConfiguration {
 
         public ConfigException(String msg) {
             super(msg);
+        }
+        
+        public ConfigException(Throwable cause) {
+            super(cause);
         }
     }
 }

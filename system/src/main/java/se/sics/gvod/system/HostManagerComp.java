@@ -21,9 +21,9 @@ package se.sics.gvod.system;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.sics.gvod.bootstrap.client.BootstrapComp;
-import se.sics.gvod.bootstrap.client.BootstrapInit;
-import se.sics.gvod.bootstrap.client.BootstrapPort;
+import se.sics.gvod.bootstrap.client.BootstrapClientComp;
+import se.sics.gvod.bootstrap.client.BootstrapClientInit;
+import se.sics.gvod.bootstrap.client.BootstrapClientPort;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
@@ -44,12 +44,13 @@ public class HostManagerComp extends ComponentDefinition {
     
 
     public HostManagerComp(HostManagerInit init) {
-        log.debug("init");
+        log.debug("starting... - self {}, bootstrap server {}",
+                new Object[]{init.config.self.toString(), init.config.bootstrapServer.toString()});
         this.vod = create(VoDComp.class, new VoDInit());
-        this.bootstrapClient = create(BootstrapComp.class, new BootstrapInit());
+        this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(init.config.getBootstrapClientConfig()));
 
         connect(vod.getNegative(VodNetwork.class), network);
         connect(bootstrapClient.getNegative(VodNetwork.class), network);
-        connect(vod.getNegative(BootstrapPort.class), bootstrapClient.getPositive(BootstrapPort.class));
+        connect(vod.getNegative(BootstrapClientPort.class), bootstrapClient.getPositive(BootstrapClientPort.class));
     }
 }

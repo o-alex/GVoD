@@ -17,26 +17,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.client.msg;
+package se.sics.gvod.bootstrap.client;
 
-import se.sics.kompics.KompicsEvent;
+import se.sics.gvod.address.Address;
+import se.sics.gvod.net.VodAddress;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapMsg {
-    public static class Request implements KompicsEvent {
-        @Override
-        public String toString() {
-            return "BootstrapMsg.Request";
-        }
-    }
+public class BootstrapClientConfig {
+    public final Address self;
+    public final Address server;
     
-    public static class Response implements KompicsEvent {
-        @Override
-        public String toString() {
-            return "BootstrapMsg.Response";
-        }
+    public BootstrapClientConfig(Address self, Address server) {
+        this.self = self;
+        this.server = server;
     }
 }

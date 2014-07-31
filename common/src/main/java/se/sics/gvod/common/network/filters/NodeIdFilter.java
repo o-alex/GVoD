@@ -17,26 +17,23 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.client.msg;
+package se.sics.gvod.common.network.filters;
 
-import se.sics.kompics.KompicsEvent;
+import se.sics.gvod.net.msgs.RewriteableMsg;
+import se.sics.kompics.ChannelFilter;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapMsg {
-    public static class Request implements KompicsEvent {
-        @Override
-        public String toString() {
-            return "BootstrapMsg.Request";
-        }
+public class NodeIdFilter extends ChannelFilter<RewriteableMsg, Integer> {
+
+    public NodeIdFilter(int id) {
+        super(RewriteableMsg.class, id, true);
     }
-    
-    public static class Response implements KompicsEvent {
-        @Override
-        public String toString() {
-            return "BootstrapMsg.Response";
-        }
+
+
+    @Override
+    public Integer getValue(RewriteableMsg event) {
+        return event.getDestination().getId();
     }
 }

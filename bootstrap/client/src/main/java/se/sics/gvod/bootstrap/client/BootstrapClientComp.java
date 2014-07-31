@@ -22,6 +22,8 @@ package se.sics.gvod.bootstrap.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.msg.BootstrapMsg;
+import se.sics.gvod.bootstrap.common.msg.BootstrapNetMsg;
+import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -31,24 +33,40 @@ import se.sics.kompics.Positive;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapComp extends ComponentDefinition {
-    private static final Logger log = LoggerFactory.getLogger(BootstrapComp.class);
+public class BootstrapClientComp extends ComponentDefinition {
+    private static final Logger log = LoggerFactory.getLogger(BootstrapClientComp.class);
     
     private Positive<VodNetwork> network = requires(VodNetwork.class);
-    private Negative<BootstrapPort> bootstrap = provides(BootstrapPort.class);
+    private Negative<BootstrapClientPort> bootstrap = provides(BootstrapClientPort.class);
+
+    private BootstrapClientConfig config;
     
-    public BootstrapComp(BootstrapInit init) {
+    public BootstrapClientComp(BootstrapClientInit init) {
         log.debug("init");
+        this.config = init.config;
         
         subscribe(handleBootstrapRequest, bootstrap);
+        subscribe(handleBootstrapNetResponse, network);
     }
     
     public Handler<BootstrapMsg.Request> handleBootstrapRequest = new Handler<BootstrapMsg.Request>() {
 
         @Override
-        public void handle(BootstrapMsg.Request event) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        public void handle(BootstrapMsg.Request req) {
+            log.trace("received {}", req.toString());
+            BootstrapNetMsg.Request netReq = new BootstrapNetMsg.Request(
+                    new VodAddress(config.self, -1),
+                    new VodAddress(config.server, -1));
+            log.debug("sending {}", netReq.toString());
+            trigger(netReq, network);
         }
-        
+    };
+    
+    public Handler<BootstrapNetMsg.Response> handleBootstrapNetResponse = new Handler<BootstrapNetMsg.Response>() {
+
+        @Override
+        public void handle(BootstrapNetMsg.Response netResp) {
+            log.debug("received {}", netResp.toString());
+        }
     };
 }

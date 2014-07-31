@@ -17,23 +17,19 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.common.network;
+package se.sics.gvod.bootstrap.server.peerManager;
 
-import se.sics.gvod.net.msgs.DirectMsg;
-import se.sics.kompics.ChannelFilter;
+import java.util.Random;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class DirectMsgFilterNodeId extends ChannelFilter<DirectMsg, Integer> {
-
-    public DirectMsgFilterNodeId(int id) {
-        super(DirectMsg.class, id, true);
-    }
-
-
-    @Override
-    public Integer getValue(DirectMsg event) {
-        return event.getDestination().getId();
+public class VodPeerManagerConfig {
+    public final Random rand;
+    public final int sampleSize;
+    
+    public VodPeerManagerConfig(long seed, int sampleSize) {
+        this.rand = new Random(seed);
+        this.sampleSize = sampleSize;
     }
 }
