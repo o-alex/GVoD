@@ -16,16 +16,30 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+package se.sics.gvod.bootstrap.client.msg;
 
-package se.sics.gvod.bootstrap.server;
-
-import se.sics.gvod.address.Address;
+import java.util.Map;
+import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface VodPeerManager {
-    public void addVodPeer(Address peerAdr);
-    public void getOverlaySample(int overlayId);
-    public void getSystemSample();
+public class JoinOverlayMsg {
+
+    public static class Request implements KompicsEvent {
+
+        public final int overlayId;
+
+        public Request(int overlayId) {
+            this.overlayId = overlayId;
+        }
+    }
+
+    public static class Response implements KompicsEvent {
+        public final Map<Integer, Integer> overlaySample;
+        
+        public Response(Map<Integer, Integer> overlaySample) {
+            this.overlaySample = overlaySample;
+        }
+    }
 }

@@ -19,17 +19,14 @@
 
 package se.sics.gvod.bootstrap.server.peerManager;
 
-import java.util.Random;
+import java.util.Set;
+import se.sics.gvod.address.Address;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VodPeerManagerConfig {
-    public final Random rand;
-    public final int sampleSize;
-    
-    public VodPeerManagerConfig(long seed, int sampleSize) {
-        this.rand = new Random(seed);
-        this.sampleSize = sampleSize;
-    }
+public interface PeerManager {
+    public void addVodPeer(Address peerAdr);
+    public void getOverlaySample(int overlayId);
+    public Set<Address> getSystemSample();
 }

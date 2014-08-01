@@ -19,10 +19,11 @@
  */
 package se.sics.gvod.bootstrap.server;
 
+import se.sics.gvod.bootstrap.server.peerManager.PeerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.common.msg.BootstrapNetMsg;
-import se.sics.gvod.bootstrap.server.peerManager.SimpleVodPeerManager;
+import se.sics.gvod.bootstrap.server.peerManager.SimplePeerManager;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -38,11 +39,11 @@ public class BootstrapServerComp extends ComponentDefinition {
     private Positive<VodNetwork> network = requires(VodNetwork.class);
     private final HostConfiguration config;
 
-    private final VodPeerManager peerManager;
+    private final PeerManager peerManager;
     public BootstrapServerComp(BootstrapServerInit init) {
         log.debug("init");
         this.config = init.config;
-        this.peerManager = new SimpleVodPeerManager(config.getVodPeerManagerConfig());
+        this.peerManager = new SimplePeerManager(config.getVodPeerManagerConfig());
         
         subscribe(handleBootstrapRequest, network);
     }
@@ -52,10 +53,15 @@ public class BootstrapServerComp extends ComponentDefinition {
         @Override
         public void handle(BootstrapNetMsg.Request netReq) {
             log.debug("received {}", netReq.toString());
-            BootstrapNetMsg.Response netResp = netReq.getResponse();
+            
+            BootstrapNetMsg.Response netResp = netReq.getResponse(peerManager.getSystemSample());
+            peerManager.addVodPeer(netReq.getSource());
+            
             log.debug("sending {}", netResp.toString());
             trigger(netResp, network);
         }
         
     };
+    
+    
 }

@@ -16,25 +16,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.bootstrap.client;
+package se.sics.gvod.bootstrap.client.msg;
 
-import se.sics.gvod.bootstrap.client.msg.AddOverlayMsg;
-import se.sics.gvod.bootstrap.client.msg.BootstrapMsg;
-import se.sics.gvod.bootstrap.client.msg.JoinOverlayMsg;
-import se.sics.kompics.PortType;
+import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapClientPort extends PortType {
+public class AddOverlayMsg {
 
-    {
-        negative(BootstrapMsg.Request.class);
-        negative(AddOverlayMsg.Request.class);
-        negative(JoinOverlayMsg.Request.class);
+    public static class Request implements KompicsEvent {
+
+        public final int overlayId;
+
+        public Request(int overlayId) {
+            this.overlayId = overlayId;
+        }
+    }
+    
+    public static class Response implements KompicsEvent {
         
-        positive(BootstrapMsg.Response.class);
-        positive(AddOverlayMsg.Response.class);
-        positive(JoinOverlayMsg.Response.class);
     }
 }

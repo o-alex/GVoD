@@ -86,7 +86,7 @@ public class ScenarioGen {
                 StochasticProcess startVodPeersProc = new StochasticProcess() {
                     {
                         eventInterArrivalTime(constant(1000));
-                        raise(1, startVodPeer, vodPeerIdDist);
+                        raise(2, startVodPeer, vodPeerIdDist);
                     }
                 };
                 

@@ -16,25 +16,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.bootstrap.client;
 
-import se.sics.gvod.bootstrap.client.msg.AddOverlayMsg;
-import se.sics.gvod.bootstrap.client.msg.BootstrapMsg;
-import se.sics.gvod.bootstrap.client.msg.JoinOverlayMsg;
-import se.sics.kompics.PortType;
+package se.sics.gvod.common.network.data;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapClientPort extends PortType {
-
-    {
-        negative(BootstrapMsg.Request.class);
-        negative(AddOverlayMsg.Request.class);
-        negative(JoinOverlayMsg.Request.class);
-        
-        positive(BootstrapMsg.Response.class);
-        positive(AddOverlayMsg.Response.class);
-        positive(JoinOverlayMsg.Response.class);
-    }
+public interface HeartbeatData<E> {
+    
 }

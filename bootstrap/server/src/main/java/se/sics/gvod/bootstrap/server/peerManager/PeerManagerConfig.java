@@ -19,42 +19,17 @@
 
 package se.sics.gvod.bootstrap.server.peerManager;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Random;
-import java.util.Set;
-import se.sics.gvod.address.Address;
-import se.sics.gvod.bootstrap.server.VodPeerManager;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class SimpleVodPeerManager implements VodPeerManager {
-
-    private final VodPeerManagerConfig config;
-    private final Set<Address> systemPeers;
-    private final Map<Integer, Set<Address>> overlayPeers;
+public class PeerManagerConfig {
+    public final Random rand;
+    public final int sampleSize;
     
-    public SimpleVodPeerManager(VodPeerManagerConfig config) {
-        this.config = config;
-        this.overlayPeers = new HashMap<>();
-        this.systemPeers = new HashSet<>();
+    public PeerManagerConfig(long seed, int sampleSize) {
+        this.rand = new Random(seed);
+        this.sampleSize = sampleSize;
     }
-    
-    @Override
-    public void addVodPeer(Address peerAdr) {
-        systemPeers.add(peerAdr);
-    }
-
-    @Override
-    public void getOverlaySample(int overlayId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void getSystemSample() {
-        
-    }
-    
 }

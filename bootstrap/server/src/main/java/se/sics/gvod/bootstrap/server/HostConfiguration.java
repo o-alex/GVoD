@@ -24,7 +24,7 @@ import com.typesafe.config.ConfigFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
-import se.sics.gvod.bootstrap.server.peerManager.VodPeerManagerConfig;
+import se.sics.gvod.bootstrap.server.peerManager.PeerManagerConfig;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -38,8 +38,8 @@ public class HostConfiguration {
         this.self = self;
     }
     
-    public VodPeerManagerConfig getVodPeerManagerConfig() {
-        return new VodPeerManagerConfig(
+    public PeerManagerConfig getVodPeerManagerConfig() {
+        return new PeerManagerConfig(
                 config.getLong("bootstrap.seed"),
                 config.getInt("bootstrap.sampleSize"));
     }

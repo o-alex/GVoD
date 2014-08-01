@@ -20,11 +20,15 @@
 package se.sics.gvod.bootstrap.common.msg;
 
 import io.netty.buffer.ByteBuf;
+import java.util.Map;
+import java.util.Set;
+import se.sics.gvod.address.Address;
 import se.sics.gvod.common.msgs.DirectMsgNetty;
 import se.sics.gvod.common.msgs.MessageEncodingException;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodMsgFrameDecoder;
 import se.sics.gvod.net.msgs.RewriteableMsg;
+import se.sics.gvod.net.util.UserTypesEncoderFactory;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -36,8 +40,8 @@ public class BootstrapNetMsg {
             super(vodSrc, vodDest);
         }
         
-        public Response getResponse() {
-            return new Response(vodDest, vodSrc);
+        public Response getResponse(Set<Address> systemSample) {
+            return new Response(vodDest, vodSrc, systemSample);
         }
         
         @Override
@@ -68,24 +72,29 @@ public class BootstrapNetMsg {
     }
     
     public static class Response extends DirectMsgNetty.Response {
-
-        public Response(VodAddress vodSrc, VodAddress vodDest) {
+        public final Set<Address> systemSample;
+        
+        public Response(VodAddress vodSrc, VodAddress vodDest, Set<Address> systemSample) {
             super(vodSrc, vodDest);
+            this.systemSample = systemSample;
         }
         @Override
         public int getSize() {
-            return super.getHeaderSize();
+            int size = super.getHeaderSize();
+            size += UserTypesEncoderFactory.getListAddressSize(systemSample);
+            return  size;
         }
 
         @Override
         public RewriteableMsg copy() {
-            return new Response(vodSrc, vodDest);
+            return new Response(vodSrc, vodDest, systemSample);
         }
 
         @Override
         public ByteBuf toByteArray() throws MessageEncodingException {
-            ByteBuf buf = createChannelBufferWithHeader();
-            return buf;
+            ByteBuf buffer = createChannelBufferWithHeader();
+            UserTypesEncoderFactory.writeListAddresses(buffer, systemSample);
+            return buffer;
         }
 
         @Override
@@ -97,5 +106,37 @@ public class BootstrapNetMsg {
         public String toString() {
             return "BootstrapNetMsg.Response from " + vodSrc.toString() + " to " + vodDest.toString();
         }
+    }
+    
+    public static final class Heartbeat extends DirectMsgNetty.Oneway {
+        public final Set<Integer> seeding;
+        public final Map<Integer, Integer> leeching;
+        
+        public Heartbeat(VodAddress vodSrc, VodAddress vodDest, Set<Integer> seeding, Map<Integer, Integer> leeching) {
+            super(vodSrc, vodDest);
+            this.seeding = seeding;
+            this.leeching = leeching;
+        }
+        
+        @Override
+        public int getSize() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public RewriteableMsg copy() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public ByteBuf toByteArray() throws MessageEncodingException {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public byte getOpcode() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
     }
 }
