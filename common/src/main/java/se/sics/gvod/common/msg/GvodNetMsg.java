@@ -16,8 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
-package se.sics.gvod.bootstrap.common.msg;
+package se.sics.gvod.common.msg;
 
 import io.netty.buffer.ByteBuf;
 import se.sics.gvod.common.msgs.DirectMsgNetty;
@@ -26,26 +25,32 @@ import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.msgs.RewriteableMsg;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class AddOverlayNetMsg {
+public class GvodNetMsg {
+
     public static class Request extends DirectMsgNetty.Request {
-        public final int overlayId;
-        
-        public Request(VodAddress vodSrc, VodAddress vodDest, int overlayId) {
+
+        public GvodMsg.Request payload;
+
+        public Request(VodAddress vodSrc, VodAddress vodDest, GvodMsg.Request payload) {
             super(vodSrc, vodDest);
-            this.overlayId = overlayId;
+            this.payload = payload;
         }
         
+        @Override 
+        public String toString() {
+            return payload.toString() + " src " + vodSrc.getPeerAddress().toString() + " dest " + vodDest.getPeerAddress().toString();
+        }
+
         @Override
         public int getSize() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates. 
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
         @Override
         public RewriteableMsg copy() {
-            return new Request(vodSrc, vodDest, overlayId);
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
         @Override
@@ -61,8 +66,16 @@ public class AddOverlayNetMsg {
 
     public static class Response extends DirectMsgNetty.Response {
 
-        public Response(VodAddress vodSrc, VodAddress vodDest) {
+        public final GvodMsg.Response payload;
+
+        public Response(VodAddress vodSrc, VodAddress vodDest, GvodMsg.Response payload) {
             super(vodSrc, vodDest);
+            this.payload = payload;
+        }
+        
+        @Override
+        public String toString() {
+            return payload.toString() + " src " + vodSrc.getPeerAddress().toString() + " dest " + vodDest.getPeerAddress().toString();
         }
 
         @Override
@@ -84,6 +97,40 @@ public class AddOverlayNetMsg {
         public byte getOpcode() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
+    }
+
+    public static class OneWay extends DirectMsgNetty.Oneway {
+
+        public final GvodMsg.OneWay payload;
+
+        public OneWay(VodAddress vodSrc, VodAddress vodDest, GvodMsg.OneWay payload) {
+            super(vodSrc, vodDest);
+            this.payload = payload;
+        }
         
+        @Override
+        public String toString() {
+            return payload.toString() + " src " + vodSrc.getPeerAddress().toString() + " dest " + vodDest.getPeerAddress().toString();
+        }
+
+        @Override
+        public int getSize() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public RewriteableMsg copy() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public ByteBuf toByteArray() throws MessageEncodingException {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public byte getOpcode() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
     }
 }

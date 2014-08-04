@@ -18,23 +18,46 @@
  */
 package se.sics.gvod.bootstrap.client.msg;
 
-import se.sics.kompics.KompicsEvent;
+import java.util.Set;
+import java.util.UUID;
+import se.sics.gvod.common.msg.GvodMsg;
+import se.sics.gvod.common.msg.ReqStatus;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class AddOverlayMsg {
 
-    public static class Request implements KompicsEvent {
+    public static class Request extends GvodMsg.Request {
 
         public final int overlayId;
 
-        public Request(int overlayId) {
+        public Request(UUID reqId, int overlayId) {
+            super(reqId);
             this.overlayId = overlayId;
+        }
+        
+        @Override
+        public String toString() {
+            return "AddOverlayMsg Request " + reqId.toString();
+        }
+        
+        public Response getResponse(ReqStatus status) {
+            return new Response(reqId, status, overlayId);
         }
     }
     
-    public static class Response implements KompicsEvent {
+    public static class Response extends GvodMsg.Response {
+        public final int overlayId;
         
+        public Response(UUID reqId, ReqStatus status, int overlayId) {
+            super(reqId, status);
+            this.overlayId = overlayId;
+        }
+     
+        @Override
+        public String toString() {
+            return "AddOverlayMsg Response " + reqId.toString() + " " + status.toString();
+        }
     }
 }

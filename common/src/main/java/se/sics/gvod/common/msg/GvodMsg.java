@@ -16,42 +16,43 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
-package se.sics.gvod.bootstrap.client.msg;
+package se.sics.gvod.common.msg;
 
 import java.util.UUID;
-import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.GvodMsg;
+import se.sics.kompics.KompicsEvent;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapMsg {
-    public static class Request extends GvodMsg.Request {
-        
+public class GvodMsg {
+
+    public static class Request implements KompicsEvent {
+
+        public final UUID reqId;
+
         public Request(UUID reqId) {
-            super(reqId);
-        }
-        
-        @Override
-        public String toString() {
-            return "BootstrapMsg Request " + reqId.toString();
-        }
-        
-        public Response getResponse(ReqStatus status) {
-            return new Response(reqId, status);
+            this.reqId = reqId;
         }
     }
-    
-    public static class Response extends GvodMsg.Response {
-        
+
+    public static class Response implements KompicsEvent {
+
+        public final UUID reqId;
+        public final ReqStatus status;
+
         public Response(UUID reqId, ReqStatus status) {
-            super(reqId, status);
+            this.reqId = reqId;
+            this.status = status;
         }
-        
-        @Override
-        public String toString() {
-            return "BootstrapMsg Response " + reqId.toString() + " " + status.toString();
-        } 
+    }
+
+    public static class OneWay implements KompicsEvent {
+
+        public final UUID reqId;
+
+        public OneWay(UUID reqId) {
+            this.reqId = reqId;
+        }
     }
 }

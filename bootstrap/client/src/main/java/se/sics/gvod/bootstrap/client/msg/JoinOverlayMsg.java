@@ -19,27 +19,47 @@
 package se.sics.gvod.bootstrap.client.msg;
 
 import java.util.Map;
-import se.sics.kompics.KompicsEvent;
+import java.util.Set;
+import java.util.UUID;
+import se.sics.gvod.common.msg.GvodMsg;
+import se.sics.gvod.common.msg.ReqStatus;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class JoinOverlayMsg {
 
-    public static class Request implements KompicsEvent {
+    public static class Request extends GvodMsg.Request {
 
-        public final int overlayId;
+        public final Set<Integer> overlayId;
 
-        public Request(int overlayId) {
+        public Request(UUID reqId, Set<Integer> overlayId) {
+            super(reqId);
             this.overlayId = overlayId;
+        }
+
+        @Override
+        public String toString() {
+            return "JoinOverlayMsg Request " + reqId.toString();
+        }
+
+        public Response getResponse(ReqStatus status, Map<Integer, Set<Integer>> overlaySample) {
+            return new Response(reqId, status, overlaySample);
         }
     }
 
-    public static class Response implements KompicsEvent {
-        public final Map<Integer, Integer> overlaySample;
-        
-        public Response(Map<Integer, Integer> overlaySample) {
+    public static class Response extends GvodMsg.Response {
+
+        public final Map<Integer, Set<Integer>> overlaySample;
+
+        public Response(UUID reqId, ReqStatus status, Map<Integer, Set<Integer>> overlaySample) {
+            super(reqId, status);
             this.overlaySample = overlaySample;
+        }
+
+        @Override
+        public String toString() {
+            return "JoinOverlayMsg Response " + reqId.toString() + " " + status.toString();
         }
     }
 }

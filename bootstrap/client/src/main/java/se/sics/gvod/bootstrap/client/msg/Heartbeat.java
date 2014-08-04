@@ -16,42 +16,26 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.bootstrap.client.msg;
 
+import java.util.Set;
 import java.util.UUID;
-import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.GvodMsg;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapMsg {
-    public static class Request extends GvodMsg.Request {
-        
-        public Request(UUID reqId) {
-            super(reqId);
-        }
-        
-        @Override
-        public String toString() {
-            return "BootstrapMsg Request " + reqId.toString();
-        }
-        
-        public Response getResponse(ReqStatus status) {
-            return new Response(reqId, status);
-        }
+public final class Heartbeat extends GvodMsg.OneWay {
+
+    public final Set<Integer> overlayIds;
+
+    public Heartbeat(UUID reqId, Set<Integer> overlayIds) {
+        super(reqId);
+        this.overlayIds = overlayIds;
     }
-    
-    public static class Response extends GvodMsg.Response {
-        
-        public Response(UUID reqId, ReqStatus status) {
-            super(reqId, status);
-        }
-        
-        @Override
-        public String toString() {
-            return "BootstrapMsg Response " + reqId.toString() + " " + status.toString();
-        } 
+
+    @Override
+    public String toString() {
+        return "Heartbeat " + reqId.toString();
     }
 }
