@@ -25,7 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import se.sics.gvod.address.Address;
+import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -33,8 +33,8 @@ import se.sics.gvod.address.Address;
 public class SimplePeerManager implements PeerManager {
 
     private final PeerManagerConfig config;
-    private final List<Address> systemPeers;
-    private final Map<Integer, Set<Address>> overlayPeers;
+    private final List<VodAddress> systemPeers;
+    private final Map<Integer, Set<VodAddress>> overlayPeers;
     
     public SimplePeerManager(PeerManagerConfig config) {
         this.config = config;
@@ -43,7 +43,7 @@ public class SimplePeerManager implements PeerManager {
     }
     
     @Override
-    public void addVodPeer(Address peerAdr) {
+    public void addVodPeer(VodAddress peerAdr) {
         systemPeers.add(peerAdr);
     }
 
@@ -53,8 +53,8 @@ public class SimplePeerManager implements PeerManager {
     }
 
     @Override
-    public Set<Address> getSystemSample() {
-        Set<Address> sample = new HashSet<>();
+    public Set<VodAddress> getSystemSample() {
+        Set<VodAddress> sample = new HashSet<>();
         
         if(config.sampleSize >= systemPeers.size()) {
             sample.addAll(systemPeers);

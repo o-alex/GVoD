@@ -19,11 +19,15 @@
  */
 package se.sics.gvod.bootstrap.server;
 
-import se.sics.gvod.bootstrap.server.peerManager.PeerManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.sics.gvod.bootstrap.common.msg.BootstrapNetMsg;
+import se.sics.gvod.bootstrap.common.msg.BootstrapMsg;
+import se.sics.gvod.bootstrap.server.peerManager.PeerManager;
 import se.sics.gvod.bootstrap.server.peerManager.SimplePeerManager;
+import se.sics.gvod.common.msg.GvodNetMsg;
+import se.sics.gvod.common.msg.ReqStatus;
+import se.sics.gvod.common.util.MsgProcessor;
+import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -40,28 +44,38 @@ public class BootstrapServerComp extends ComponentDefinition {
     private final HostConfiguration config;
 
     private final PeerManager peerManager;
+    private final MsgProcessor msgProc;
+    private GvodNetMsg.Request currentReq;
+
     public BootstrapServerComp(BootstrapServerInit init) {
         log.debug("init");
         this.config = init.config;
+        this.msgProc = new MsgProcessor();
         this.peerManager = new SimplePeerManager(config.getVodPeerManagerConfig());
-        
-        subscribe(handleBootstrapRequest, network);
+
+        subscribe(handleGvodNetRequest, network);
+        msgProc.subscribe(handleBootstrapRequest);
     }
-    
-    public Handler<BootstrapNetMsg.Request> handleBootstrapRequest = new Handler<BootstrapNetMsg.Request> () {
+
+    public Handler<GvodNetMsg.Request> handleGvodNetRequest = new Handler<GvodNetMsg.Request>() {
 
         @Override
-        public void handle(BootstrapNetMsg.Request netReq) {
+        public void handle(final GvodNetMsg.Request netReq) {
             log.debug("received {}", netReq.toString());
-            
-            BootstrapNetMsg.Response netResp = netReq.getResponse(peerManager.getSystemSample());
-            peerManager.addVodPeer(netReq.getSource());
-            
+            currentReq = netReq;
+            msgProc.process(netReq.payload);
+        }
+    };
+
+    Handler<BootstrapMsg.Request> handleBootstrapRequest = new Handler<BootstrapMsg.Request>(BootstrapMsg.Request.class) {
+        @Override
+        public void handle(BootstrapMsg.Request req) {
+            BootstrapMsg.Response resp = req.getResponse(peerManager.getSystemSample());
+            GvodNetMsg.Response netResp = currentReq.getResponse(resp);
+            peerManager.addVodPeer(currentReq.getVodSource());
+
             log.debug("sending {}", netResp.toString());
             trigger(netResp, network);
         }
-        
     };
-    
-    
 }

@@ -18,10 +18,11 @@
  */
 package se.sics.gvod.system;
 
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
-import se.sics.gvod.bootstrap.client.msg.BootstrapMsg;
+import se.sics.gvod.bootstrap.common.msg.BootstrapMsg;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -35,8 +36,8 @@ public class VoDComp extends ComponentDefinition {
 
     private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
 
-    private Positive<VodNetwork> network = requires(VodNetwork.class);
-    private Positive<BootstrapClientPort> bootstrap = requires(BootstrapClientPort.class);
+    Positive<VodNetwork> network = requires(VodNetwork.class);
+    Positive<BootstrapClientPort> bootstrap = requires(BootstrapClientPort.class);
     
     public VoDComp(VoDInit init) {
         log.debug("init");
@@ -48,7 +49,7 @@ public class VoDComp extends ComponentDefinition {
 
         @Override
         public void handle(Start event) {
-            BootstrapMsg.Request req = new BootstrapMsg.Request();
+            BootstrapMsg.Request req = new BootstrapMsg.Request(UUID.randomUUID());
             log.debug("sending {}", req.toString());
             trigger(req, bootstrap);
         }

@@ -20,13 +20,13 @@
 package se.sics.gvod.bootstrap.server.peerManager;
 
 import java.util.Set;
-import se.sics.gvod.address.Address;
+import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public interface PeerManager {
-    public void addVodPeer(Address peerAdr);
+    public void addVodPeer(VodAddress peerAdr);
     public void getOverlaySample(int overlayId);
-    public Set<Address> getSystemSample();
+    public Set<VodAddress> getSystemSample();
 }

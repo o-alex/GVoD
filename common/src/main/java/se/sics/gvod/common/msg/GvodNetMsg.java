@@ -29,13 +29,17 @@ import se.sics.gvod.net.msgs.RewriteableMsg;
  */
 public class GvodNetMsg {
 
-    public static class Request extends DirectMsgNetty.Request {
+    public static class Request<E extends GvodMsg.Request> extends DirectMsgNetty.Request {
 
-        public GvodMsg.Request payload;
+        public E payload;
 
-        public Request(VodAddress vodSrc, VodAddress vodDest, GvodMsg.Request payload) {
+        public Request(VodAddress vodSrc, VodAddress vodDest, E payload) {
             super(vodSrc, vodDest);
             this.payload = payload;
+        }
+        
+        public <E extends GvodMsg.Response> Response getResponse(E payload) {
+            return new Response(vodDest, vodSrc, payload);
         }
         
         @Override 
@@ -64,11 +68,11 @@ public class GvodNetMsg {
         }
     }
 
-    public static class Response extends DirectMsgNetty.Response {
+    public static class Response<E extends GvodMsg.Response> extends DirectMsgNetty.Response {
 
-        public final GvodMsg.Response payload;
+        public final E payload;
 
-        public Response(VodAddress vodSrc, VodAddress vodDest, GvodMsg.Response payload) {
+        public Response(VodAddress vodSrc, VodAddress vodDest, E payload) {
             super(vodSrc, vodDest);
             this.payload = payload;
         }
@@ -99,11 +103,11 @@ public class GvodNetMsg {
         }
     }
 
-    public static class OneWay extends DirectMsgNetty.Oneway {
+    public static class OneWay<E extends GvodMsg.OneWay> extends DirectMsgNetty.Oneway {
 
-        public final GvodMsg.OneWay payload;
+        public final E payload;
 
-        public OneWay(VodAddress vodSrc, VodAddress vodDest, GvodMsg.OneWay payload) {
+        public OneWay(VodAddress vodSrc, VodAddress vodDest, E payload) {
             super(vodSrc, vodDest);
             this.payload = payload;
         }

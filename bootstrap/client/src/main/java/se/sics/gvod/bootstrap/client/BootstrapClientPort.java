@@ -19,7 +19,7 @@
 package se.sics.gvod.bootstrap.client;
 
 import se.sics.gvod.bootstrap.client.msg.AddOverlayMsg;
-import se.sics.gvod.bootstrap.client.msg.BootstrapMsg;
+import se.sics.gvod.bootstrap.common.msg.BootstrapMsg;
 import se.sics.gvod.bootstrap.client.msg.JoinOverlayMsg;
 import se.sics.kompics.PortType;
 
@@ -32,7 +32,6 @@ public class BootstrapClientPort extends PortType {
         negative(BootstrapMsg.Request.class);
         negative(AddOverlayMsg.Request.class);
         negative(JoinOverlayMsg.Request.class);
-        
         positive(BootstrapMsg.Response.class);
         positive(AddOverlayMsg.Response.class);
         positive(JoinOverlayMsg.Response.class);

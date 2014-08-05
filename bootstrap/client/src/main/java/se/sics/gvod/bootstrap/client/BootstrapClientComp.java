@@ -23,9 +23,11 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.msg.AddOverlayMsg;
-import se.sics.gvod.bootstrap.client.msg.BootstrapMsg;
+import se.sics.gvod.bootstrap.common.msg.BootstrapMsg;
 import se.sics.gvod.bootstrap.client.msg.JoinOverlayMsg;
 import se.sics.gvod.common.msg.GvodNetMsg;
+import se.sics.gvod.common.msg.ReqStatus;
+import se.sics.gvod.common.util.MsgProcessor;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
@@ -41,8 +43,9 @@ public class BootstrapClientComp extends ComponentDefinition {
     private static final Logger log = LoggerFactory.getLogger(BootstrapClientComp.class);
 
     private Positive<VodNetwork> network = requires(VodNetwork.class);
-    private Negative<BootstrapClientPort> bootstrap = provides(BootstrapClientPort.class);
-
+    private Negative<BootstrapClientPort> myPort = provides(BootstrapClientPort.class);
+   
+    private MsgProcessor msgProc;
     private BootstrapClientConfig config;
     
     private final Set<Integer> overlayIds;
@@ -50,13 +53,14 @@ public class BootstrapClientComp extends ComponentDefinition {
     public BootstrapClientComp(BootstrapClientInit init) {
         log.debug("init");
         this.config = init.config;
+        this.msgProc = new MsgProcessor();
         this.overlayIds = new HashSet<>();
 
-        subscribe(handleBootstrapRequest, bootstrap);
-        subscribe(handleJoinOverlayRequest, bootstrap);
-        subscribe(handleAddOverlayRequest, bootstrap);
+        subscribe(handleBootstrapRequest, myPort);
+        subscribe(handleJoinOverlayRequest, myPort);
+        subscribe(handleAddOverlayRequest, myPort);
         subscribe(handleGvodNetResponse, network);
-
+        msgProc.subscribe(handleBootstrapResponse);
     }
 
     public Handler<BootstrapMsg.Request> handleBootstrapRequest = new Handler<BootstrapMsg.Request>() {
@@ -72,7 +76,7 @@ public class BootstrapClientComp extends ComponentDefinition {
             trigger(netReq, network);
         }
     };
-
+    
     public Handler<AddOverlayMsg.Request> handleAddOverlayRequest = new Handler<AddOverlayMsg.Request>() {
 
         @Override
@@ -88,7 +92,7 @@ public class BootstrapClientComp extends ComponentDefinition {
         }
 
     };
-    
+
     public Handler<JoinOverlayMsg.Request> handleJoinOverlayRequest = new Handler<JoinOverlayMsg.Request>() {
 
         @Override
@@ -104,25 +108,24 @@ public class BootstrapClientComp extends ComponentDefinition {
         }
 
     };
-    
+
     public Handler<GvodNetMsg.Response> handleGvodNetResponse = new Handler<GvodNetMsg.Response>() {
 
         @Override
         public void handle(GvodNetMsg.Response netResp) {
             log.debug("received {} ", netResp.toString());
-            process(netResp.payload);
+            msgProc.process(netResp.payload);
         }
     };
     
-    private void process(BootstrapMsg.Response resp) {
-        
-    }
-    
-    private void process(AddOverlayMsg.Response resp) {
-        
-    }
-    
-    private void process(JoinOverlayMsg.Response resp) {
-        
-    }
+    public Handler<BootstrapMsg.Response> handleBootstrapResponse = new Handler<BootstrapMsg.Response>(BootstrapMsg.Response.class) {
+
+        @Override
+        public void handle(BootstrapMsg.Response resp) {
+            if(resp.status == ReqStatus.SUCCESS) {
+                log.info("bootstraped");
+                trigger(resp, myPort);
+            }
+        }
+    };
 }
