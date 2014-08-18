@@ -24,7 +24,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.bootstrap.client.BootstrapClientConfig;
-import se.sics.kompics.ConfigurationException;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -44,11 +43,16 @@ public class HostConfiguration {
     public BootstrapClientConfig getBootstrapClientConfig() {
         return new BootstrapClientConfig(self, bootstrapServer);
     }
+    
+    public VoDConfiguration getVoDConfiguration() {
+        return new VoDConfiguration(self.getId());
+    }
 
     public static class Builder {
 
         private Config config;
-        private Integer id = null;
+        private Integer id;
+        
 
         public Builder() {
             loadDefault();
@@ -58,7 +62,7 @@ public class HostConfiguration {
             this.config = ConfigFactory.load();
         }
 
-        public Builder loadConfig(String configFile) {
+        private loadConfig(String configFile) {
             this.config = ConfigFactory.load(configFile);
             return this;
         }
@@ -67,7 +71,7 @@ public class HostConfiguration {
             this.id = id;
             return this;
         }
-
+        
         public HostConfiguration finalise() throws ConfigException {
             try {
                 Address self = new Address(

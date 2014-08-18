@@ -24,7 +24,6 @@ import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.common.network.filters.NodeIdFilter;
-import se.sics.gvod.filters.MsgDestFilterNodeId;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
 import se.sics.gvod.simulation.cmd.system.StartVodPeerCmd;

@@ -46,6 +46,16 @@ public class SimplePeerManager implements PeerManager {
     public void addVodPeer(VodAddress peerAdr) {
         systemPeers.add(peerAdr);
     }
+    
+    @Override
+    public void addOverlay(int overlayId, VodAddress peer) throws PeerManager.PMException {
+        if(overlayPeers.containsKey(overlayId)) {
+            throw new PeerManager.PMException("overlay already exists");
+        }
+        HashSet<VodAddress> overlay = new HashSet<>();
+        overlay.add(peer);
+        overlayPeers.put(overlayId,overlay);
+    }
 
     @Override
     public void getOverlaySample(int overlayId) {

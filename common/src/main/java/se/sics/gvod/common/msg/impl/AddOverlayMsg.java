@@ -16,9 +16,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.bootstrap.client.msg;
+package se.sics.gvod.common.msg.impl;
 
-import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
@@ -42,17 +41,19 @@ public class AddOverlayMsg {
             return "AddOverlayMsg Request " + reqId.toString();
         }
         
-        public Response getResponse(ReqStatus status) {
-            return new Response(reqId, status, overlayId);
+        public Response fail() {
+            return new Response(reqId, ReqStatus.FAIL);
+        }
+        
+        public Response success() {
+            return new Response(reqId, ReqStatus.SUCCESS);
         }
     }
     
     public static class Response extends GvodMsg.Response {
-        public final int overlayId;
         
-        public Response(UUID reqId, ReqStatus status, int overlayId) {
+        private Response(UUID reqId, ReqStatus status) {
             super(reqId, status);
-            this.overlayId = overlayId;
         }
      
         @Override

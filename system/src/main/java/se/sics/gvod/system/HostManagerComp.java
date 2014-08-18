@@ -16,14 +16,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.system;
 
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientComp;
 import se.sics.gvod.bootstrap.client.BootstrapClientInit;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
+import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
@@ -34,6 +35,7 @@ import se.sics.kompics.Positive;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class HostManagerComp extends ComponentDefinition {
+
     private static final Logger log = LoggerFactory.getLogger(HostManagerComp.class);
 
     private Positive<VodNetwork> network = requires(VodNetwork.class);
@@ -41,13 +43,17 @@ public class HostManagerComp extends ComponentDefinition {
 
     private Component vod;
     private Component bootstrapClient;
+    private Component globalCroupier;
     
+    private final HostConfiguration config;
 
     public HostManagerComp(HostManagerInit init) {
         log.debug("starting... - self {}, bootstrap server {}",
                 new Object[]{init.config.self.toString(), init.config.bootstrapServer.toString()});
-        this.vod = create(VoDComp.class, new VoDInit());
-        this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(init.config.getBootstrapClientConfig()));
+        this.config = init.config;
+        
+        this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration()));
+        this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig()));
 
         connect(vod.getNegative(VodNetwork.class), network);
         connect(bootstrapClient.getNegative(VodNetwork.class), network);

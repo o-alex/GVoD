@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.common.msg;
+package se.sics.gvod.common.msg.impl;
 
 import java.util.Set;
 import java.util.UUID;
@@ -28,7 +28,7 @@ import se.sics.gvod.net.VodAddress;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapMsg {
+public class BootstrapGlobalMsg {
     public static class Request extends GvodMsg.Request {
         
         public Request(UUID reqId) {
@@ -37,24 +37,24 @@ public class BootstrapMsg {
         
         @Override
         public String toString() {
-            return "BootstrapMsg Request " + reqId.toString();
+            return "BootstrapGlobalMsg Request " + reqId.toString();
         }
         
-        public Response getResponse(Set<VodAddress> systemSample) {
+        public Response success(Set<VodAddress> systemSample) {
             return new Response(reqId, ReqStatus.SUCCESS, systemSample);
         }
     }
     
     public static class Response extends GvodMsg.Response {
         public final Set<VodAddress> systemSample;
-        public Response(UUID reqId, ReqStatus status, Set<VodAddress> systemSample) {
+        private Response(UUID reqId, ReqStatus status, Set<VodAddress> systemSample) {
             super(reqId, status);
             this.systemSample = systemSample;
         }
         
         @Override
         public String toString() {
-            return "BootstrapMsg Response " + reqId.toString() + " " + status.toString();
+            return "BootstrapGlobalMsg Response " + reqId.toString() + " " + status.toString();
         } 
     }
 }

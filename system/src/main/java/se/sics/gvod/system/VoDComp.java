@@ -22,7 +22,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
-import se.sics.gvod.bootstrap.common.msg.BootstrapMsg;
+import se.sics.gvod.common.msg.impl.AddOverlayMsg;
+import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -38,20 +39,36 @@ public class VoDComp extends ComponentDefinition {
 
     Positive<VodNetwork> network = requires(VodNetwork.class);
     Positive<BootstrapClientPort> bootstrap = requires(BootstrapClientPort.class);
-    
+
+    private final VoDConfiguration config;
+
     public VoDComp(VoDInit init) {
         log.debug("init");
-        
+        this.config = init.config;
+
         subscribe(handleStart, control);
+        subscribe(handleBootstrapGlobalResponse, bootstrap);
     }
-    
+
     public Handler<Start> handleStart = new Handler<Start>() {
 
         @Override
         public void handle(Start event) {
-            BootstrapMsg.Request req = new BootstrapMsg.Request(UUID.randomUUID());
-            log.debug("sending {}", req.toString());
-            trigger(req, bootstrap);
+            
+        }
+    };
+    
+    public Handler<BootstrapGlobalMsg.Response> handleBootstrapGlobalResponse = new Handler<BootstrapGlobalMsg.Response>() {
+        @Override
+        public void handle(BootstrapGlobalMsg.Response event) {
+        }
+    };
+
+    public Handler<AddOverlayMsg.Request> handleAddOverlayRequest = new Handler<AddOverlayMsg.Request>() {
+
+        @Override
+        public void handle(AddOverlayMsg.Request event) {
+            log.debug("{} sending ");
         }
     };
 }

@@ -17,23 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.client;
-
-import se.sics.gvod.net.VodAddress;
+package se.sics.gvod.system;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapClientConfig {
-    public final VodAddress self;
-    public final VodAddress server;
-    public final byte[] seed;
-    public final int globalNodesSize;
+public class VoDConfiguration {
+    public final int hostId;
     
-    public BootstrapClientConfig(VodAddress self, VodAddress server, byte[] seed, int globalNodesSize) {
-        this.self = self;
-        this.server = server;
-        this.seed = seed;
-        this.globalNodesSize = globalNodesSize;
+    public VoDConfiguration(int hostId) {
+        this.hostId = hostId;
     }
 }

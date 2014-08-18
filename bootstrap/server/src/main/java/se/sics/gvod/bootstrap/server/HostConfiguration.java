@@ -25,6 +25,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.bootstrap.server.peerManager.PeerManagerConfig;
+import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -36,6 +37,10 @@ public class HostConfiguration {
     private HostConfiguration(Config config, Address self) {
         this.config = config;
         this.self = self;
+    }
+    
+    public VodAddress getVodAddress() {
+        return new VodAddress(self, -1);
     }
     
     public PeerManagerConfig getVodPeerManagerConfig() {

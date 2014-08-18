@@ -23,6 +23,7 @@ import se.sics.gvod.simulation.cmd.system.StartBSCmd;
 import se.sics.gvod.simulation.cmd.system.StartVodPeerCmd;
 import se.sics.gvod.simulation.cmd.system.StopBSCmd;
 import se.sics.gvod.simulation.cmd.system.StopVodPeerCmd;
+import se.sics.gvod.simulation.util.IntegerUniformDistribution;
 import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
 import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation1;
 import se.sics.kompics.p2p.experiment.dsl.distribution.ConstantDistribution;
@@ -73,8 +74,7 @@ public class ScenarioGen {
             {
                 final Random rand = new Random(seed);
                 final Distribution<Integer> bootstrapIdDist = new ConstantDistribution<>(Integer.class, 0);
-                final Distribution<Integer> vodPeerIdDist = new ConstantDistribution<>(Integer.class, 1);
-//                final Distribution<Integer> vodPeerIdDist = new IntegerUniformDistribution(1, 65535, rand);
+                final Distribution<Integer> vodPeerIdDist = new IntegerUniformDistribution(1, 65535, rand);
                 
                 StochasticProcess startBootstrapServerProc = new StochasticProcess() {
                     {

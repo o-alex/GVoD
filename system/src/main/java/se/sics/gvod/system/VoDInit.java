@@ -25,5 +25,9 @@ import se.sics.kompics.Init;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class VoDInit extends Init<VoDComp>{
+    public final VoDConfiguration config;
     
+    public VoDInit(VoDConfiguration config) {
+        this.config = config;
+    }
 }

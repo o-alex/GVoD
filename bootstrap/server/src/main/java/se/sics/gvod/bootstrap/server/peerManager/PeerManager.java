@@ -26,7 +26,15 @@ import se.sics.gvod.net.VodAddress;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public interface PeerManager {
-    public void addVodPeer(VodAddress peerAdr);
-    public void getOverlaySample(int overlayId);
+    
     public Set<VodAddress> getSystemSample();
+    public void addVodPeer(VodAddress peerAdr);
+    public void addOverlay(int overlayId, VodAddress peer) throws PMException;
+    public void getOverlaySample(int overlayId);
+    
+    public static class PMException extends Exception {
+        public PMException(String message) {
+            super(message);
+        }
+    }
 }
