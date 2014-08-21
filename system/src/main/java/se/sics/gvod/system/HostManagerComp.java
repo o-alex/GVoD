@@ -18,13 +18,13 @@
  */
 package se.sics.gvod.system;
 
-import java.util.UUID;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientComp;
 import se.sics.gvod.bootstrap.client.BootstrapClientInit;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
-import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
+import se.sics.gvod.common.util.ConfigException;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
@@ -49,11 +49,15 @@ public class HostManagerComp extends ComponentDefinition {
 
     public HostManagerComp(HostManagerInit init) {
         log.debug("starting... - self {}, bootstrap server {}",
-                new Object[]{init.config.self.toString(), init.config.bootstrapServer.toString()});
+                new Object[]{init.config.self.toString(), init.config.server.toString()});
         this.config = init.config;
         
-        this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration()));
-        this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig()));
+        try {
+            this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration().finalise()));
+            this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig().finalise()));
+        } catch (ConfigException.Missing ex) {
+            throw new RuntimeException(ex);
+        }
 
         connect(vod.getNegative(VodNetwork.class), network);
         connect(bootstrapClient.getNegative(VodNetwork.class), network);

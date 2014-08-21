@@ -8,16 +8,14 @@
     </parent>
     <name>System</name>
     <artifactId>system</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <properties>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
-    </properties>
+    
     <dependencies>
         <dependency>
             <groupId>se.sics.gvod.bootstrap</groupId>
             <artifactId>client</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

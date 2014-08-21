@@ -55,7 +55,7 @@ public class BootstrapOverlayMsg {
 
         private Response(UUID reqId, ReqStatus status, Map<Integer, VodAddress> overlaySample) {
             super(reqId, status);
-            this.overlaySample = this.overlaySample;
+            this.overlaySample = overlaySample;
         }
 
         @Override

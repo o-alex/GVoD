@@ -24,6 +24,7 @@ import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.common.network.filters.NodeIdFilter;
+import se.sics.gvod.common.util.ConfigException;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
 import se.sics.gvod.simulation.cmd.system.StartVodPeerCmd;
@@ -70,9 +71,8 @@ public class SimManagerComp extends ComponentDefinition {
         public void handle(final StartBSCmd start) {
             log.info("bootstrap server - id {} - starting...", start.id);
             try {
-                InetAddress ip = InetAddress.getLocalHost();
-                se.sics.gvod.bootstrap.server.HostConfiguration bsConfig = new se.sics.gvod.bootstrap.server.HostConfiguration.Builder().
-                        loadConfig("bootstrap.conf").setId(start.id).setIp(ip).finalise();
+                se.sics.gvod.bootstrap.server.HostConfiguration bsConfig = 
+                        new se.sics.gvod.bootstrap.server.HostConfiguration.Builder("bootstrap.conf").setId(start.id).setSeed(new byte[]{1,2,3,4}).finalise();
                 
                 final Component vodPeerHost = create(se.sics.gvod.bootstrap.server.HostManagerComp.class,
                         new se.sics.gvod.bootstrap.server.HostManagerInit(bsConfig));
@@ -82,11 +82,8 @@ public class SimManagerComp extends ComponentDefinition {
                 connect(vodPeerHost.getNegative(Timer.class), timer);
 
                 trigger(Start.event, vodPeerHost.control());
-            } catch (se.sics.gvod.bootstrap.server.HostConfiguration.ConfigException ex) {
+            } catch (ConfigException.Missing ex) {
                 log.error("error loading bootstrap server configuration");
-                throw new RuntimeException(ex);
-            } catch (UnknownHostException ex) {
-                log.error("error getting localhost ip");
                 throw new RuntimeException(ex);
             }
         }
@@ -127,8 +124,7 @@ public class SimManagerComp extends ComponentDefinition {
         public void handle(final StartVodPeerCmd start) {
             log.info("vod peer - id {} - starting...", start.id);
             try {
-                se.sics.gvod.system.HostConfiguration bsConfig = new se.sics.gvod.system.HostConfiguration.Builder().
-                        loadConfig("vod.conf").setId(start.id).finalise();
+                se.sics.gvod.system.HostConfiguration bsConfig = new se.sics.gvod.system.HostConfiguration.Builder("vod.conf").setId(start.id).setSeed(new byte[]{1,2,3,4}).finalise();
 
                 final Component vodPeerHost = create(se.sics.gvod.system.HostManagerComp.class,
                         new se.sics.gvod.system.HostManagerInit(bsConfig));
@@ -138,7 +134,7 @@ public class SimManagerComp extends ComponentDefinition {
                 connect(vodPeerHost.getNegative(Timer.class), timer);
 
                 trigger(Start.event, vodPeerHost.control());
-            } catch (se.sics.gvod.system.HostConfiguration.ConfigException ex) {
+            } catch (ConfigException.Missing ex) {
                 log.error("error loading vod peer configuration");
                 throw new RuntimeException(ex);
             }

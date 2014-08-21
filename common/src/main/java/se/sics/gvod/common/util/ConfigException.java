@@ -16,34 +16,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
-package se.sics.gvod.system;
-
-import com.typesafe.config.Config;
-import se.sics.gvod.common.util.ConfigException;
-import se.sics.gvod.net.VodAddress;
+package se.sics.gvod.common.util;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDConfiguration {
-    public final VodAddress self;
-    
-    private VoDConfiguration(VodAddress self) {
-        this.self = self;
-    }
-    
-    public static class Builder {
-        private final Config config;
-        private final VodAddress self;
-        
-        public Builder(Config config, VodAddress self) {
-            this.config = config;
-            this.self = self;
+public class ConfigException {
+
+    public static class Missing extends Exception {
+
+        public Missing(String msg) {
+            super(msg);
         }
-        
-        public VoDConfiguration finalise() throws ConfigException.Missing {
-            return new VoDConfiguration(self);
+
+        public Missing(Throwable cause) {
+            super(cause);
         }
     }
 }

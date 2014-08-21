@@ -16,20 +16,43 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.bootstrap.server.peerManager;
 
-import java.util.Random;
+import com.typesafe.config.Config;
+import se.sics.gvod.common.util.ConfigException;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class PeerManagerConfig {
-    public final Random rand;
+
+    public final byte[] seed;
     public final int sampleSize;
-    
-    public PeerManagerConfig(long seed, int sampleSize) {
-        this.rand = new Random(seed);
+
+    public PeerManagerConfig(byte[] seed, int sampleSize) {
+        this.seed = seed;
         this.sampleSize = sampleSize;
+    }
+
+    public static class Builder {
+
+        private final Config config;
+        private final byte[] seed;
+        private Integer sampleSize;
+
+        public Builder(Config config, byte[] seed) {
+            this.config = config;
+            this.seed = seed;
+        }
+
+        public PeerManagerConfig finalise() throws ConfigException.Missing {
+            try {
+                sampleSize = (sampleSize == null ? config.getInt("bootstrap.sampleSize") : sampleSize);
+                
+                return new PeerManagerConfig(seed, sampleSize);
+            } catch (com.typesafe.config.ConfigException.Missing ex) {
+                throw new ConfigException.Missing(ex.getMessage());
+            }
+        }
     }
 }

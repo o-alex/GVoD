@@ -8,24 +8,20 @@
     </parent>
     <name>Simulation</name>
     <artifactId>simulation</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
+    
     <dependencies>
-        <dependency>
-            <groupId>se.sics.gvod</groupId>
-            <artifactId>common</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
         <dependency>
             <groupId>se.sics.gvod.bootstrap</groupId>
             <artifactId>server</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>se.sics.gvod</groupId>
             <artifactId>system</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -44,11 +40,7 @@
             <artifactId>kompics-component-netty-network</artifactId>
             <groupId>se.sics.kompics.basic</groupId>
             <type>jar</type>
-            <version>0.6.0-SNAPSHOT</version>
+            <version>${kompics.version}</version>
         </dependency>
     </dependencies>
-    <properties>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
-    </properties>
 </project>

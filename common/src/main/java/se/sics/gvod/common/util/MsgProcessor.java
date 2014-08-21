@@ -19,7 +19,7 @@
 package se.sics.gvod.common.util;
 
 import java.util.HashMap;
-import se.sics.kompics.Handler;
+import se.sics.gvod.net.VodAddress;
 import se.sics.kompics.KompicsEvent;
 
 /**
@@ -27,25 +27,20 @@ import se.sics.kompics.KompicsEvent;
  */
 public class MsgProcessor {
 
-    private final HashMap<Class<? extends KompicsEvent>, Handler<?>> subscribedHandlers;
-    private Handler<KompicsEvent> defaultHandler = null;
+    private final HashMap<Class<? extends KompicsEvent>, Handler<? extends KompicsEvent>> subscribedHandlers;
 
     public MsgProcessor() {
         this.subscribedHandlers = new HashMap<>();
     }
 
     public <E extends KompicsEvent> void subscribe(Handler<E> handler) {
-        if (handler.getEventType() == null) {
+        if (handler.eventType == null) {
             throw new RuntimeException("Handler did not initialize handlerType");
         }
-        subscribedHandlers.put(handler.getEventType(), handler);
+        subscribedHandlers.put(handler.eventType, handler);
     }
 
-    public void setDefaultHandler(Handler<KompicsEvent> handler) {
-        this.defaultHandler = handler;
-    }
-
-    public void process(KompicsEvent event) {
+    public <E extends KompicsEvent> void trigger(VodAddress src, E event) {
         Class<? extends KompicsEvent> eventType = event.getClass();
         Handler<?> handler = null;
 
@@ -56,11 +51,20 @@ public class MsgProcessor {
         }
 
         if (handler != null) {
-            ((Handler<KompicsEvent>)handler).handle(event);
-        } else if (defaultHandler != null) {
-            defaultHandler.handle(event);
+            ((Handler<KompicsEvent>) handler).handle(src, event);
         } else {
             //silently drop message
         }
+    }
+
+    public static abstract class Handler<E extends KompicsEvent> {
+
+        public final Class<E> eventType;
+
+        public Handler(Class<E> eventType) {
+            this.eventType = eventType;
+        }
+
+        public abstract void handle(VodAddress src, E event);
     }
 }

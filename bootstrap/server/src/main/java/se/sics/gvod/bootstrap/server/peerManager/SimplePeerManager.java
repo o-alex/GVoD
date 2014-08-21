@@ -19,11 +19,13 @@
 
 package se.sics.gvod.bootstrap.server.peerManager;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import se.sics.gvod.net.VodAddress;
 
@@ -35,11 +37,14 @@ public class SimplePeerManager implements PeerManager {
     private final PeerManagerConfig config;
     private final List<VodAddress> systemPeers;
     private final Map<Integer, Set<VodAddress>> overlayPeers;
+    private final Random rand;
     
     public SimplePeerManager(PeerManagerConfig config) {
         this.config = config;
+        
         this.overlayPeers = new HashMap<>();
         this.systemPeers = new ArrayList<>();
+        this.rand = new SecureRandom(config.seed);
     }
     
     @Override
@@ -71,7 +76,7 @@ public class SimplePeerManager implements PeerManager {
             return sample;
         }
         while(sample.size() < config.sampleSize) {
-            int idx = config.rand.nextInt(systemPeers.size());
+            int idx = rand.nextInt(systemPeers.size());
             sample.add(systemPeers.get(idx));
         }
         return sample;

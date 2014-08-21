@@ -16,7 +16,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.bootstrap.server;
 
 import com.typesafe.config.Config;
@@ -26,73 +25,71 @@ import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.bootstrap.server.peerManager.PeerManagerConfig;
 import se.sics.gvod.net.VodAddress;
-
+import se.sics.gvod.common.util.ConfigException;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class HostConfiguration {
-    public final Address self; 
+
+    public final VodAddress self;
     public final Config config;
-    
-    private HostConfiguration(Config config, Address self) {
+    public final byte[] seed;
+
+    private HostConfiguration(Config config, VodAddress self, byte[] seed) {
         this.config = config;
         this.self = self;
+        this.seed = seed;
     }
-    
-    public VodAddress getVodAddress() {
-        return new VodAddress(self, -1);
+
+    public PeerManagerConfig.Builder getVodPeerManagerConfig() {
+        return new PeerManagerConfig.Builder(config, seed);
     }
-    
-    public PeerManagerConfig getVodPeerManagerConfig() {
-        return new PeerManagerConfig(
-                config.getLong("bootstrap.seed"),
-                config.getInt("bootstrap.sampleSize"));
-    }
-    
+
     public int getSeed() {
         return Integer.valueOf(config.getString("bootstrap.seed"));
     }
-    
+
     public static class Builder {
-        private Config config = null;
-        private Integer id = null;
-        private InetAddress ip;
-        
+
+        private Config config;
+        private Integer id;
+        private byte[] seed;
+
         public Builder() {
-            loadDefault();
-        }
-        
-        private void loadDefault() {
             this.config = ConfigFactory.load();
         }
         
-        public Builder loadConfig(String configFile) {
+        public Builder(String configFile) {
             this.config = ConfigFactory.load(configFile);
-            return this;
         }
-        
+
         public Builder setId(int id) {
             this.id = id;
             return this;
         }
         
-        public Builder setIp(InetAddress ip) {
-            this.ip = ip;
+        public Builder setSeed(byte[] seed) {
+            this.seed = seed;
             return this;
         }
-        
-        public HostConfiguration finalise() throws ConfigException {
-            if(id == null || ip == null) {
-                throw new ConfigException("incomplete configuration");
+
+        public HostConfiguration finalise() throws ConfigException.Missing {
+            try {
+                Address self = new Address(
+                        InetAddress.getByName(config.getString("bootstrap.address.ip")),
+                        config.getInt("bootstrap.address.port"),
+                        id == null ? config.getInt("bootstrap.address.id") : id
+                );
+                if(seed == null) {
+                    throw new ConfigException.Missing("missing seed");
+                }
+
+                return new HostConfiguration(config, new VodAddress(self, -1), seed);
+            } catch (UnknownHostException ex) {
+                throw new ConfigException.Missing(ex.getMessage());
+            } catch (com.typesafe.config.ConfigException.Missing ex) {
+                throw new ConfigException.Missing(ex.getMessage());
             }
-            int port = config.getInt("bootstrap.address.port");
-            return new HostConfiguration(config, new Address(ip, port, id));
-        }
-    }
-    
-    public static class ConfigException extends Exception {
-        public ConfigException(String msg) {
-            super(msg);
         }
     }
 }

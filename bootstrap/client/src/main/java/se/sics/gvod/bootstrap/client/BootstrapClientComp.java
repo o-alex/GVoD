@@ -88,7 +88,7 @@ public class BootstrapClientComp extends ComponentDefinition {
             if (netResp.payload.status == ReqStatus.SUCCESS) {
                 log.debug("{} global nodes {}", new Object[]{config.self, netResp.payload.systemSample});
                 for (VodAddress peer : netResp.payload.systemSample) {
-                    if (bootstrapNodes.size() < config.globalNodesSize) {
+                    if (bootstrapNodes.size() < config.openViewSize) {
                         bootstrapNodes.add(peer);
                     }
                 }

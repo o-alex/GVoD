@@ -19,17 +19,17 @@
  */
 package se.sics.gvod.bootstrap.server;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.sics.gvod.common.msg.impl.AddOverlayMsg;
-import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.bootstrap.server.peerManager.PeerManager;
 import se.sics.gvod.bootstrap.server.peerManager.SimplePeerManager;
+import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.GvodNetMsg;
+import se.sics.gvod.common.msg.impl.AddOverlayMsg;
+import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
+import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.MsgProcessor;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
@@ -47,49 +47,63 @@ public class BootstrapServerComp extends ComponentDefinition {
 
     private final HostConfiguration config;
 
+    private final MsgProcessor msgProc;
+
     private final PeerManager peerManager;
 
     public BootstrapServerComp(BootstrapServerInit init) {
         log.debug("init");
         this.config = init.config;
-        this.peerManager = new SimplePeerManager(config.getVodPeerManagerConfig());
+        this.msgProc = new MsgProcessor();
+        try {
+            this.peerManager = new SimplePeerManager(config.getVodPeerManagerConfig().finalise());
+        } catch (ConfigException.Missing ex) {
+            throw new RuntimeException(ex);
+        }
 
-        subscribe(handleBootstrapRequest, network);
-        subscribe(handleAddOverlayRequest, network);
+        subscribe(handleNetRequest, network);
+        msgProc.subscribe(handleAddOverlayRequest);
+        msgProc.subscribe(handleBootstrapRequest);
+        
     }
 
-    public Handler<GvodNetMsg.Request<BootstrapGlobalMsg.Request>> handleBootstrapRequest = new Handler<GvodNetMsg.Request<BootstrapGlobalMsg.Request>>() {
+    public Handler<GvodNetMsg.Request<GvodMsg.Request>> handleNetRequest = new Handler<GvodNetMsg.Request<GvodMsg.Request>>() {
 
         @Override
-        public void handle(final GvodNetMsg.Request<BootstrapGlobalMsg.Request> netReq) {
+        public void handle(GvodNetMsg.Request<GvodMsg.Request> netReq) {
             log.debug("received {}", netReq.toString());
-            BootstrapGlobalMsg.Response resp = netReq.payload.success(peerManager.getSystemSample());
-            peerManager.addVodPeer(netReq.getVodSource());
+            msgProc.trigger(netReq.getVodSource(), netReq.payload);
+        }
+    };
 
-            GvodNetMsg.Response netResp = netReq.getResponse(resp);
+    public MsgProcessor.Handler<BootstrapGlobalMsg.Request> handleBootstrapRequest = new MsgProcessor.Handler<BootstrapGlobalMsg.Request>(BootstrapGlobalMsg.Request.class) {
+
+        @Override
+        public void handle(VodAddress src, BootstrapGlobalMsg.Request req) {
+            BootstrapGlobalMsg.Response resp = req.success(peerManager.getSystemSample());
+            peerManager.addVodPeer(src);
+
+            GvodNetMsg.Response<BootstrapGlobalMsg.Response> netResp = new GvodNetMsg.Response<BootstrapGlobalMsg.Response>(config.self, src, resp);
             log.debug("sending {}", netResp.toString());
             trigger(netResp, network);
         }
     };
 
-    public Handler<GvodNetMsg.Request<AddOverlayMsg.Request>> handleAddOverlayRequest = new Handler<GvodNetMsg.Request<AddOverlayMsg.Request>>() {
+    public MsgProcessor.Handler<AddOverlayMsg.Request> handleAddOverlayRequest = new MsgProcessor.Handler<AddOverlayMsg.Request>(AddOverlayMsg.Request.class) {
 
         @Override
-        public void handle(GvodNetMsg.Request<AddOverlayMsg.Request> netReq) {
-            log.debug("received {}", netReq.toString());
-
+        public void handle(VodAddress src, AddOverlayMsg.Request req) {
             AddOverlayMsg.Response resp;
             try {
-                peerManager.addOverlay(netReq.payload.overlayId, netReq.getVodSource());
-                resp = netReq.payload.success();
+                peerManager.addOverlay(req.overlayId, src);
+                resp = req.success();
             } catch (PeerManager.PMException ex) {
-                resp = netReq.payload.fail();
+                resp = req.fail();
             }
 
-            GvodNetMsg.Response netResp = netReq.getResponse(resp);
+            GvodNetMsg.Response<AddOverlayMsg.Response> netResp = new GvodNetMsg.Response<AddOverlayMsg.Response>(config.self, src, resp);
             log.debug("sending {}", netResp.toString());
             trigger(netResp, network);
         }
     };
-
 }

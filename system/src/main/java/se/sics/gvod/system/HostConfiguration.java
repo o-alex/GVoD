@@ -24,6 +24,8 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.bootstrap.client.BootstrapClientConfig;
+import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -31,77 +33,72 @@ import se.sics.gvod.bootstrap.client.BootstrapClientConfig;
 public class HostConfiguration {
 
     private final Config config;
-    public final Address self;
-    public final Address bootstrapServer;
+    public final VodAddress self;
+    public final VodAddress server;
+    public final byte[] seed;
 
-    private HostConfiguration(Config config, Address self, Address bootstrapServer) {
+    private HostConfiguration(Config config, VodAddress self, VodAddress server, byte[] seed) {
         this.config = config;
         this.self = self;
-        this.bootstrapServer = bootstrapServer;
+        this.server = server;
+        this.seed = seed;
     }
-    
-    public BootstrapClientConfig getBootstrapClientConfig() {
-        return new BootstrapClientConfig(self, bootstrapServer);
+
+    public BootstrapClientConfig.Builder getBootstrapClientConfig() {
+        return new BootstrapClientConfig.Builder(config, self, server, seed);
     }
-    
-    public VoDConfiguration getVoDConfiguration() {
-        return new VoDConfiguration(self.getId());
+
+    public VoDConfiguration.Builder getVoDConfiguration() {
+        return new VoDConfiguration.Builder(config, self);
     }
 
     public static class Builder {
 
-        private Config config;
+        private final Config config;
         private Integer id;
-        
+        private byte[] seed;
 
         public Builder() {
-            loadDefault();
-        }
-
-        private void loadDefault() {
             this.config = ConfigFactory.load();
         }
 
-        private loadConfig(String configFile) {
+        public Builder(String configFile) {
             this.config = ConfigFactory.load(configFile);
-            return this;
         }
 
         public Builder setId(int id) {
             this.id = id;
             return this;
         }
-        
-        public HostConfiguration finalise() throws ConfigException {
+
+        public Builder setSeed(byte[] seed) {
+            this.seed = seed;
+            return this;
+        }
+
+        public HostConfiguration finalise() throws ConfigException.Missing {
             try {
                 Address self = new Address(
                         InetAddress.getByName(config.getString("vod.address.ip")),
                         config.getInt("vod.address.port"),
                         id == null ? config.getInt("vod.address.id") : id
                 );
-                
-                Address bootstrapServer = new Address(
+
+                Address server = new Address(
                         InetAddress.getByName(config.getString("bootstrap.address.ip")),
                         config.getInt("bootstrap.address.port"),
                         config.getInt("bootstrap.address.id")
                 );
-                
-                return new HostConfiguration(config, self, bootstrapServer);
-            } catch (UnknownHostException | com.typesafe.config.ConfigException ex) {
-                throw new ConfigException(ex);
-            } 
-        }
 
-    }
-
-    public static class ConfigException extends Exception {
-
-        public ConfigException(String msg) {
-            super(msg);
-        }
-        
-        public ConfigException(Throwable cause) {
-            super(cause);
+                if (seed == null) {
+                    throw new ConfigException.Missing("missing seed");
+                }
+                return new HostConfiguration(config, new VodAddress(self, -1), new VodAddress(server, -1), seed);
+            } catch (UnknownHostException e) {
+                throw new ConfigException.Missing("bad host - " + e.getMessage());
+            } catch (com.typesafe.config.ConfigException e) {
+                throw new ConfigException.Missing(e.getMessage());
+            }
         }
     }
 }
