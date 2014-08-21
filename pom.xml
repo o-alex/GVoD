@@ -5,18 +5,21 @@
     <artifactId>GVoD</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
+    
     <modules>
         <module>bootstrap</module>
         <module>system</module>
         <module>simulation</module>
         <module>common</module>
     </modules>
+    
     <properties>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kompics.version>0.6.0-SNAPSHOT</kompics.version>
         <nattraverser.version>1.1-SNAPSHOT</nattraverser.version>
+        <java.compiler.version>1.7</java.compiler.version>
     </properties>
     
     <dependencies>
@@ -85,4 +88,142 @@
             </snapshots>
         </repository>
     </repositories>
+    
+    <distributionManagement>
+        <repository>
+            <id>sics-release-repository</id>
+            <name>SICS Repository</name>
+            <url>scpexe://kompics.i.sics.se/home/maven/repository</url>
+        </repository>
+        <snapshotRepository>
+            <id>sics-snapshot-repository</id>
+            <name>SICS Snapshot Repository</name>
+            <url>scpexe://kompics.i.sics.se/home/maven/snapshotrepository</url>
+        </snapshotRepository>
+        <downloadUrl>http://kompics.sics.se/maven/repository</downloadUrl>
+    </distributionManagement>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <inherited>true</inherited>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <source>${java.compiler.version}</source>
+                    <target>${java.compiler.version}</target>
+                    <debug>true</debug>
+                    <optimize>true</optimize>
+                    <showDeprecations>true</showDeprecations>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.2</version>
+                <configuration>
+                    <locales>en</locales>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>2.1.1</version>
+                <executions>
+                    <execution>
+                        <id>attach-sources</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.6.1</version>
+                <executions>
+                    <execution>
+                        <id>aggregate</id>
+                        <goals>
+                            <goal>aggregate</goal>
+                        </goals>
+                        <phase>site</phase>
+                        <configuration>
+                            <breakiterator>true</breakiterator>
+                            <charset>${project.build.sourceEncoding}</charset>
+                            <docencoding>${project.build.sourceEncoding}</docencoding>
+                            <windowtitle>
+                                GVoD ${project.version} API Documentation
+                            </windowtitle>
+                            <doctitle>
+                                GVoD ${project.version} API Documentation
+                            </doctitle>
+                            <encoding>${project.build.sourceEncoding}</encoding>
+                            <links>
+                                <link>http://java.sun.com/javase/6/docs/api/</link>
+                                <link>http://www.slf4j.org/api/</link>
+                            </links>
+                            <groups>
+                                <group>
+                                    <title>GVoD</title>
+                                    <packages>se.sics.gvod</packages>
+                                </group>
+                            </groups>
+                            <locale>en_GB</locale>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.6</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+        </plugins>
+
+        <extensions>
+            <extension>
+                <groupId>org.apache.maven.wagon</groupId>
+                <artifactId>wagon-ssh-external</artifactId>
+                <version>1.0-beta-6</version>
+            </extension>
+        </extensions>
+    </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.6.1</version>
+            </plugin>
+            <plugin>
+                <inherited>true</inherited>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jxr-plugin</artifactId>
+                <version>LATEST</version>
+                <configuration>
+                    <aggregate>true</aggregate>
+                    <linkJavadoc>true</linkJavadoc>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <inherited>true</inherited>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>LATEST</version>
+                <configuration>
+                    <aggregate>true</aggregate>
+                    <linkXRef>true</linkXRef>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>
