@@ -6,12 +6,18 @@
         <artifactId>GVoD</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <name>Bootstrap</name>
-    <artifactId>bootstrap</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>server</module>
-        <module>client</module>
-        <module>common</module>
-    </modules>
+    <artifactId>manager</artifactId>
+    <groupId>se.sics.gvod</groupId>
+    <name>Manager</name>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    
+    <dependencies>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.2.4</version>
+            <type>jar</type>
+        </dependency>
+    </dependencies>
 </project>
