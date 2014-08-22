@@ -17,21 +17,19 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.simulation;
+package se.sics.gvod.system.vod;
 
-import se.sics.gvod.simulation.cmd.OperationCmd;
-import se.sics.gvod.simulation.cmd.SystemCmd;
+import se.sics.gvod.system.vod.msg.DownloadVideo;
+import se.sics.gvod.system.vod.msg.UploadVideo;
 import se.sics.kompics.PortType;
-import se.sics.kompics.p2p.experiment.dsl.events.TerminateExperiment;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VodExperiment extends PortType {
+public class VoDPort extends PortType {
     {
-        positive(SystemCmd.class);
-        positive(OperationCmd.class);
-        positive(TerminateExperiment.class);
-        negative(TerminateExperiment.class);
+        request(UploadVideo.Request.class);
+        request(DownloadVideo.Request.class);
     }
 }

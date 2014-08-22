@@ -17,21 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.simulation;
+package se.sics.gvod.system.vod;
 
-import se.sics.gvod.simulation.cmd.OperationCmd;
-import se.sics.gvod.simulation.cmd.SystemCmd;
-import se.sics.kompics.PortType;
-import se.sics.kompics.p2p.experiment.dsl.events.TerminateExperiment;
+import se.sics.kompics.Init;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VodExperiment extends PortType {
-    {
-        positive(SystemCmd.class);
-        positive(OperationCmd.class);
-        positive(TerminateExperiment.class);
-        negative(TerminateExperiment.class);
+public class VoDInit extends Init<VoDComp>{
+    public final VoDConfiguration config;
+    
+    public VoDInit(VoDConfiguration config) {
+        this.config = config;
     }
 }

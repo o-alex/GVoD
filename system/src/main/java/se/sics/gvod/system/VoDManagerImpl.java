@@ -17,21 +17,37 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.simulation;
+package se.sics.gvod.system;
 
-import se.sics.gvod.simulation.cmd.OperationCmd;
-import se.sics.gvod.simulation.cmd.SystemCmd;
-import se.sics.kompics.PortType;
-import se.sics.kompics.p2p.experiment.dsl.events.TerminateExperiment;
+import se.sics.gvod.manager.VoDManager;
+import se.sics.gvod.system.vod.VoDPort;
+import se.sics.gvod.system.vod.msg.UploadVideo;
+import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.Positive;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VodExperiment extends PortType {
-    {
-        positive(SystemCmd.class);
-        positive(OperationCmd.class);
-        positive(TerminateExperiment.class);
-        negative(TerminateExperiment.class);
+public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
+
+    Positive<VoDPort> vodPort = requires(VoDPort.class);
+    
+    public VoDManagerImpl() {
     }
+    
+    public VoDManager getInstance() {
+        return this;
+    }
+
+    @Override
+    public void uploadVideo(int overlayId) {
+        trigger(new UploadVideo.Request(overlayId), vodPort);
+    }
+
+    @Override
+    public void downloadVideo(int overlayId) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
 }

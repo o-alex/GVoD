@@ -17,17 +17,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system;
+package se.sics.gvod.system.video;
 
 import se.sics.kompics.Init;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDInit extends Init<VoDComp>{
-    public final VoDConfiguration config;
+public class VideoInit extends Init<VideoComp> {
     
-    public VoDInit(VoDConfiguration config) {
-        this.config = config;
-    }
 }

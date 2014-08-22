@@ -17,21 +17,33 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.simulation;
+package se.sics.gvod.system.vod;
 
-import se.sics.gvod.simulation.cmd.OperationCmd;
-import se.sics.gvod.simulation.cmd.SystemCmd;
-import se.sics.kompics.PortType;
-import se.sics.kompics.p2p.experiment.dsl.events.TerminateExperiment;
+import com.typesafe.config.Config;
+import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VodExperiment extends PortType {
-    {
-        positive(SystemCmd.class);
-        positive(OperationCmd.class);
-        positive(TerminateExperiment.class);
-        negative(TerminateExperiment.class);
+public class VoDConfiguration {
+    public final VodAddress self;
+    
+    private VoDConfiguration(VodAddress self) {
+        this.self = self;
+    }
+    
+    public static class Builder {
+        private final Config config;
+        private final VodAddress self;
+        
+        public Builder(Config config, VodAddress self) {
+            this.config = config;
+            this.self = self;
+        }
+        
+        public VoDConfiguration finalise() throws ConfigException.Missing {
+            return new VoDConfiguration(self);
+        }
     }
 }

@@ -25,11 +25,12 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.sics.gvod.bootstrap.client.msg.JoinOverlayMsg;
+import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.GvodNetMsg;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
+import se.sics.gvod.common.util.MsgProcessor;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.kompics.ComponentDefinition;
@@ -50,23 +51,27 @@ public class BootstrapClientComp extends ComponentDefinition {
 
     private BootstrapClientConfig config;
 
+    private final MsgProcessor msgProc;
+    private final Random rand;
+
     private final Set<Integer> overlayIds;
     private final Set<VodAddress> bootstrapNodes;
-
-    private final Random rand;
 
     public BootstrapClientComp(BootstrapClientInit init) {
         this.config = init.config;
         log.debug("{} init", new Object[]{config.self});
 
+        this.msgProc = new MsgProcessor();
         this.rand = new SecureRandom(config.seed);
         this.overlayIds = new HashSet<>();
         this.bootstrapNodes = new HashSet<>();
 
         subscribe(handleStart, control);
-        subscribe(handleBootstrapResponse, network);
+        subscribe(handleNetResponse, network);
+        subscribe(handleAddOverlayRequest, myPort);
+        msgProc.subscribe(handleBootstrapResponse);
+        msgProc.subscribe(handleAddOverlayResponse);
 //        subscribe(handleJoinOverlayRequest, myPort);
-//        subscribe(handleAddOverlayRequest, myPort);
     }
 
     public Handler<Start> handleStart = new Handler<Start>() {
@@ -80,38 +85,53 @@ public class BootstrapClientComp extends ComponentDefinition {
         }
     };
 
-    public Handler<GvodNetMsg.Response<BootstrapGlobalMsg.Response>> handleBootstrapResponse = new Handler<GvodNetMsg.Response<BootstrapGlobalMsg.Response>>() {
+    public Handler<GvodNetMsg.Response<GvodMsg.Response>> handleNetResponse = new Handler<GvodNetMsg.Response<GvodMsg.Response>>() {
 
         @Override
-        public void handle(GvodNetMsg.Response<BootstrapGlobalMsg.Response> netResp) {
-            log.debug("{} received {} ", new Object[]{config.self, netResp.toString()});
-            if (netResp.payload.status == ReqStatus.SUCCESS) {
-                log.debug("{} global nodes {}", new Object[]{config.self, netResp.payload.systemSample});
-                for (VodAddress peer : netResp.payload.systemSample) {
-                    if (bootstrapNodes.size() < config.openViewSize) {
-                        bootstrapNodes.add(peer);
-                    }
-                }
-            }
+        public void handle(GvodNetMsg.Response<GvodMsg.Response> netResp) {
+            log.debug("received {}", netResp.toString());
+            msgProc.trigger(netResp.getVodSource(), netResp.payload);
         }
     };
 
-//    public Handler<AddOverlayMsg.Request> handleAddOverlayRequest = new Handler<AddOverlayMsg.Request>() {
-//
-//        @Override
-//        public void handle(AddOverlayMsg.Request req) {
-//            log.trace("received {}", req.toString());
-//            overlayIds.add(req.overlayId);
-//            GvodNetMsg.Request netReq = new GvodNetMsg.Request(
-//                    new VodAddress(config.self, -1),
-//                    new VodAddress(config.server, -1),
-//                    req);
-//            log.debug("sending {}", netReq.toString());
-//            trigger(netReq, network);
-//        }
-//
-//    };
-//
+    public MsgProcessor.Handler<BootstrapGlobalMsg.Response> handleBootstrapResponse
+            = new MsgProcessor.Handler<BootstrapGlobalMsg.Response>(BootstrapGlobalMsg.Response.class) {
+
+                @Override
+                public void handle(VodAddress src, BootstrapGlobalMsg.Response resp) {
+                    if (resp.status == ReqStatus.SUCCESS) {
+                        log.debug("{} global nodes {}", new Object[]{config.self, resp.systemSample});
+                        for (VodAddress peer : resp.systemSample) {
+                            if (bootstrapNodes.size() < config.openViewSize) {
+                                bootstrapNodes.add(peer);
+                            }
+                        }
+                    }
+                }
+            };
+
+    public Handler<AddOverlayMsg.Request> handleAddOverlayRequest = new Handler<AddOverlayMsg.Request>() {
+
+        @Override
+        public void handle(AddOverlayMsg.Request req) {
+            log.trace("{} {} - overlay:{}", new Object[]{config.self.toString(), req.toString(), req.overlayId});
+            overlayIds.add(req.overlayId);
+            GvodNetMsg.Request netReq = new GvodNetMsg.Request(config.self, config.server, req);
+            trigger(netReq, network);
+        }
+    };
+
+    public MsgProcessor.Handler<AddOverlayMsg.Response> handleAddOverlayResponse
+            = new MsgProcessor.Handler<AddOverlayMsg.Response>(AddOverlayMsg.Response.class
+            ) {
+
+                @Override
+                public void handle(VodAddress src, AddOverlayMsg.Response resp) {
+                    log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
+                    trigger(resp, myPort);
+                }
+            };
+
 //    public Handler<JoinOverlayMsg.Request> handleJoinOverlayRequest = new Handler<JoinOverlayMsg.Request>() {
 //
 //        @Override
@@ -127,5 +147,4 @@ public class BootstrapClientComp extends ComponentDefinition {
 //        }
 //
 //    };
-
 }

@@ -16,17 +16,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system;
+package se.sics.gvod.system.vod;
 
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.net.VodNetwork;
+import se.sics.gvod.system.vod.msg.UploadVideo;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
+import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
 
@@ -39,6 +40,7 @@ public class VoDComp extends ComponentDefinition {
 
     Positive<VodNetwork> network = requires(VodNetwork.class);
     Positive<BootstrapClientPort> bootstrap = requires(BootstrapClientPort.class);
+    Negative<VoDPort> myPort = provides(VoDPort.class);
 
     private final VoDConfiguration config;
 
@@ -48,6 +50,8 @@ public class VoDComp extends ComponentDefinition {
 
         subscribe(handleStart, control);
         subscribe(handleBootstrapGlobalResponse, bootstrap);
+        subscribe(handleUploadVideoRequest, myPort);
+        subscribe(handleAddOverlayResponse, bootstrap);
     }
 
     public Handler<Start> handleStart = new Handler<Start>() {
@@ -64,11 +68,20 @@ public class VoDComp extends ComponentDefinition {
         }
     };
 
-    public Handler<AddOverlayMsg.Request> handleAddOverlayRequest = new Handler<AddOverlayMsg.Request>() {
+    public Handler<UploadVideo.Request> handleUploadVideoRequest = new Handler<UploadVideo.Request>() {
 
         @Override
-        public void handle(AddOverlayMsg.Request event) {
-            log.debug("{} sending ");
+        public void handle(UploadVideo.Request req) {
+            log.debug("{} - {} - overlay: {}", new Object[]{config.self.toString(), req.toString(), req.overlayId});
+            trigger(new AddOverlayMsg.Request(req.reqId, req.overlayId), bootstrap);
+        }
+    };
+    
+    public Handler<AddOverlayMsg.Response> handleAddOverlayResponse = new Handler<AddOverlayMsg.Response>() {
+
+        @Override
+        public void handle(AddOverlayMsg.Response resp) {
+            log.trace("{} - {}", new Object[]{config.self.toString(), resp.toString()});
         }
     };
 }

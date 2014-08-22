@@ -41,7 +41,7 @@ public class BootstrapOverlayMsg {
 
         @Override
         public String toString() {
-            return "BootstrapOverlayMsg Request " + reqId.toString();
+            return "BootstrapOverlayRequest " + reqId.toString();
         }
 
         public Response success(Map<Integer, VodAddress> overlaySample) {
@@ -60,7 +60,7 @@ public class BootstrapOverlayMsg {
 
         @Override
         public String toString() {
-            return "BootstrapOverlayMsg Response " + reqId.toString() + " " + status.toString();
+            return "BootstrapOverlayResponse<" + status.toString() + "> " + reqId.toString();
         }
     }
 }

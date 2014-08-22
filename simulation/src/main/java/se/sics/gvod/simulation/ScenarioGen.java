@@ -19,13 +19,16 @@
 package se.sics.gvod.simulation;
 
 import java.util.Random;
+import se.sics.gvod.simulation.cmd.operations.UploadVideoCmd;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
 import se.sics.gvod.simulation.cmd.system.StartVodPeerCmd;
 import se.sics.gvod.simulation.cmd.system.StopBSCmd;
 import se.sics.gvod.simulation.cmd.system.StopVodPeerCmd;
 import se.sics.gvod.simulation.util.IntegerUniformDistribution;
+import se.sics.gvod.system.vod.msg.UploadVideo;
 import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
 import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation1;
+import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation2;
 import se.sics.kompics.p2p.experiment.dsl.distribution.ConstantDistribution;
 import se.sics.kompics.p2p.experiment.dsl.distribution.Distribution;
 
@@ -42,7 +45,7 @@ public class ScenarioGen {
                     return new StartBSCmd(id);
                 }
             };
-    
+
     static Operation1<StopBSCmd, Integer> stopBootstrapServer
             = new Operation1<StopBSCmd, Integer>() {
 
@@ -59,7 +62,7 @@ public class ScenarioGen {
                     return new StartVodPeerCmd(id);
                 }
             };
-    
+
     static Operation1<StopVodPeerCmd, Integer> stopVodPeer
             = new Operation1<StopVodPeerCmd, Integer>() {
 
@@ -68,14 +71,28 @@ public class ScenarioGen {
                     return new StopVodPeerCmd(id);
                 }
             };
-    
+
+    static Operation2<UploadVideoCmd, Integer, Integer> uploadVideo
+            = new Operation2<UploadVideoCmd, Integer, Integer>() {
+
+                @Override
+                public UploadVideoCmd generate(Integer nodeId, Integer overlayId) {
+                    return new UploadVideoCmd(nodeId, overlayId);
+                }
+            };
+
     public static SimulationScenario simpleBoot(final long seed, int peers) {
         SimulationScenario scen = new SimulationScenario() {
             {
                 final Random rand = new Random(seed);
                 final Distribution<Integer> bootstrapIdDist = new ConstantDistribution<>(Integer.class, 0);
-                final Distribution<Integer> vodPeerIdDist = new IntegerUniformDistribution(1, 65535, rand);
+                final Distribution<Integer> vodPeerIdDist = new IntegerUniformDistribution(1, 65535, new Random(seed));
+                final Distribution<Integer> videoIdDist = new ConstantDistribution<>(Integer.class, 1);
+                //generate the same ids - first id will be the uploader
+                final Distribution<Integer> videoPeerIdDist = new IntegerUniformDistribution(1, 65535, new Random(seed));
+                final Distribution<Integer> uploaderIdDist = new ConstantDistribution<>(Integer.class, videoPeerIdDist.draw());
                 
+
                 StochasticProcess startBootstrapServerProc = new StochasticProcess() {
                     {
                         eventInterArrivalTime(constant(1000));
@@ -89,14 +106,14 @@ public class ScenarioGen {
                         raise(2, startVodPeer, vodPeerIdDist);
                     }
                 };
-                
+
                 StochasticProcess stopVodPeersProc = new StochasticProcess() {
                     {
                         eventInterArrivalTime(constant(1000));
                         raise(1, stopVodPeer, vodPeerIdDist);
                     }
                 };
-                
+
                 StochasticProcess stopBootstrapServerProc = new StochasticProcess() {
                     {
                         eventInterArrivalTime(constant(0));
@@ -104,9 +121,17 @@ public class ScenarioGen {
                     }
                 };
 
+                StochasticProcess uploadVideoProc = new StochasticProcess() {
+                    {
+                        eventInterArrivalTime(constant(0));
+                        raise(1, uploadVideo, uploaderIdDist, videoIdDist);
+                    }
+                };
+
                 startBootstrapServerProc.start();
                 startVodPeersProc.startAfterTerminationOf(1000, startBootstrapServerProc);
-                terminateAfterTerminationOf(1000*1000, startVodPeersProc);
+                uploadVideoProc.startAfterTerminationOf(1000, startVodPeersProc);
+                terminateAfterTerminationOf(1000 * 1000, uploadVideoProc);
             }
         };
 
@@ -114,6 +139,4 @@ public class ScenarioGen {
 
         return scen;
     }
-
-    
 }

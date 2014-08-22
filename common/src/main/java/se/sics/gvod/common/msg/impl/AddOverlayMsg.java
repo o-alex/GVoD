@@ -38,7 +38,7 @@ public class AddOverlayMsg {
         
         @Override
         public String toString() {
-            return "AddOverlayMsg Request " + reqId.toString();
+            return "AddOverlayRequest " + reqId.toString();
         }
         
         public Response fail() {
@@ -58,7 +58,7 @@ public class AddOverlayMsg {
      
         @Override
         public String toString() {
-            return "AddOverlayMsg Response " + reqId.toString() + " " + status.toString();
+            return "AddOverlayResponse<" + status.toString() + "> "+ reqId.toString();
         }
     }
 }

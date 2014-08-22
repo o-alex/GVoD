@@ -17,33 +17,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system;
+package se.sics.gvod.simulation.cmd.operations;
 
-import com.typesafe.config.Config;
-import se.sics.gvod.common.util.ConfigException;
-import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.simulation.cmd.OperationCmd;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDConfiguration {
-    public final VodAddress self;
+public class DownloadVideoCmd implements OperationCmd {
+    public final int nodeId;
+    public final int overlayId;
     
-    private VoDConfiguration(VodAddress self) {
-        this.self = self;
-    }
-    
-    public static class Builder {
-        private final Config config;
-        private final VodAddress self;
-        
-        public Builder(Config config, VodAddress self) {
-            this.config = config;
-            this.self = self;
-        }
-        
-        public VoDConfiguration finalise() throws ConfigException.Missing {
-            return new VoDConfiguration(self);
-        }
+    public DownloadVideoCmd(int nodeId, int overlayId) {
+        this.nodeId = nodeId;
+        this.overlayId = overlayId;
     }
 }

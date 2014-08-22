@@ -19,7 +19,6 @@
  */
 package se.sics.gvod.bootstrap.server;
 
-import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.server.peerManager.PeerManager;
@@ -71,7 +70,7 @@ public class BootstrapServerComp extends ComponentDefinition {
 
         @Override
         public void handle(GvodNetMsg.Request<GvodMsg.Request> netReq) {
-            log.debug("received {}", netReq.toString());
+            log.debug("{} received {}", new Object[]{config.self.toString(), netReq.toString()});
             msgProc.trigger(netReq.getVodSource(), netReq.payload);
         }
     };
@@ -84,7 +83,6 @@ public class BootstrapServerComp extends ComponentDefinition {
             peerManager.addVodPeer(src);
 
             GvodNetMsg.Response<BootstrapGlobalMsg.Response> netResp = new GvodNetMsg.Response<BootstrapGlobalMsg.Response>(config.self, src, resp);
-            log.debug("sending {}", netResp.toString());
             trigger(netResp, network);
         }
     };
@@ -102,7 +100,6 @@ public class BootstrapServerComp extends ComponentDefinition {
             }
 
             GvodNetMsg.Response<AddOverlayMsg.Response> netResp = new GvodNetMsg.Response<AddOverlayMsg.Response>(config.self, src, resp);
-            log.debug("sending {}", netResp.toString());
             trigger(netResp, network);
         }
     };
