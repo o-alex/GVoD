@@ -19,13 +19,13 @@
 package se.sics.gvod.simulation;
 
 import java.util.Random;
+import se.sics.gvod.simulation.cmd.operations.DownloadVideoCmd;
 import se.sics.gvod.simulation.cmd.operations.UploadVideoCmd;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
 import se.sics.gvod.simulation.cmd.system.StartVodPeerCmd;
 import se.sics.gvod.simulation.cmd.system.StopBSCmd;
 import se.sics.gvod.simulation.cmd.system.StopVodPeerCmd;
 import se.sics.gvod.simulation.util.IntegerUniformDistribution;
-import se.sics.gvod.system.vod.msg.UploadVideo;
 import se.sics.kompics.p2p.experiment.dsl.SimulationScenario;
 import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation1;
 import se.sics.kompics.p2p.experiment.dsl.adaptor.Operation2;
@@ -80,6 +80,15 @@ public class ScenarioGen {
                     return new UploadVideoCmd(nodeId, overlayId);
                 }
             };
+    
+    static Operation2<DownloadVideoCmd, Integer, Integer> downloadVideo
+            = new Operation2<DownloadVideoCmd, Integer, Integer>() {
+
+                @Override
+                public DownloadVideoCmd generate(Integer nodeId, Integer overlayId) {
+                    return new DownloadVideoCmd(nodeId, overlayId);
+                }
+            };
 
     public static SimulationScenario simpleBoot(final long seed, int peers) {
         SimulationScenario scen = new SimulationScenario() {
@@ -91,7 +100,7 @@ public class ScenarioGen {
                 //generate the same ids - first id will be the uploader
                 final Distribution<Integer> videoPeerIdDist = new IntegerUniformDistribution(1, 65535, new Random(seed));
                 final Distribution<Integer> uploaderIdDist = new ConstantDistribution<>(Integer.class, videoPeerIdDist.draw());
-                
+                final Distribution<Integer> downloaderIdDist = videoPeerIdDist;
 
                 StochasticProcess startBootstrapServerProc = new StochasticProcess() {
                     {
@@ -103,7 +112,7 @@ public class ScenarioGen {
                 StochasticProcess startVodPeersProc = new StochasticProcess() {
                     {
                         eventInterArrivalTime(constant(1000));
-                        raise(2, startVodPeer, vodPeerIdDist);
+                        raise(10, startVodPeer, vodPeerIdDist);
                     }
                 };
 
@@ -127,10 +136,18 @@ public class ScenarioGen {
                         raise(1, uploadVideo, uploaderIdDist, videoIdDist);
                     }
                 };
+                
+                StochasticProcess downloadVideoProc = new StochasticProcess() {
+                    {
+                        eventInterArrivalTime(constant(1000));
+                        raise(5, downloadVideo, downloaderIdDist, videoIdDist);
+                    }
+                };
 
                 startBootstrapServerProc.start();
                 startVodPeersProc.startAfterTerminationOf(1000, startBootstrapServerProc);
                 uploadVideoProc.startAfterTerminationOf(1000, startVodPeersProc);
+                downloadVideoProc.startAfterStartOf(10*1000,uploadVideoProc);
                 terminateAfterTerminationOf(1000 * 1000, uploadVideoProc);
             }
         };

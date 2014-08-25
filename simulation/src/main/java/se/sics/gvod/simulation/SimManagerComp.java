@@ -25,13 +25,12 @@ import se.sics.gvod.common.network.filters.NodeIdFilter;
 import se.sics.gvod.common.util.ConfigException;
 import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.net.VodNetwork;
+import se.sics.gvod.simulation.cmd.operations.DownloadVideoCmd;
 import se.sics.gvod.simulation.cmd.operations.UploadVideoCmd;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
 import se.sics.gvod.simulation.cmd.system.StartVodPeerCmd;
 import se.sics.gvod.simulation.cmd.system.StopBSCmd;
 import se.sics.gvod.simulation.cmd.system.StopVodPeerCmd;
-import se.sics.gvod.system.vod.VoDPort;
-import se.sics.gvod.system.vod.msg.UploadVideo;
 import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
@@ -65,6 +64,7 @@ public class SimManagerComp extends ComponentDefinition {
         subscribe(handleStartVodPeer, experiment);
         subscribe(handleStopVodPeer, experiment);
         subscribe(handleUploadVideo, experiment);
+        subscribe(handleDownloadVideo, experiment);
         subscribe(handleTerminate, experiment);
     }
 
@@ -185,6 +185,21 @@ public class SimManagerComp extends ComponentDefinition {
             se.sics.gvod.system.HostManagerComp nodeHost = (se.sics.gvod.system.HostManagerComp) node.getComponent();
             VoDManager vodMngr = nodeHost.getVoDManager();
             vodMngr.uploadVideo(cmd.overlayId);
+        }
+    };
+    
+    public Handler<DownloadVideoCmd> handleDownloadVideo = new Handler<DownloadVideoCmd>() {
+
+        @Override
+        public void handle(DownloadVideoCmd cmd) {
+            log.trace("{}", cmd);
+            Component node = systemComp.get(cmd.nodeId);
+            if(node == null) {
+                return;
+            }
+            se.sics.gvod.system.HostManagerComp nodeHost = (se.sics.gvod.system.HostManagerComp) node.getComponent();
+            VoDManager vodMngr = nodeHost.getVoDManager();
+            vodMngr.downloadVideo(cmd.overlayId);
         }
     };
     

@@ -36,7 +36,7 @@ public class SimplePeerManager implements PeerManager {
 
     private final PeerManagerConfig config;
     private final List<VodAddress> systemPeers;
-    private final Map<Integer, Set<VodAddress>> overlayPeers;
+    private final Map<Integer, List<VodAddress>> overlayPeers;
     private final Random rand;
     
     public SimplePeerManager(PeerManagerConfig config) {
@@ -53,18 +53,39 @@ public class SimplePeerManager implements PeerManager {
     }
     
     @Override
-    public void addOverlay(int overlayId, VodAddress peer) throws PeerManager.PMException {
+    public void addOverlay(int overlayId) throws PeerManager.PMException {
         if(overlayPeers.containsKey(overlayId)) {
-            throw new PeerManager.PMException("overlay already exists");
+            throw new PeerManager.PMException("overlay " + overlayId + " already exists");
         }
-        HashSet<VodAddress> overlay = new HashSet<>();
-        overlay.add(peer);
-        overlayPeers.put(overlayId,overlay);
+        overlayPeers.put(overlayId, new ArrayList<VodAddress>());
+    }
+    
+    @Override
+    public void addOverlayPeer(int overlayId, VodAddress peer) throws PeerManager.PMException {
+        if(!overlayPeers.containsKey(overlayId)) {
+            throw new PeerManager.PMException("overlay " + overlayId + " does not exist");
+        }
+        overlayPeers.get(overlayId).add(peer);
+        
     }
 
     @Override
-    public void getOverlaySample(int overlayId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Set<VodAddress> getOverlaySample(int overlayId) throws PeerManager.PMException {
+        Set<VodAddress> sample = new HashSet<>();
+        
+        List<VodAddress> overlay = overlayPeers.get(overlayId);
+        if(overlay == null) {
+            throw new PeerManager.PMException("overlay " + overlayId + " does not exist");
+        }
+        if(overlay.size() <= config.sampleSize) {
+            sample.addAll(overlay);
+            return sample;
+        }
+        while(sample.size() < config.sampleSize) {
+            int idx = rand.nextInt(overlay.size());
+            sample.add(overlay.get(idx));
+        }
+        return sample;
     }
 
     @Override

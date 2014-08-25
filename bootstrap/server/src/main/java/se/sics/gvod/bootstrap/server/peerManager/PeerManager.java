@@ -29,8 +29,9 @@ public interface PeerManager {
     
     public Set<VodAddress> getSystemSample();
     public void addVodPeer(VodAddress peerAdr);
-    public void addOverlay(int overlayId, VodAddress peer) throws PMException;
-    public void getOverlaySample(int overlayId);
+    public void addOverlay(int overlayId) throws PMException;
+    public void addOverlayPeer(int overlayId, VodAddress peerAdr) throws PMException;
+    public Set<VodAddress> getOverlaySample(int overlayId) throws PMException ;
     
     public static class PMException extends Exception {
         public PMException(String message) {

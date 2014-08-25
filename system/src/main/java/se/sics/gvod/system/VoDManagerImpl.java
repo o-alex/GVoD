@@ -21,6 +21,7 @@ package se.sics.gvod.system;
 
 import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.system.vod.VoDPort;
+import se.sics.gvod.system.vod.msg.DownloadVideo;
 import se.sics.gvod.system.vod.msg.UploadVideo;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Positive;
@@ -47,7 +48,6 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
     @Override
     public void downloadVideo(int overlayId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        trigger(new DownloadVideo.Request(overlayId), vodPort);
     }
-    
 }

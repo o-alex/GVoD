@@ -18,12 +18,15 @@
  */
 package se.sics.gvod.system.vod;
 
+import java.util.HashSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
+import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
 import se.sics.gvod.net.VodNetwork;
+import se.sics.gvod.system.vod.msg.DownloadVideo;
 import se.sics.gvod.system.vod.msg.UploadVideo;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -51,7 +54,9 @@ public class VoDComp extends ComponentDefinition {
         subscribe(handleStart, control);
         subscribe(handleBootstrapGlobalResponse, bootstrap);
         subscribe(handleUploadVideoRequest, myPort);
+        subscribe(handleDownloadVideoRequest, myPort);
         subscribe(handleAddOverlayResponse, bootstrap);
+        subscribe(handleJoinOverlayResponse, bootstrap);
     }
 
     public Handler<Start> handleStart = new Handler<Start>() {
@@ -77,11 +82,29 @@ public class VoDComp extends ComponentDefinition {
         }
     };
     
+    public Handler<DownloadVideo.Request> handleDownloadVideoRequest = new Handler<DownloadVideo.Request>() {
+
+        @Override
+        public void handle(DownloadVideo.Request req) {
+            log.debug("{} - {} - overlay: {}", new Object[]{config.self.toString(), req.toString(), req.overlayId});
+            HashSet<Integer> overlayIds = new HashSet<>();
+            overlayIds.add(req.overlayId);
+            trigger(new JoinOverlayMsg.Request(req.reqId, overlayIds), bootstrap);
+        }
+    };
+    
     public Handler<AddOverlayMsg.Response> handleAddOverlayResponse = new Handler<AddOverlayMsg.Response>() {
 
         @Override
         public void handle(AddOverlayMsg.Response resp) {
             log.trace("{} - {}", new Object[]{config.self.toString(), resp.toString()});
+        }
+    };
+    public Handler<JoinOverlayMsg.Response> handleJoinOverlayResponse = new Handler<JoinOverlayMsg.Response>() {
+
+        @Override
+        public void handle(JoinOverlayMsg.Response resp) {
+            log.trace("{} - {} - peers:{}", new Object[]{config.self.toString(), resp.toString(), resp.overlaySample.toString()});
         }
     };
 }

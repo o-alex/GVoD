@@ -19,6 +19,9 @@
  */
 package se.sics.gvod.bootstrap.server;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.server.peerManager.PeerManager;
@@ -27,6 +30,7 @@ import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.GvodNetMsg;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
+import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
 import se.sics.gvod.common.util.ConfigException;
 import se.sics.gvod.common.util.MsgProcessor;
 import se.sics.gvod.net.VodAddress;
@@ -61,9 +65,9 @@ public class BootstrapServerComp extends ComponentDefinition {
         }
 
         subscribe(handleNetRequest, network);
-        msgProc.subscribe(handleAddOverlayRequest);
         msgProc.subscribe(handleBootstrapRequest);
-        
+        msgProc.subscribe(handleAddOverlayRequest);
+        msgProc.subscribe(handleJoinOverlayRequest);
     }
 
     public Handler<GvodNetMsg.Request<GvodMsg.Request>> handleNetRequest = new Handler<GvodNetMsg.Request<GvodMsg.Request>>() {
@@ -83,6 +87,7 @@ public class BootstrapServerComp extends ComponentDefinition {
             peerManager.addVodPeer(src);
 
             GvodNetMsg.Response<BootstrapGlobalMsg.Response> netResp = new GvodNetMsg.Response<BootstrapGlobalMsg.Response>(config.self, src, resp);
+            log.debug("{} sending {}", new Object[]{config.self.toString(), netResp.toString()});
             trigger(netResp, network);
         }
     };
@@ -93,13 +98,37 @@ public class BootstrapServerComp extends ComponentDefinition {
         public void handle(VodAddress src, AddOverlayMsg.Request req) {
             AddOverlayMsg.Response resp;
             try {
-                peerManager.addOverlay(req.overlayId, src);
+                peerManager.addOverlay(req.overlayId);
+                peerManager.addOverlayPeer(req.overlayId, src);
                 resp = req.success();
             } catch (PeerManager.PMException ex) {
                 resp = req.fail();
             }
 
             GvodNetMsg.Response<AddOverlayMsg.Response> netResp = new GvodNetMsg.Response<AddOverlayMsg.Response>(config.self, src, resp);
+            log.debug("{} sending {}", new Object[]{config.self.toString(), netResp.toString()});
+            trigger(netResp, network);
+        }
+    };
+
+    public MsgProcessor.Handler<JoinOverlayMsg.Request> handleJoinOverlayRequest = new MsgProcessor.Handler<JoinOverlayMsg.Request>(JoinOverlayMsg.Request.class) {
+
+        @Override
+        public void handle(VodAddress src, JoinOverlayMsg.Request req) {
+            JoinOverlayMsg.Response resp;
+            try {
+                Map<Integer, Set<VodAddress>> overlaySamples = new HashMap<>();
+                for (Integer overlayId : req.overlayIds) {
+                    overlaySamples.put(overlayId, peerManager.getOverlaySample(overlayId));
+                    peerManager.addOverlayPeer(overlayId, src);
+                }
+                resp = req.success(overlaySamples);
+            } catch (PeerManager.PMException ex) {
+                resp = req.fail();
+            }
+
+            GvodNetMsg.Response<JoinOverlayMsg.Response> netResp = new GvodNetMsg.Response<JoinOverlayMsg.Response>(config.self, src, resp);
+            log.debug("{} sending {}", new Object[]{config.self.toString(), netResp.toString()});
             trigger(netResp, network);
         }
     };

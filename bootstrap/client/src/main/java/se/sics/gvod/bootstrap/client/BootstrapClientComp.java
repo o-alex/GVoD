@@ -30,6 +30,7 @@ import se.sics.gvod.common.msg.GvodNetMsg;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
+import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
 import se.sics.gvod.common.util.MsgProcessor;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
@@ -69,9 +70,10 @@ public class BootstrapClientComp extends ComponentDefinition {
         subscribe(handleStart, control);
         subscribe(handleNetResponse, network);
         subscribe(handleAddOverlayRequest, myPort);
+        subscribe(handleJoinOverlayRequest, myPort);
         msgProc.subscribe(handleBootstrapResponse);
         msgProc.subscribe(handleAddOverlayResponse);
-//        subscribe(handleJoinOverlayRequest, myPort);
+        msgProc.subscribe(handleJoinOverlayResponse);
     }
 
     public Handler<Start> handleStart = new Handler<Start>() {
@@ -114,9 +116,23 @@ public class BootstrapClientComp extends ComponentDefinition {
 
         @Override
         public void handle(AddOverlayMsg.Request req) {
-            log.trace("{} {} - overlay:{}", new Object[]{config.self.toString(), req.toString(), req.overlayId});
+            log.trace("{} {} - overlay:{}", new Object[]{config.self, req, req.overlayId});
             overlayIds.add(req.overlayId);
-            GvodNetMsg.Request netReq = new GvodNetMsg.Request(config.self, config.server, req);
+            
+            GvodNetMsg.Request<JoinOverlayMsg.Request> netReq = new GvodNetMsg.Request(config.self, config.server, req);
+            log.trace("{} sending {}", new Object[]{config.self, netReq});
+            trigger(netReq, network);
+        }
+    };
+    
+    public Handler<JoinOverlayMsg.Request> handleJoinOverlayRequest = new Handler<JoinOverlayMsg.Request>() {
+
+        @Override
+        public void handle(JoinOverlayMsg.Request req) {
+            log.trace("{} {} - overlay:{}", new Object[]{config.self, req, req.overlayIds});
+            
+            GvodNetMsg.Request<JoinOverlayMsg.Request> netReq = new GvodNetMsg.Request(config.self, config.server, req);
+            log.trace("{} sending {}", new Object[]{config.self, netReq});
             trigger(netReq, network);
         }
     };
@@ -131,20 +147,14 @@ public class BootstrapClientComp extends ComponentDefinition {
                     trigger(resp, myPort);
                 }
             };
+    public MsgProcessor.Handler<JoinOverlayMsg.Response> handleJoinOverlayResponse
+            = new MsgProcessor.Handler<JoinOverlayMsg.Response>(JoinOverlayMsg.Response.class
+            ) {
 
-//    public Handler<JoinOverlayMsg.Request> handleJoinOverlayRequest = new Handler<JoinOverlayMsg.Request>() {
-//
-//        @Override
-//        public void handle(JoinOverlayMsg.Request req) {
-//            log.trace("received {}", req.toString());
-//            overlayIds.addAll(req.overlayId);
-//            GvodNetMsg.Request netReq = new GvodNetMsg.Request(
-//                    new VodAddress(config.self, -1),
-//                    new VodAddress(config.server, -1),
-//                    req);
-//            log.debug("sending {}", netReq.toString());
-//            trigger(netReq, network);
-//        }
-//
-//    };
+                @Override
+                public void handle(VodAddress src, JoinOverlayMsg.Response resp) {
+                    log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
+                    trigger(resp, myPort);
+                }
+            };
 }
