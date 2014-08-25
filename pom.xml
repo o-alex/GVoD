@@ -12,6 +12,7 @@
         <module>simulation</module>
         <module>common</module>
         <module>manager</module>
+        <module>network</module>
     </modules>
     
     <properties>

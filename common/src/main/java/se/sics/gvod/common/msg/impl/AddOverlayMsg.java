@@ -18,6 +18,7 @@
  */
 package se.sics.gvod.common.msg.impl;
 
+import java.util.Objects;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
@@ -36,11 +37,6 @@ public class AddOverlayMsg {
             this.overlayId = overlayId;
         }
         
-        @Override
-        public String toString() {
-            return "AddOverlayRequest " + reqId.toString();
-        }
-        
         public Response fail() {
             return new Response(reqId, ReqStatus.FAIL);
         }
@@ -48,17 +44,74 @@ public class AddOverlayMsg {
         public Response success() {
             return new Response(reqId, ReqStatus.SUCCESS);
         }
+        
+        @Override
+        public String toString() {
+            return "AddOverlayRequest " + reqId.toString();
+        }
+        
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 61 * hash + Objects.hashCode(this.reqId);
+            hash = 61 * hash + this.overlayId;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Request other = (Request) obj;
+            if (!Objects.equals(this.reqId, other.reqId)) {
+                return false;
+            }
+            if (this.overlayId != other.overlayId) {
+                return false;
+            }
+            return true;
+        }
     }
     
     public static class Response extends GvodMsg.Response {
         
-        private Response(UUID reqId, ReqStatus status) {
+        public Response(UUID reqId, ReqStatus status) {
             super(reqId, status);
         }
      
         @Override
         public String toString() {
             return "AddOverlayResponse<" + status.toString() + "> "+ reqId.toString();
+        }
+        
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 23 * hash + Objects.hashCode(this.reqId);
+            hash = 23 * hash + Objects.hashCode(this.status);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Response other = (Response) obj;
+            if (!Objects.equals(this.reqId, other.reqId)) {
+                return false;
+            }
+            if (this.status != other.status) {
+                return false;
+            }
+            return true;
         }
     }
 }

@@ -19,6 +19,7 @@
 package se.sics.gvod.common.msg.impl;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
@@ -39,17 +40,44 @@ public class JoinOverlayMsg {
             this.overlayIds = overlayId;
         }
 
+        public Response success(Map<Integer, Set<VodAddress>> overlaySample) {
+            return new Response(reqId, ReqStatus.SUCCESS, overlaySample);
+        }
+
+        public Response fail() {
+            return new Response(reqId, ReqStatus.FAIL, null);
+        }
+        
         @Override
         public String toString() {
             return "JoinOverlayRequest " + reqId.toString();
         }
 
-        public Response success(Map<Integer, Set<VodAddress>> overlaySample) {
-            return new Response(reqId, ReqStatus.SUCCESS, overlaySample);
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 71 * hash + Objects.hashCode(this.reqId);
+            hash = 71 * hash + Objects.hashCode(this.overlayIds);
+            return hash;
         }
-        
-        public Response fail() {
-            return new Response(reqId, ReqStatus.FAIL, null);
+
+        @Override
+        public boolean equals(Object obj
+        ) {
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Request other = (Request) obj;
+            if (!Objects.equals(this.reqId, other.reqId)) {
+                return false;
+            }
+            if (!Objects.equals(this.overlayIds, other.overlayIds)) {
+                return false;
+            }
+            return true;
         }
     }
 
@@ -66,5 +94,32 @@ public class JoinOverlayMsg {
         public String toString() {
             return "JoinOverlayMsgResponse<" + status.toString() + "> " + reqId.toString();
         }
+        
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 17 * hash + Objects.hashCode(this.reqId);
+            hash = 17 * hash + Objects.hashCode(this.overlaySample);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Response other = (Response) obj;
+            if (!Objects.equals(this.reqId, other.reqId)) {
+                return false;
+            }
+            if (!Objects.equals(this.overlaySample, other.overlaySample)) {
+                return false;
+            }
+            return true;
+        }
     }
+
 }
