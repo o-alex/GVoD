@@ -53,26 +53,26 @@ public class HostConfiguration {
         return new VoDConfiguration.Builder(config, self);
     }
 
-    public static class Builder {
+    public static class SimulationBuilder {
 
         private final Config config;
         private Integer id;
         private byte[] seed;
 
-        public Builder() {
+        public SimulationBuilder() {
             this.config = ConfigFactory.load();
         }
 
-        public Builder(String configFile) {
+        public SimulationBuilder(String configFile) {
             this.config = ConfigFactory.load(configFile);
         }
 
-        public Builder setId(int id) {
+        public SimulationBuilder setId(int id) {
             this.id = id;
             return this;
         }
 
-        public Builder setSeed(byte[] seed) {
+        public SimulationBuilder setSeed(byte[] seed) {
             this.seed = seed;
             return this;
         }
@@ -95,6 +95,54 @@ public class HostConfiguration {
                     throw new ConfigException.Missing("missing seed");
                 }
                 return new HostConfiguration(config, new VodAddress(self, -1), new VodAddress(server, -1), seed);
+            } catch (UnknownHostException e) {
+                throw new ConfigException.Missing("bad host - " + e.getMessage());
+            } catch (com.typesafe.config.ConfigException e) {
+                throw new ConfigException.Missing(e.getMessage());
+            }
+        }
+    }
+    
+    public static class ExecBuilder {
+
+        private final Config config;
+        private Address selfAddress;
+        private byte[] seed;
+
+        public ExecBuilder() {
+            this.config = ConfigFactory.load();
+        }
+
+        public ExecBuilder(String configFile) {
+            this.config = ConfigFactory.load(configFile);
+        }
+
+        public ExecBuilder setSelfAddress(Address selfAddress) {
+            this.selfAddress = selfAddress;
+            return this;
+        }
+
+        public ExecBuilder setSeed(byte[] seed) {
+            this.seed = seed;
+            return this;
+        }
+
+        public HostConfiguration finalise() throws ConfigException.Missing {
+            try {
+                if(selfAddress == null) {
+                    throw new ConfigException.Missing("self Address");
+                }
+
+                Address serverAddress = new Address(
+                        InetAddress.getByName(config.getString("bootstrap.server.address.ip")),
+                        config.getInt("bootstrap.server.address.port"),
+                        config.getInt("bootstrap.server.address.id")
+                );
+
+                if (seed == null) {
+                    throw new ConfigException.Missing("missing seed");
+                }
+                return new HostConfiguration(config, new VodAddress(selfAddress, -1), new VodAddress(serverAddress, -1), seed);
             } catch (UnknownHostException e) {
                 throw new ConfigException.Missing("bad host - " + e.getMessage());
             } catch (com.typesafe.config.ConfigException e) {

@@ -26,6 +26,7 @@ import se.sics.gvod.address.Address;
 import se.sics.gvod.bootstrap.server.peerManager.PeerManagerConfig;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.common.util.ConfigException;
+
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
@@ -49,26 +50,26 @@ public class HostConfiguration {
         return Integer.valueOf(config.getString("bootstrap.seed"));
     }
 
-    public static class Builder {
+    public static class SimBuilder {
 
         private Config config;
         private Integer id;
         private byte[] seed;
 
-        public Builder() {
+        public SimBuilder() {
             this.config = ConfigFactory.load();
         }
-        
-        public Builder(String configFile) {
+
+        public SimBuilder(String configFile) {
             this.config = ConfigFactory.load(configFile);
         }
 
-        public Builder setId(int id) {
+        public SimBuilder setId(int id) {
             this.id = id;
             return this;
         }
-        
-        public Builder setSeed(byte[] seed) {
+
+        public SimBuilder setSeed(byte[] seed) {
             this.seed = seed;
             return this;
         }
@@ -80,7 +81,7 @@ public class HostConfiguration {
                         config.getInt("bootstrap.address.port"),
                         id == null ? config.getInt("bootstrap.address.id") : id
                 );
-                if(seed == null) {
+                if (seed == null) {
                     throw new ConfigException.Missing("missing seed");
                 }
 
@@ -90,6 +91,42 @@ public class HostConfiguration {
             } catch (com.typesafe.config.ConfigException.Missing ex) {
                 throw new ConfigException.Missing(ex.getMessage());
             }
+        }
+    }
+
+    public static class ExecBuilder {
+
+        private Config config;
+        private Address selfAddress;
+        private byte[] seed;
+
+        public ExecBuilder() {
+            this.config = ConfigFactory.load();
+        }
+
+        public ExecBuilder(String configFile) {
+            this.config = ConfigFactory.load(configFile);
+        }
+
+        public ExecBuilder setSelfAddress(Address selfAddress) {
+            this.selfAddress = selfAddress;
+            return this;
+        }
+
+        public ExecBuilder setSeed(byte[] seed) {
+            this.seed = seed;
+            return this;
+        }
+
+        public HostConfiguration finalise() throws ConfigException.Missing {
+            if (selfAddress == null) {
+                throw new ConfigException.Missing("self Address");
+            }
+            if (seed == null) {
+                throw new ConfigException.Missing("missing seed");
+            }
+
+            return new HostConfiguration(config, new VodAddress(selfAddress, -1), seed);
         }
     }
 }

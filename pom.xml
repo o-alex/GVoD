@@ -54,17 +54,12 @@
             <version>${kompics.version}</version>
             <type>jar</type>
         </dependency>
+        
         <dependency>
             <groupId>se.sics.net</groupId>
             <artifactId>netty</artifactId>
             <version>${nattraverser.version}</version>
             <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>se.sics</groupId>
-            <artifactId>croupier</artifactId>
-            <version>${nattraverser.version}</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
     
