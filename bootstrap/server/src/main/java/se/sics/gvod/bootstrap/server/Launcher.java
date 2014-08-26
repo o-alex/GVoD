@@ -102,6 +102,8 @@ public class Launcher extends ComponentDefinition {
 
         connect(manager.getNegative(VodNetwork.class), network.getPositive(VodNetwork.class));
         connect(manager.getNegative(Timer.class), timer.getPositive(Timer.class));
+        
+        trigger(Start.event, manager.control());
     }
 
     public Handler<Start> handleStart = new Handler<Start>() {

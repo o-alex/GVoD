@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.net.NatNetworkControl;
 import se.sics.gvod.net.NettyInit;
 import se.sics.gvod.net.NettyNetwork;
@@ -62,6 +63,12 @@ public class Launcher extends ComponentDefinition {
     private Component manager;
 
     private Address selfAddress;
+    
+    private static VoDManager vodManager;
+    
+    public static VoDManager getVoDManager() {
+        return vodManager;
+    }
 
     public Launcher() {
         System.setProperty("java.net.preferIPv4Stack", "true");
@@ -99,9 +106,15 @@ public class Launcher extends ComponentDefinition {
             throw new RuntimeException(ex);
         }
         manager = create(HostManagerComp.class, new HostManagerInit(hostConfig));
-
+        
         connect(manager.getNegative(VodNetwork.class), network.getPositive(VodNetwork.class));
         connect(manager.getNegative(Timer.class), timer.getPositive(Timer.class));
+        
+        trigger(Start.event, manager.control());
+        
+        //TODO Alex Fix later
+        vodManager = ((HostManagerComp)manager.getComponent()).getVoDManager();
+        //done fix
     }
 
     public Handler<Start> handleStart = new Handler<Start>() {
