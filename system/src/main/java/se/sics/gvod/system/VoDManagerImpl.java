@@ -17,25 +17,37 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.server.peerManager;
+package se.sics.gvod.system;
 
-import java.util.Set;
-import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.manager.VoDManager;
+import se.sics.gvod.system.vod.VoDPort;
+import se.sics.gvod.system.vod.msg.DownloadVideo;
+import se.sics.gvod.system.vod.msg.UploadVideo;
+import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.Positive;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface PeerManager {
+public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
+
+    Positive<VoDPort> vodPort = requires(VoDPort.class);
     
-    public Set<VodAddress> getSystemSample();
-    public void addVodPeer(VodAddress peerAdr);
-    public void addOverlay(int overlayId) throws PMException;
-    public void addOverlayPeer(int overlayId, VodAddress peerAdr) throws PMException;
-    public Set<VodAddress> getOverlaySample(int overlayId) throws PMException ;
+    public VoDManagerImpl() {
+    }
     
-    public static class PMException extends Exception {
-        public PMException(String message) {
-            super(message);
-        }
+    public VoDManager getInstance() {
+        return this;
+    }
+
+    @Override
+    public void uploadVideo(int overlayId) {
+        trigger(new UploadVideo.Request(overlayId), vodPort);
+    }
+
+    @Override
+    public void downloadVideo(int overlayId) {
+        trigger(new DownloadVideo.Request(overlayId), vodPort);
     }
 }

@@ -20,7 +20,7 @@ package se.sics.gvod.bootstrap.client;
 
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
-import se.sics.gvod.bootstrap.client.msg.JoinOverlayMsg;
+import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
 import se.sics.kompics.PortType;
 
 /**

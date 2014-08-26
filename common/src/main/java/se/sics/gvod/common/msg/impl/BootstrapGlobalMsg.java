@@ -19,6 +19,8 @@
 
 package se.sics.gvod.common.msg.impl;
 
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
@@ -34,27 +36,89 @@ public class BootstrapGlobalMsg {
         public Request(UUID reqId) {
             super(reqId);
         }
+
+        public Response success(Set<VodAddress> systemSample) {
+            return new Response(reqId, ReqStatus.SUCCESS, systemSample);
+        }
+        
+        @Override
+        public Request copy() {
+            return new Request(reqId);
+        }
         
         @Override
         public String toString() {
-            return "BootstrapGlobalMsg Request " + reqId.toString();
+            return "BootstrapGlobalRequest " + reqId.toString();
         }
-        
-        public Response success(Set<VodAddress> systemSample) {
-            return new Response(reqId, ReqStatus.SUCCESS, systemSample);
+
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 37 * hash + Objects.hashCode(this.reqId);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object that) {
+            if (that == null) {
+                return false;
+            }
+            if (getClass() != that.getClass()) {
+                return false;
+            }
+            final Request other = (Request) that;
+            if (!Objects.equals(this.reqId, other.reqId)) {
+                return false;
+            }
+            return true;
         }
     }
     
     public static class Response extends GvodMsg.Response {
         public final Set<VodAddress> systemSample;
-        private Response(UUID reqId, ReqStatus status, Set<VodAddress> systemSample) {
+        public Response(UUID reqId, ReqStatus status, Set<VodAddress> systemSample) {
             super(reqId, status);
             this.systemSample = systemSample;
         }
         
         @Override
+        public Response copy() {
+            return new Response(reqId, status, new HashSet<>(systemSample));
+        }
+        
+        @Override
         public String toString() {
-            return "BootstrapGlobalMsg Response " + reqId.toString() + " " + status.toString();
+            return "BootstrapGlobalResponse<" + status.toString() + "> " + reqId.toString();
         } 
+        
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 47 * hash + Objects.hashCode(this.systemSample);
+            hash = 47 * hash + Objects.hashCode(this.status);
+            hash = 47 * hash + Objects.hashCode(this.reqId);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final Response other = (Response) obj;
+            if (!Objects.equals(this.systemSample, other.systemSample)) {
+                return false;
+            }
+            if (this.status != other.status) {
+                return false;
+            }
+            if (!Objects.equals(this.reqId, other.reqId)) {
+                return false;
+            }
+            return true;
+        }
     }
 }

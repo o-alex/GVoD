@@ -18,53 +18,59 @@
  */
 package se.sics.gvod.common.msg.impl;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
+import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class AddOverlayMsg {
+public class JoinOverlayMsg {
 
     public static class Request extends GvodMsg.Request {
 
-        public final int overlayId;
+        public final Set<Integer> overlayIds;
 
-        public Request(UUID reqId, int overlayId) {
+        public Request(UUID reqId, Set<Integer> overlayId) {
             super(reqId);
-            this.overlayId = overlayId;
+            this.overlayIds = overlayId;
         }
-        
+
+        public Response success(Map<Integer, Set<VodAddress>> overlaySample) {
+            return new Response(reqId, ReqStatus.SUCCESS, overlaySample);
+        }
+
         public Response fail() {
-            return new Response(reqId, ReqStatus.FAIL);
-        }
-        
-        public Response success() {
-            return new Response(reqId, ReqStatus.SUCCESS);
+            return new Response(reqId, ReqStatus.FAIL, null);
         }
         
         @Override
         public Request copy() {
-            return new Request(reqId, overlayId);
+            return new Request(reqId, new HashSet<>(overlayIds));
         }
         
         @Override
         public String toString() {
-            return "AddOverlayRequest " + reqId.toString();
+            return "JoinOverlayRequest " + reqId.toString();
         }
-        
+
         @Override
         public int hashCode() {
             int hash = 3;
-            hash = 61 * hash + Objects.hashCode(this.reqId);
-            hash = 61 * hash + this.overlayId;
+            hash = 71 * hash + Objects.hashCode(this.reqId);
+            hash = 71 * hash + Objects.hashCode(this.overlayIds);
             return hash;
         }
 
         @Override
-        public boolean equals(Object obj) {
+        public boolean equals(Object obj
+        ) {
             if (obj == null) {
                 return false;
             }
@@ -75,34 +81,41 @@ public class AddOverlayMsg {
             if (!Objects.equals(this.reqId, other.reqId)) {
                 return false;
             }
-            if (this.overlayId != other.overlayId) {
+            if (!Objects.equals(this.overlayIds, other.overlayIds)) {
                 return false;
             }
             return true;
         }
     }
-    
+
     public static class Response extends GvodMsg.Response {
-        
-        public Response(UUID reqId, ReqStatus status) {
+
+        public final Map<Integer, Set<VodAddress>> overlaySamples;
+
+        public Response(UUID reqId, ReqStatus status, Map<Integer, Set<VodAddress>> overlaySamples) {
             super(reqId, status);
+            this.overlaySamples = overlaySamples;
         }
-        
+
         @Override
         public Response copy() {
-            return new Response(reqId, status);
+            Map<Integer, Set<VodAddress>> newOverlaySamples = new HashMap<>();
+            for(Map.Entry<Integer, Set<VodAddress>> e : overlaySamples.entrySet()) {
+                newOverlaySamples.put(e.getKey(), new HashSet<>(e.getValue()));
+            }
+            return new Response(reqId, status, newOverlaySamples);
         }
-     
+        
         @Override
         public String toString() {
-            return "AddOverlayResponse<" + status.toString() + "> "+ reqId.toString();
+            return "JoinOverlayMsgResponse<" + status.toString() + "> " + reqId.toString();
         }
         
         @Override
         public int hashCode() {
             int hash = 7;
-            hash = 23 * hash + Objects.hashCode(this.reqId);
-            hash = 23 * hash + Objects.hashCode(this.status);
+            hash = 17 * hash + Objects.hashCode(this.reqId);
+            hash = 17 * hash + Objects.hashCode(this.overlaySamples);
             return hash;
         }
 
@@ -118,10 +131,11 @@ public class AddOverlayMsg {
             if (!Objects.equals(this.reqId, other.reqId)) {
                 return false;
             }
-            if (this.status != other.status) {
+            if (!Objects.equals(this.overlaySamples, other.overlaySamples)) {
                 return false;
             }
             return true;
         }
     }
+
 }

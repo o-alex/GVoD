@@ -20,10 +20,17 @@
         </dependency>
         <dependency>
             <groupId>se.sics.gvod</groupId>
+            <artifactId>manager</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>se.sics.gvod</groupId>
             <artifactId>system</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
+        
         <dependency>
             <groupId>se.sics.kompics.simulation</groupId>
             <artifactId>kompics-simulation</artifactId>

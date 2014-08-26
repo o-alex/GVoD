@@ -16,50 +16,33 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.bootstrap.client.msg;
+package se.sics.gvod.system.vod.msg;
 
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.common.msg.ReqStatus;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class JoinOverlayMsg {
+public class UploadVideo {
 
     public static class Request extends GvodMsg.Request {
 
-        public final Set<Integer> overlayId;
+        public final int overlayId;
 
-        public Request(UUID reqId, Set<Integer> overlayId) {
-            super(reqId);
+        public Request(int overlayId) {
+            super(UUID.randomUUID());
             this.overlayId = overlayId;
         }
-
+        
+        @Override
+        public Request copy() {
+            return new Request(overlayId);
+        }
+        
         @Override
         public String toString() {
-            return "JoinOverlayMsg Request " + reqId.toString();
-        }
-
-        public Response getResponse(ReqStatus status, Map<Integer, Set<Integer>> overlaySample) {
-            return new Response(reqId, status, overlaySample);
-        }
-    }
-
-    public static class Response extends GvodMsg.Response {
-
-        public final Map<Integer, Set<Integer>> overlaySample;
-
-        public Response(UUID reqId, ReqStatus status, Map<Integer, Set<Integer>> overlaySample) {
-            super(reqId, status);
-            this.overlaySample = overlaySample;
-        }
-
-        @Override
-        public String toString() {
-            return "JoinOverlayMsg Response " + reqId.toString() + " " + status.toString();
+            return "UploadVideo.Request " + reqId.toString();
         }
     }
 }

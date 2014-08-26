@@ -19,6 +19,7 @@
 
 package se.sics.gvod.simulation;
 
+import se.sics.gvod.simulation.cmd.OperationCmd;
 import se.sics.gvod.simulation.cmd.SystemCmd;
 import se.sics.kompics.PortType;
 import se.sics.kompics.p2p.experiment.dsl.events.TerminateExperiment;
@@ -29,6 +30,7 @@ import se.sics.kompics.p2p.experiment.dsl.events.TerminateExperiment;
 public class VodExperiment extends PortType {
     {
         positive(SystemCmd.class);
+        positive(OperationCmd.class);
         positive(TerminateExperiment.class);
         negative(TerminateExperiment.class);
     }

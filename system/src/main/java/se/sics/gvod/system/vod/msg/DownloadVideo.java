@@ -16,51 +16,33 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.common.msg.impl;
+package se.sics.gvod.system.vod.msg;
 
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootstrapOverlayMsg {
+public class DownloadVideo {
 
     public static class Request extends GvodMsg.Request {
 
-        public final Set<Integer> overlayIds;
+        public final int overlayId;
 
-        public Request(UUID reqId, Set<Integer> overlayIds) {
-            super(reqId);
-            this.overlayIds = overlayIds;
+        public Request(int overlayId) {
+            super(UUID.randomUUID());
+            this.overlayId = overlayId;
+        }
+        
+        @Override
+        public Request copy() {
+            return new Request(overlayId);
         }
 
         @Override
         public String toString() {
-            return "BootstrapOverlayMsg Request " + reqId.toString();
-        }
-
-        public Response success(Map<Integer, VodAddress> overlaySample) {
-            return new Response(reqId, ReqStatus.SUCCESS, overlaySample);
-        }
-    }
-
-    public static class Response extends GvodMsg.Response {
-
-        public final Map<Integer, VodAddress> overlaySample;
-
-        private Response(UUID reqId, ReqStatus status, Map<Integer, VodAddress> overlaySample) {
-            super(reqId, status);
-            this.overlaySample = overlaySample;
-        }
-
-        @Override
-        public String toString() {
-            return "BootstrapOverlayMsg Response " + reqId.toString() + " " + status.toString();
+            return "DownloadVideo.Request " + reqId.toString();
         }
     }
 }

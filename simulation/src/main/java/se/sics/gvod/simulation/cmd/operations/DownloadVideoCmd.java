@@ -17,13 +17,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system;
+package se.sics.gvod.simulation.cmd.operations;
 
-import se.sics.kompics.Init;
+import se.sics.gvod.simulation.cmd.OperationCmd;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VideoInit extends Init<VideoComp> {
+public class DownloadVideoCmd implements OperationCmd {
+    public final int nodeId;
+    public final int overlayId;
     
+    public DownloadVideoCmd(int nodeId, int overlayId) {
+        this.nodeId = nodeId;
+        this.overlayId = overlayId;
+    }
 }

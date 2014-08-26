@@ -27,16 +27,18 @@ import se.sics.kompics.KompicsEvent;
  */
 public class GvodMsg {
 
-    public static class Request implements KompicsEvent {
+    public static abstract class Request implements KompicsEvent {
 
         public final UUID reqId;
 
         public Request(UUID reqId) {
             this.reqId = reqId;
         }
+        
+        public abstract <E extends Request> E copy();
     }
 
-    public static class Response implements KompicsEvent {
+    public static abstract class Response implements KompicsEvent {
 
         public final UUID reqId;
         public final ReqStatus status;
@@ -45,14 +47,18 @@ public class GvodMsg {
             this.reqId = reqId;
             this.status = status;
         }
+        
+        public abstract <E extends Response> E copy();
     }
 
-    public static class OneWay implements KompicsEvent {
+    public static abstract class OneWay implements KompicsEvent {
 
         public final UUID reqId;
 
         public OneWay(UUID reqId) {
             this.reqId = reqId;
         }
+        
+        public abstract <E extends OneWay> E copy();
     }
 }

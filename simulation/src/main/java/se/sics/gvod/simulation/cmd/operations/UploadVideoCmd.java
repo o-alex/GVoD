@@ -17,17 +17,24 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system;
+package se.sics.gvod.simulation.cmd.operations;
 
-import se.sics.kompics.Init;
+import se.sics.gvod.simulation.cmd.OperationCmd;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDInit extends Init<VoDComp>{
-    public final VoDConfiguration config;
+public class UploadVideoCmd implements OperationCmd {
+    public final int nodeId;
+    public final int overlayId;
     
-    public VoDInit(VoDConfiguration config) {
-        this.config = config;
+    public UploadVideoCmd(int nodeId, int overlayId) {
+        this.nodeId = nodeId;
+        this.overlayId = overlayId;
+    }
+    
+    @Override
+    public String toString() {
+        return "UploadVideoCmd - node:" + nodeId + " overlay:" + overlayId;
     }
 }

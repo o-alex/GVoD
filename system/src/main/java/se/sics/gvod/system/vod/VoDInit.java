@@ -17,25 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.server.peerManager;
+package se.sics.gvod.system.vod;
 
-import java.util.Set;
-import se.sics.gvod.net.VodAddress;
+import se.sics.kompics.Init;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface PeerManager {
+public class VoDInit extends Init<VoDComp>{
+    public final VoDConfiguration config;
     
-    public Set<VodAddress> getSystemSample();
-    public void addVodPeer(VodAddress peerAdr);
-    public void addOverlay(int overlayId) throws PMException;
-    public void addOverlayPeer(int overlayId, VodAddress peerAdr) throws PMException;
-    public Set<VodAddress> getOverlaySample(int overlayId) throws PMException ;
-    
-    public static class PMException extends Exception {
-        public PMException(String message) {
-            super(message);
-        }
+    public VoDInit(VoDConfiguration config) {
+        this.config = config;
     }
 }

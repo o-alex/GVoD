@@ -16,24 +16,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
-import se.sics.kompics.network.Network;
+package se.sics.gvod.simulation.cmd;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VideoComp extends ComponentDefinition {
-
-    private static final Logger log = LoggerFactory.getLogger(VideoComp.class);
-
-    private Positive<Network> network = requires(Network.class);
-
-    public VideoComp(VideoInit init) {
-
-    }
+public interface OperationCmd extends SimulationCmd {
 }
