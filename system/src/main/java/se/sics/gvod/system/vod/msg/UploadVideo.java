@@ -36,6 +36,11 @@ public class UploadVideo {
         }
         
         @Override
+        public Request copy() {
+            return new Request(overlayId);
+        }
+        
+        @Override
         public String toString() {
             return "UploadVideo.Request " + reqId.toString();
         }

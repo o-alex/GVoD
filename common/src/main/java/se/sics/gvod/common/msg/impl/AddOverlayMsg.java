@@ -46,6 +46,11 @@ public class AddOverlayMsg {
         }
         
         @Override
+        public Request copy() {
+            return new Request(reqId, overlayId);
+        }
+        
+        @Override
         public String toString() {
             return "AddOverlayRequest " + reqId.toString();
         }
@@ -81,6 +86,11 @@ public class AddOverlayMsg {
         
         public Response(UUID reqId, ReqStatus status) {
             super(reqId, status);
+        }
+        
+        @Override
+        public Response copy() {
+            return new Response(reqId, status);
         }
      
         @Override

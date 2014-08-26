@@ -26,7 +26,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.common.msg.GvodNetMsg;
+import se.sics.gvod.network.nettymsg.GvodNetMsg;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;

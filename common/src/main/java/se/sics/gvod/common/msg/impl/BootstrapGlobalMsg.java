@@ -19,6 +19,7 @@
 
 package se.sics.gvod.common.msg.impl;
 
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -38,6 +39,11 @@ public class BootstrapGlobalMsg {
 
         public Response success(Set<VodAddress> systemSample) {
             return new Response(reqId, ReqStatus.SUCCESS, systemSample);
+        }
+        
+        @Override
+        public Request copy() {
+            return new Request(reqId);
         }
         
         @Override
@@ -73,6 +79,11 @@ public class BootstrapGlobalMsg {
         public Response(UUID reqId, ReqStatus status, Set<VodAddress> systemSample) {
             super(reqId, status);
             this.systemSample = systemSample;
+        }
+        
+        @Override
+        public Response copy() {
+            return new Response(reqId, status, new HashSet<>(systemSample));
         }
         
         @Override

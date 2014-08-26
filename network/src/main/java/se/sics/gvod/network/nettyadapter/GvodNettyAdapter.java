@@ -20,7 +20,7 @@ package se.sics.gvod.network.nettyadapter;
 
 import io.netty.buffer.ByteBuf;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.common.msg.GvodNetMsg;
+import se.sics.gvod.network.nettymsg.GvodNetMsg;
 import se.sics.gvod.common.msgs.DirectMsgNettyFactory;
 import se.sics.gvod.common.msgs.MessageDecodingException;
 import se.sics.gvod.net.msgs.DirectMsg;

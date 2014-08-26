@@ -18,6 +18,8 @@
  */
 package se.sics.gvod.common.msg.impl;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -46,6 +48,11 @@ public class JoinOverlayMsg {
 
         public Response fail() {
             return new Response(reqId, ReqStatus.FAIL, null);
+        }
+        
+        @Override
+        public Request copy() {
+            return new Request(reqId, new HashSet<>(overlayIds));
         }
         
         @Override
@@ -83,13 +90,22 @@ public class JoinOverlayMsg {
 
     public static class Response extends GvodMsg.Response {
 
-        public final Map<Integer, Set<VodAddress>> overlaySample;
+        public final Map<Integer, Set<VodAddress>> overlaySamples;
 
-        public Response(UUID reqId, ReqStatus status, Map<Integer, Set<VodAddress>> overlaySample) {
+        public Response(UUID reqId, ReqStatus status, Map<Integer, Set<VodAddress>> overlaySamples) {
             super(reqId, status);
-            this.overlaySample = overlaySample;
+            this.overlaySamples = overlaySamples;
         }
 
+        @Override
+        public Response copy() {
+            Map<Integer, Set<VodAddress>> newOverlaySamples = new HashMap<>();
+            for(Map.Entry<Integer, Set<VodAddress>> e : overlaySamples.entrySet()) {
+                newOverlaySamples.put(e.getKey(), new HashSet<>(e.getValue()));
+            }
+            return new Response(reqId, status, newOverlaySamples);
+        }
+        
         @Override
         public String toString() {
             return "JoinOverlayMsgResponse<" + status.toString() + "> " + reqId.toString();
@@ -99,7 +115,7 @@ public class JoinOverlayMsg {
         public int hashCode() {
             int hash = 7;
             hash = 17 * hash + Objects.hashCode(this.reqId);
-            hash = 17 * hash + Objects.hashCode(this.overlaySample);
+            hash = 17 * hash + Objects.hashCode(this.overlaySamples);
             return hash;
         }
 
@@ -115,7 +131,7 @@ public class JoinOverlayMsg {
             if (!Objects.equals(this.reqId, other.reqId)) {
                 return false;
             }
-            if (!Objects.equals(this.overlaySample, other.overlaySample)) {
+            if (!Objects.equals(this.overlaySamples, other.overlaySamples)) {
                 return false;
             }
             return true;

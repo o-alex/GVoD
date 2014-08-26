@@ -21,9 +21,13 @@ package se.sics.gvod.network;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.UUID;
 import junit.framework.Assert;
 import org.junit.Test;
+import se.sics.gvod.address.Address;
+import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -33,15 +37,24 @@ public class UtilTests {
     @Test
     public void testUUID() {
         UUID expected = UUID.randomUUID();
+        int expectedSize = Util.getUUIDEncodedSize();
         ByteBuf buf = Unpooled.buffer();
         Util.encodeUUID(buf, expected);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
         UUID decoded = Util.decodeUUID(newBuf);
         Assert.assertEquals(expected, decoded);
+        Assert.assertEquals(expectedSize, buf.readableBytes());
     }
     
     @Test 
-    public void testVodAddress() {
-        
+    public void testVodAddress() throws UnknownHostException {
+        VodAddress expected = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 1), -1);
+        int expectedSize = Util.getVodAddressEncodedSize(expected);
+        ByteBuf buf = Unpooled.buffer();
+        Util.encodeVodAddress(buf, expected);
+        ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
+        VodAddress decoded = Util.decodeVodAddress(newBuf);
+        Assert.assertEquals(expected, decoded);
+        Assert.assertEquals(expectedSize, buf.readableBytes());
     }
 }

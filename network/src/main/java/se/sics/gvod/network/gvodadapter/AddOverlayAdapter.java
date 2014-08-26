@@ -50,6 +50,15 @@ public class AddOverlayAdapter {
 
             return buffer;
         }
+        
+        @Override
+        public int getEncodedSize(AddOverlayMsg.Request req) {
+            int size = 0;
+            size += 1; //type
+            size += Util.getUUIDEncodedSize();
+            size += 4; //overlayId;
+            return size;
+        }
 
     }
 
@@ -71,6 +80,15 @@ public class AddOverlayAdapter {
             Util.encodeReqStatus(buffer, resp.status);
 
             return buffer;
+        }
+
+        @Override
+        public int getEncodedSize(AddOverlayMsg.Response resp) {
+            int size = 0;
+            size += 1; //type
+            size += Util.getUUIDEncodedSize();
+            size += Util.getReqStatusEncodedSize();
+            return size;
         }
     }
 }

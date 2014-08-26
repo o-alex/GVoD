@@ -104,7 +104,7 @@ public class VoDComp extends ComponentDefinition {
 
         @Override
         public void handle(JoinOverlayMsg.Response resp) {
-            log.trace("{} - {} - peers:{}", new Object[]{config.self.toString(), resp.toString(), resp.overlaySample.toString()});
+            log.trace("{} - {} - peers:{}", new Object[]{config.self.toString(), resp.toString(), resp.overlaySamples.toString()});
         }
     };
 }

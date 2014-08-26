@@ -48,6 +48,14 @@ public class BootstrapGlobalAdapter {
             Util.encodeUUID(buffer, req.reqId);
             return buffer;
         }
+
+        @Override
+        public int getEncodedSize(BootstrapGlobalMsg.Request req) {
+            int size = 0;
+            size += 1; //type
+            size += Util.getUUIDEncodedSize();
+            return size;
+        }
     }
 
     public static class Response implements GVoDAdapter<BootstrapGlobalMsg.Response> {
@@ -80,11 +88,26 @@ public class BootstrapGlobalAdapter {
 
             if (resp.status == ReqStatus.SUCCESS) {
                 buffer.writeInt(resp.systemSample.size());
-                for (VodAddress address : resp.systemSample) {
-                    Util.encodeVodAddress(buffer, address);
+                for (VodAddress peer : resp.systemSample) {
+                    Util.encodeVodAddress(buffer, peer);
                 }
             }
             return buffer;
+        }
+
+        @Override
+        public int getEncodedSize(BootstrapGlobalMsg.Response resp) {
+            int size = 0;
+            size += 1; //type
+            size += Util.getUUIDEncodedSize();
+            size += Util.getReqStatusEncodedSize();
+            if (resp.status == ReqStatus.SUCCESS) {
+                size += 4; //sampleSize
+                for (VodAddress peer : resp.systemSample) {
+                    size += Util.getVodAddressEncodedSize(peer);
+                }
+            }
+            return size;
         }
     }
 }

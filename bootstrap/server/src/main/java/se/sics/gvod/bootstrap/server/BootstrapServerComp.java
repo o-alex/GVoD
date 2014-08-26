@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.server.peerManager.PeerManager;
 import se.sics.gvod.bootstrap.server.peerManager.SimplePeerManager;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.common.msg.GvodNetMsg;
+import se.sics.gvod.network.nettymsg.GvodNetMsg;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.common.msg.impl.JoinOverlayMsg;

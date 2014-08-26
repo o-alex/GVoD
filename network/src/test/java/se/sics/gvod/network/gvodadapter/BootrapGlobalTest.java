@@ -38,12 +38,13 @@ import se.sics.gvod.network.GVoDAdapterFactory;
  *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BootrapGlobalTests {
+public class BootrapGlobalTest {
     
     @Test
     public void testRequest() {
         GVoDAdapter<BootstrapGlobalMsg.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_REQUEST);
         BootstrapGlobalMsg.Request expected = new BootstrapGlobalMsg.Request(UUID.randomUUID());
+        int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
@@ -57,6 +58,7 @@ public class BootrapGlobalTests {
     public void testSuccessResponse0() {
         GVoDAdapter<BootstrapGlobalMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE);
         BootstrapGlobalMsg.Response expected = new BootstrapGlobalMsg.Response(UUID.randomUUID(), ReqStatus.SUCCESS, new HashSet<VodAddress>());
+        int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
@@ -64,6 +66,7 @@ public class BootrapGlobalTests {
         Assert.assertEquals(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE, type);
         BootstrapGlobalMsg.Response decoded = adapter.decode(newBuf);
         Assert.assertEquals(expected, decoded);
+        Assert.assertEquals(expectedSize, buf.readableBytes());
     }
     
     @Test
@@ -76,6 +79,7 @@ public class BootrapGlobalTests {
         systemSample.add(new VodAddress(adr, 2));
         systemSample.add(new VodAddress(adr, 3));
         BootstrapGlobalMsg.Response expected = new BootstrapGlobalMsg.Response(UUID.randomUUID(), ReqStatus.SUCCESS, systemSample);
+        int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
         
@@ -84,12 +88,14 @@ public class BootrapGlobalTests {
         Assert.assertEquals(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE, type);
         BootstrapGlobalMsg.Response decoded = adapter.decode(newBuf);
         Assert.assertEquals(expected, decoded);
+        Assert.assertEquals(expectedSize, buf.readableBytes());
     }
     
     @Test
     public void testFail() {
         GVoDAdapter<BootstrapGlobalMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE);
         BootstrapGlobalMsg.Response expected = new BootstrapGlobalMsg.Response(UUID.randomUUID(), ReqStatus.FAIL, null);
+        int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
         
@@ -98,5 +104,6 @@ public class BootrapGlobalTests {
         Assert.assertEquals(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE, type);
         BootstrapGlobalMsg.Response decoded = adapter.decode(newBuf);
         Assert.assertEquals(expected, decoded);
+        Assert.assertEquals(expectedSize, buf.readableBytes());
     }
 }

@@ -38,9 +38,13 @@ public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
     //netty
     public static final byte GVOD_NET_REQUEST = 0x60;
     public static final byte GVOD_NET_RESPONSE = 0x61;
+    public static final byte GVOD_NET_ONEWAY = 0x62;
 
     private static final Map<Byte, NettyAdapter> nettyAdapters = new HashMap<>();
     static {
+        GvodNettyAdapter.Request.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
+        GvodNettyAdapter.Response.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
+        
         nettyAdapters.put(GVOD_NET_REQUEST, new GvodNettyAdapter.Request());
         nettyAdapters.put(GVOD_NET_RESPONSE, new GvodNettyAdapter.Response());
     }

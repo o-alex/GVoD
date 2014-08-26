@@ -26,7 +26,9 @@ import se.sics.kompics.KompicsEvent;
  */
 public interface GVoDAdapter<E extends KompicsEvent> {
 
-    public abstract E decode(ByteBuf buffer);
+    public E decode(ByteBuf buffer);
 
-    public abstract ByteBuf encode(E object, ByteBuf buffer);
+    public ByteBuf encode(E object, ByteBuf buffer);
+    
+    public int getEncodedSize(E object); 
 }

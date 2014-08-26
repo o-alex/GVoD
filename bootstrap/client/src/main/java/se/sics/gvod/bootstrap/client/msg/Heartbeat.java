@@ -18,6 +18,7 @@
  */
 package se.sics.gvod.bootstrap.client.msg;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
@@ -34,6 +35,11 @@ public final class Heartbeat extends GvodMsg.OneWay {
         this.overlayIds = overlayIds;
     }
 
+    @Override
+    public Heartbeat copy() {
+        return new Heartbeat(reqId, new HashSet<>(overlayIds));
+    }
+    
     @Override
     public String toString() {
         return "Heartbeat " + reqId.toString();

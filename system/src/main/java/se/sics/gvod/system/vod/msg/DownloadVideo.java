@@ -34,6 +34,11 @@ public class DownloadVideo {
             super(UUID.randomUUID());
             this.overlayId = overlayId;
         }
+        
+        @Override
+        public Request copy() {
+            return new Request(overlayId);
+        }
 
         @Override
         public String toString() {
