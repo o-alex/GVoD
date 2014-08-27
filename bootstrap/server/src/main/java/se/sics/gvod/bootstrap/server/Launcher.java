@@ -71,7 +71,7 @@ public class Launcher extends ComponentDefinition {
     public Launcher() {
         System.setProperty("java.net.preferIPv4Stack", "true");
         subscribe(handleStart, control);
-        config = ConfigFactory.load("server.conf");
+        config = ConfigFactory.load();
         port = config.getInt("bootstrap.address.port");
         id = config.getInt("bootstrap.address.id");
         phase1();
@@ -101,7 +101,7 @@ public class Launcher extends ComponentDefinition {
         log.info("phase 3 - starting with Address: {}", selfAddress);
         HostConfiguration hostConfig = null;
         try {
-            hostConfig = new HostConfiguration.ExecBuilder("server.conf").setSelfAddress(selfAddress).setSeed(bseed).finalise();
+            hostConfig = new HostConfiguration.ExecBuilder().setSelfAddress(selfAddress).setSeed(bseed).finalise();
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
