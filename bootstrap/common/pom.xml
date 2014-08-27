@@ -17,7 +17,6 @@
             <groupId>se.sics.gvod</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>
