@@ -39,6 +39,9 @@ public class GvodNetMsg {
 
         public Request(VodAddress vodSrc, VodAddress vodDest, E payload) {
             super(vodSrc, vodDest);
+            //TODO ALEX fix later
+            setTimeoutId(se.sics.gvod.timer.UUID.nextUUID());
+            //fix
             this.payload = payload;
         }
         
@@ -104,6 +107,9 @@ public class GvodNetMsg {
 
         public Response(VodAddress vodSrc, VodAddress vodDest, E payload) {
             super(vodSrc, vodDest);
+            //TODO ALEX fix later
+            setTimeoutId(se.sics.gvod.timer.UUID.nextUUID());
+            //fix
             this.payload = payload;
         }
         
@@ -165,6 +171,9 @@ public class GvodNetMsg {
 
         public OneWay(VodAddress vodSrc, VodAddress vodDest, E payload) {
             super(vodSrc, vodDest);
+            //TODO ALEX fix later
+            setTimeoutId(se.sics.gvod.timer.UUID.nextUUID());
+            //fix
             this.payload = payload;
         }
         

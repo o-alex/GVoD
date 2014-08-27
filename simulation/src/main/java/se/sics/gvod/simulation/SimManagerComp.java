@@ -75,7 +75,7 @@ public class SimManagerComp extends ComponentDefinition {
             log.info("bootstrap server - id {} - starting...", start.id);
             try {
                 se.sics.gvod.bootstrap.server.HostConfiguration bsConfig = 
-                        new se.sics.gvod.bootstrap.server.HostConfiguration.Builder("bootstrap.conf").setId(start.id).setSeed(new byte[]{1,2,3,4}).finalise();
+                        new se.sics.gvod.bootstrap.server.HostConfiguration.SimBuilder("bootstrap.conf").setId(start.id).setSeed(new byte[]{1,2,3,4}).finalise();
                 
                 final Component vodPeerHost = create(se.sics.gvod.bootstrap.server.HostManagerComp.class,
                         new se.sics.gvod.bootstrap.server.HostManagerInit(bsConfig));
@@ -127,7 +127,7 @@ public class SimManagerComp extends ComponentDefinition {
         public void handle(final StartVodPeerCmd start) {
             log.info("vod peer - id {} - starting...", start.id);
             try {
-                se.sics.gvod.system.HostConfiguration bsConfig = new se.sics.gvod.system.HostConfiguration.Builder("vod.conf").setId(start.id).setSeed(new byte[]{1,2,3,4}).finalise();
+                se.sics.gvod.system.HostConfiguration bsConfig = new se.sics.gvod.system.HostConfiguration.SimulationBuilder("vod.conf").setId(start.id).setSeed(new byte[]{1,2,3,4}).finalise();
 
                 final Component vodPeerHost = create(se.sics.gvod.system.HostManagerComp.class,
                         new se.sics.gvod.system.HostManagerInit(bsConfig));

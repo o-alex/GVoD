@@ -49,14 +49,14 @@ public class HostManagerComp extends ComponentDefinition {
     private Component vod;
     private Component bootstrapClient;
     private Component globalCroupier;
-    
+
     private final HostConfiguration config;
 
     public HostManagerComp(HostManagerInit init) {
         log.debug("starting... - self {}, bootstrap server {}",
                 new Object[]{init.config.self.toString(), init.config.server.toString()});
         this.config = init.config;
-        
+
         try {
             this.vodMngr = create(VoDManagerImpl.class, Init.NONE);
             this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration().finalise()));
@@ -70,9 +70,9 @@ public class HostManagerComp extends ComponentDefinition {
         connect(vod.getNegative(BootstrapClientPort.class), bootstrapClient.getPositive(BootstrapClientPort.class));
         connect(bootstrapClient.getNegative(VodNetwork.class), network);
     }
-    
+
     public VoDManager getVoDManager() {
-        VoDManagerImpl vodM = (VoDManagerImpl)vodMngr.getComponent();
+        VoDManagerImpl vodM = (VoDManagerImpl) vodMngr.getComponent();
         return vodM;
     }
 }

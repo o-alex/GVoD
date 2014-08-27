@@ -28,6 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
+import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.common.msgs.MessageEncodingException;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
@@ -54,6 +55,24 @@ public class NettyAdapterTest {
         GvodNetMsg.Request<AddOverlayMsg.Request> decoded = (GvodNetMsg.Request<AddOverlayMsg.Request>)decoder.parse(newBuf);
         Assert.assertEquals(expected, decoded);
         GVoDAdapter<AddOverlayMsg.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_REQUEST);
+        Assert.assertEquals(adapter.getEncodedSize(expected.payload), adapter.getEncodedSize(decoded.payload));
+//        Assert.assertEquals(expectedSize, buf.readableBytes());
+    }
+    
+    @Test
+    public void testRequest2() throws UnknownHostException, MessageEncodingException, Exception {
+        BootstrapGlobalMsg.Request req = new BootstrapGlobalMsg.Request(UUID.randomUUID());
+        VodAddress src = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 1), -1);
+        VodAddress dest = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 2), -1);
+        GvodNetMsg.Request<BootstrapGlobalMsg.Request> expected = new GvodNetMsg.Request<>(src, dest, req);
+        expected.setTimeoutId(se.sics.gvod.timer.UUID.nextUUID());
+        int expectedSize = expected.getSize();
+        ByteBuf buf = expected.toByteArray();
+        ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
+        GVoDNetFrameDecoder decoder = new GVoDNetFrameDecoder();
+        GvodNetMsg.Request<BootstrapGlobalMsg.Request> decoded = (GvodNetMsg.Request<BootstrapGlobalMsg.Request>)decoder.parse(newBuf);
+        Assert.assertEquals(expected, decoded);
+        GVoDAdapter<BootstrapGlobalMsg.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_REQUEST);
         Assert.assertEquals(adapter.getEncodedSize(expected.payload), adapter.getEncodedSize(decoded.payload));
 //        Assert.assertEquals(expectedSize, buf.readableBytes());
     }
