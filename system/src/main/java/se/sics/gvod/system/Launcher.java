@@ -54,8 +54,8 @@ public class Launcher extends ComponentDefinition {
 
     public static int seed = 1234;
     public static byte[] bseed = new byte[]{1,2,3,4};
-    public static int port = 23456;
-    public static int id = 123;
+    public static int port = 22001;
+    public static int id = 100;
 
     private Component timer;
     private Component resolveIp;

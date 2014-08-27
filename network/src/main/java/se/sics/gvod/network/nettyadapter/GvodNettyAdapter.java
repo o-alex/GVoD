@@ -65,8 +65,12 @@ public class GvodNettyAdapter {
 
         //**********NettyAdapter
         @Override
-        public RewriteableMsg decodeMsg(ByteBuf buffer) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        public RewriteableMsg decodeMsg(ByteBuf buffer) throws DecodingException {
+            try {
+                return decode(buffer);
+            } catch (MessageDecodingException ex) {
+                throw new DecodingException(ex);
+            }
         }
 
         @Override

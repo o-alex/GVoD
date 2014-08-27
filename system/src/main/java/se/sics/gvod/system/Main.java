@@ -50,7 +50,7 @@ public class Main {
     }
     
     private static void doStuff() {
-//        VoDManager manager = Launcher.getVoDManager();
-//        manager.uploadVideo(1);
+        VoDManager manager = Launcher.getVoDManager();
+        manager.uploadVideo(1);
     }
 }
