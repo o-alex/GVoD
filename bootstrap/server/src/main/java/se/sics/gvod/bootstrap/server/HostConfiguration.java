@@ -25,7 +25,7 @@ import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.bootstrap.server.peerManager.PeerManagerConfig;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.GVoDConfigException;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -74,7 +74,7 @@ public class HostConfiguration {
             return this;
         }
 
-        public HostConfiguration finalise() throws ConfigException.Missing {
+        public HostConfiguration finalise() throws GVoDConfigException.Missing {
             try {
                 Address self = new Address(
                         InetAddress.getByName(config.getString("bootstrap.address.ip")),
@@ -82,14 +82,14 @@ public class HostConfiguration {
                         id == null ? config.getInt("bootstrap.address.id") : id
                 );
                 if (seed == null) {
-                    throw new ConfigException.Missing("missing seed");
+                    throw new GVoDConfigException.Missing("missing seed");
                 }
 
                 return new HostConfiguration(config, new VodAddress(self, -1), seed);
             } catch (UnknownHostException ex) {
-                throw new ConfigException.Missing(ex.getMessage());
+                throw new GVoDConfigException.Missing(ex.getMessage());
             } catch (com.typesafe.config.ConfigException.Missing ex) {
-                throw new ConfigException.Missing(ex.getMessage());
+                throw new GVoDConfigException.Missing(ex.getMessage());
             }
         }
     }
@@ -118,12 +118,12 @@ public class HostConfiguration {
             return this;
         }
 
-        public HostConfiguration finalise() throws ConfigException.Missing {
+        public HostConfiguration finalise() throws GVoDConfigException.Missing {
             if (selfAddress == null) {
-                throw new ConfigException.Missing("self Address");
+                throw new GVoDConfigException.Missing("self Address");
             }
             if (seed == null) {
-                throw new ConfigException.Missing("missing seed");
+                throw new GVoDConfigException.Missing("missing seed");
             }
 
             return new HostConfiguration(config, new VodAddress(selfAddress, -1), seed);

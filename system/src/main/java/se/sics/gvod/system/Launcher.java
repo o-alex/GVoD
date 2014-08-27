@@ -24,7 +24,7 @@ import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.net.NatNetworkControl;
 import se.sics.gvod.net.NettyInit;
@@ -110,7 +110,7 @@ public class Launcher extends ComponentDefinition {
         HostConfiguration hostConfig = null;
         try {
             hostConfig = new HostConfiguration.ExecBuilder("vod.conf").setSelfAddress(selfAddress).setSeed(bseed).finalise();
-        } catch (ConfigException.Missing ex) {
+        } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
         manager = create(HostManagerComp.class, new HostManagerInit(hostConfig));

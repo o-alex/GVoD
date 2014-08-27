@@ -31,7 +31,7 @@ import se.sics.gvod.network.nettymsg.GvodNetMsg;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.common.util.MsgProcessor;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
@@ -60,7 +60,7 @@ public class BootstrapServerComp extends ComponentDefinition {
         this.msgProc = new MsgProcessor();
         try {
             this.peerManager = new SimplePeerManager(config.getVodPeerManagerConfig().finalise());
-        } catch (ConfigException.Missing ex) {
+        } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
 

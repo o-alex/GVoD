@@ -19,7 +19,7 @@
 package se.sics.gvod.bootstrap.server.peerManager;
 
 import com.typesafe.config.Config;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.GVoDConfigException;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -45,13 +45,13 @@ public class PeerManagerConfig {
             this.seed = seed;
         }
 
-        public PeerManagerConfig finalise() throws ConfigException.Missing {
+        public PeerManagerConfig finalise() throws GVoDConfigException.Missing {
             try {
                 sampleSize = (sampleSize == null ? config.getInt("bootstrap.sampleSize") : sampleSize);
                 
                 return new PeerManagerConfig(seed, sampleSize);
             } catch (com.typesafe.config.ConfigException.Missing ex) {
-                throw new ConfigException.Missing(ex.getMessage());
+                throw new GVoDConfigException.Missing(ex.getMessage());
             }
         }
     }

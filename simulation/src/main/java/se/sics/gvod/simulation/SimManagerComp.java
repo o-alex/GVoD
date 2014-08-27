@@ -22,7 +22,7 @@ import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.common.network.filters.NodeIdFilter;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.simulation.cmd.operations.DownloadVideoCmd;
@@ -85,7 +85,7 @@ public class SimManagerComp extends ComponentDefinition {
                 connect(vodPeerHost.getNegative(Timer.class), timer);
 
                 trigger(Start.event, vodPeerHost.control());
-            } catch (ConfigException.Missing ex) {
+            } catch (GVoDConfigException.Missing ex) {
                 log.error("error loading bootstrap server configuration");
                 throw new RuntimeException(ex);
             }
@@ -137,7 +137,7 @@ public class SimManagerComp extends ComponentDefinition {
                 connect(vodPeerHost.getNegative(Timer.class), timer);
 
                 trigger(Start.event, vodPeerHost.control());
-            } catch (ConfigException.Missing ex) {
+            } catch (GVoDConfigException.Missing ex) {
                 log.error("error loading vod peer configuration");
                 throw new RuntimeException(ex);
             }

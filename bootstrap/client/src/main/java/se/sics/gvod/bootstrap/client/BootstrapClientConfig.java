@@ -19,7 +19,7 @@
 package se.sics.gvod.bootstrap.client;
 
 import com.typesafe.config.Config;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
 
 /**
@@ -57,14 +57,14 @@ public class BootstrapClientConfig {
             this.seed = seed;
         }
 
-        public BootstrapClientConfig finalise() throws ConfigException.Missing {
+        public BootstrapClientConfig finalise() throws GVoDConfigException.Missing {
             try {
                 openViewSize = (openViewSize == null ? config.getInt("bootstrap.client.globalViewSize") : openViewSize);
                 storageViewSize = config.getInt("bootstrap.client.storageViewSize");
                 
                 return new BootstrapClientConfig(self, server, seed, openViewSize, storageViewSize);
             } catch (com.typesafe.config.ConfigException.Missing e) {
-                throw new ConfigException.Missing(e.getMessage());
+                throw new GVoDConfigException.Missing(e.getMessage());
             }
         }
     }

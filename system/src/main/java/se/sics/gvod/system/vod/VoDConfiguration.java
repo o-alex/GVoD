@@ -20,7 +20,7 @@
 package se.sics.gvod.system.vod;
 
 import com.typesafe.config.Config;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
 
 /**
@@ -42,7 +42,7 @@ public class VoDConfiguration {
             this.self = self;
         }
         
-        public VoDConfiguration finalise() throws ConfigException.Missing {
+        public VoDConfiguration finalise() throws GVoDConfigException.Missing {
             return new VoDConfiguration(self);
         }
     }

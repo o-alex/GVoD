@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientComp;
 import se.sics.gvod.bootstrap.client.BootstrapClientInit;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.system.vod.VoDPort;
@@ -61,7 +61,7 @@ public class HostManagerComp extends ComponentDefinition {
             this.vodMngr = create(VoDManagerImpl.class, Init.NONE);
             this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration().finalise()));
             this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig().finalise()));
-        } catch (ConfigException.Missing ex) {
+        } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
 

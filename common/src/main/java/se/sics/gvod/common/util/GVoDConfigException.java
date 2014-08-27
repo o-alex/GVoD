@@ -21,7 +21,7 @@ package se.sics.gvod.common.util;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class ConfigException {
+public class GVoDConfigException {
 
     public static class Missing extends Exception {
 

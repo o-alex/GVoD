@@ -25,7 +25,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.bootstrap.client.BootstrapClientConfig;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
 
 /**
@@ -77,7 +77,7 @@ public class HostConfiguration {
             return this;
         }
 
-        public HostConfiguration finalise() throws ConfigException.Missing {
+        public HostConfiguration finalise() throws GVoDConfigException.Missing {
             try {
                 Address self = new Address(
                         InetAddress.getByName(config.getString("vod.address.ip")),
@@ -92,13 +92,13 @@ public class HostConfiguration {
                 );
 
                 if (seed == null) {
-                    throw new ConfigException.Missing("missing seed");
+                    throw new GVoDConfigException.Missing("missing seed");
                 }
                 return new HostConfiguration(config, new VodAddress(self, -1), new VodAddress(server, -1), seed);
             } catch (UnknownHostException e) {
-                throw new ConfigException.Missing("bad host - " + e.getMessage());
+                throw new GVoDConfigException.Missing("bad host - " + e.getMessage());
             } catch (com.typesafe.config.ConfigException e) {
-                throw new ConfigException.Missing(e.getMessage());
+                throw new GVoDConfigException.Missing(e.getMessage());
             }
         }
     }
@@ -127,10 +127,10 @@ public class HostConfiguration {
             return this;
         }
 
-        public HostConfiguration finalise() throws ConfigException.Missing {
+        public HostConfiguration finalise() throws GVoDConfigException.Missing {
             try {
                 if(selfAddress == null) {
-                    throw new ConfigException.Missing("self Address");
+                    throw new GVoDConfigException.Missing("self Address");
                 }
 
                 Address serverAddress = new Address(
@@ -140,13 +140,13 @@ public class HostConfiguration {
                 );
 
                 if (seed == null) {
-                    throw new ConfigException.Missing("missing seed");
+                    throw new GVoDConfigException.Missing("missing seed");
                 }
                 return new HostConfiguration(config, new VodAddress(selfAddress, -1), new VodAddress(serverAddress, -1), seed);
             } catch (UnknownHostException e) {
-                throw new ConfigException.Missing("bad host - " + e.getMessage());
+                throw new GVoDConfigException.Missing("bad host - " + e.getMessage());
             } catch (com.typesafe.config.ConfigException e) {
-                throw new ConfigException.Missing(e.getMessage());
+                throw new GVoDConfigException.Missing(e.getMessage());
             }
         }
     }
