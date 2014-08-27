@@ -117,7 +117,7 @@ public class BootstrapServerComp extends ComponentDefinition {
         public void handle(VodAddress src, JoinOverlayMsg.Request req) {
             JoinOverlayMsg.Response resp;
             try {
-                Map<Integer, Set<VodAddress>> overlaySamples = new HashMap<>();
+                Map<Integer, Set<VodAddress>> overlaySamples = new HashMap<Integer, Set<VodAddress>>();
                 for (Integer overlayId : req.overlayIds) {
                     overlaySamples.put(overlayId, peerManager.getOverlaySample(overlayId));
                     peerManager.addOverlayPeer(overlayId, src);

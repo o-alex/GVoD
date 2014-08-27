@@ -37,7 +37,7 @@ public final class Heartbeat extends GvodMsg.OneWay {
 
     @Override
     public Heartbeat copy() {
-        return new Heartbeat(reqId, new HashSet<>(overlayIds));
+        return new Heartbeat(reqId, new HashSet<Integer>(overlayIds));
     }
     
     @Override

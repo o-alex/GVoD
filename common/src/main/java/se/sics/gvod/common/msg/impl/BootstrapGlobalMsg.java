@@ -83,7 +83,7 @@ public class BootstrapGlobalMsg {
         
         @Override
         public Response copy() {
-            return new Response(reqId, status, new HashSet<>(systemSample));
+            return new Response(reqId, status, new HashSet<VodAddress>(systemSample));
         }
         
         @Override

@@ -64,8 +64,8 @@ public class BootstrapClientComp extends ComponentDefinition {
 
         this.msgProc = new MsgProcessor();
         this.rand = new SecureRandom(config.seed);
-        this.overlayIds = new HashSet<>();
-        this.bootstrapNodes = new HashSet<>();
+        this.overlayIds = new HashSet<Integer>();
+        this.bootstrapNodes = new HashSet<VodAddress>();
 
         subscribe(handleStart, control);
         subscribe(handleNetResponse, network);

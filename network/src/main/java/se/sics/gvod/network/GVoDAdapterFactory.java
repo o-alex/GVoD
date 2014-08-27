@@ -44,7 +44,7 @@ public class GVoDAdapterFactory {
     public static final byte JOIN_OVERLAY_REQUEST = 0x07;
     public static final byte JOIN_OVERLAY_RESPONSE = 0x08;
 
-    private static final Map<Byte, GVoDAdapter<? extends KompicsEvent>> gvodAdapters = new HashMap<>();
+    private static final Map<Byte, GVoDAdapter<? extends KompicsEvent>> gvodAdapters = new HashMap<Byte, GVoDAdapter<? extends KompicsEvent>>();
 
     static {
         gvodAdapters.put(BOOTSTRAP_GLOBAL_REQUEST, new BootstrapGlobalAdapter.Request());

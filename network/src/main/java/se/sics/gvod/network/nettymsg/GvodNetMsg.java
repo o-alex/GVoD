@@ -62,7 +62,7 @@ public class GvodNetMsg {
 
         @Override
         public Request<E> copy() {
-            return new Request<>(vodSrc, vodDest, (E) payload.copy());
+            return new Request<E>(vodSrc, vodDest, (E) payload.copy());
         }
 
         @Override
@@ -126,7 +126,7 @@ public class GvodNetMsg {
 
         @Override
         public Response<E> copy() {
-            return new Response<>(vodSrc, vodDest, (E) payload.copy());
+            return new Response<E>(vodSrc, vodDest, (E) payload.copy());
         }
 
         @Override

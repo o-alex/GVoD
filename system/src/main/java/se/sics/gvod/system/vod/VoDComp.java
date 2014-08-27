@@ -87,7 +87,7 @@ public class VoDComp extends ComponentDefinition {
         @Override
         public void handle(DownloadVideo.Request req) {
             log.debug("{} - {} - overlay: {}", new Object[]{config.self.toString(), req.toString(), req.overlayId});
-            HashSet<Integer> overlayIds = new HashSet<>();
+            HashSet<Integer> overlayIds = new HashSet<Integer>();
             overlayIds.add(req.overlayId);
             trigger(new JoinOverlayMsg.Request(req.reqId, overlayIds), bootstrap);
         }

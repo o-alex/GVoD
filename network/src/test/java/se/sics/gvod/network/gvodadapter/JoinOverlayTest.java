@@ -44,7 +44,7 @@ public class JoinOverlayTest {
     @Test
     public void testRequest() {
         GVoDAdapter<JoinOverlayMsg.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_REQUEST);
-        Set<Integer> overlayIds = new HashSet<>();
+        Set<Integer> overlayIds = new HashSet<Integer>();
         overlayIds.add(1);
         JoinOverlayMsg.Request expected = new JoinOverlayMsg.Request(UUID.randomUUID(), overlayIds);
         int expectedSize = adapter.getEncodedSize(expected);
@@ -61,8 +61,8 @@ public class JoinOverlayTest {
      @Test
     public void testResponseSuccess() throws UnknownHostException {
         GVoDAdapter<JoinOverlayMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
-        Map<Integer,Set<VodAddress>> overlaySamples = new HashMap<>();
-        Set<VodAddress> overlaySample = new HashSet<>();
+        Map<Integer,Set<VodAddress>> overlaySamples = new HashMap<Integer, Set<VodAddress>>();
+        Set<VodAddress> overlaySample = new HashSet<VodAddress>();
         overlaySamples.put(1, overlaySample);
         overlaySample.add(new VodAddress(new Address(InetAddress.getLocalHost(), 12345, 1), -1));
         JoinOverlayMsg.Response expected = new JoinOverlayMsg.Response(UUID.randomUUID(), ReqStatus.SUCCESS, overlaySamples);

@@ -42,8 +42,8 @@ public class SimplePeerManager implements PeerManager {
     public SimplePeerManager(PeerManagerConfig config) {
         this.config = config;
         
-        this.overlayPeers = new HashMap<>();
-        this.systemPeers = new ArrayList<>();
+        this.overlayPeers = new HashMap<Integer, List<VodAddress>>();
+        this.systemPeers = new ArrayList<VodAddress>();
         this.rand = new SecureRandom(config.seed);
     }
     
@@ -71,7 +71,7 @@ public class SimplePeerManager implements PeerManager {
 
     @Override
     public Set<VodAddress> getOverlaySample(int overlayId) throws PeerManager.PMException {
-        Set<VodAddress> sample = new HashSet<>();
+        Set<VodAddress> sample = new HashSet<VodAddress>();
         
         List<VodAddress> overlay = overlayPeers.get(overlayId);
         if(overlay == null) {
@@ -90,7 +90,7 @@ public class SimplePeerManager implements PeerManager {
 
     @Override
     public Set<VodAddress> getSystemSample() {
-        Set<VodAddress> sample = new HashSet<>();
+        Set<VodAddress> sample = new HashSet<VodAddress>();
         
         if(config.sampleSize >= systemPeers.size()) {
             sample.addAll(systemPeers);

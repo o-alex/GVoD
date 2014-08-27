@@ -46,7 +46,7 @@ public class NettyAdapterTest {
         AddOverlayMsg.Request req = new AddOverlayMsg.Request(UUID.randomUUID(), 1);
         VodAddress src = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 1), -1);
         VodAddress dest = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 2), -1);
-        GvodNetMsg.Request<AddOverlayMsg.Request> expected = new GvodNetMsg.Request<>(src, dest, req);
+        GvodNetMsg.Request<AddOverlayMsg.Request> expected = new GvodNetMsg.Request<AddOverlayMsg.Request>(src, dest, req);
         expected.setTimeoutId(se.sics.gvod.timer.UUID.nextUUID());
         int expectedSize = expected.getSize();
         ByteBuf buf = expected.toByteArray();
@@ -64,7 +64,7 @@ public class NettyAdapterTest {
         BootstrapGlobalMsg.Request req = new BootstrapGlobalMsg.Request(UUID.randomUUID());
         VodAddress src = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 1), -1);
         VodAddress dest = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 2), -1);
-        GvodNetMsg.Request<BootstrapGlobalMsg.Request> expected = new GvodNetMsg.Request<>(src, dest, req);
+        GvodNetMsg.Request<BootstrapGlobalMsg.Request> expected = new GvodNetMsg.Request<BootstrapGlobalMsg.Request>(src, dest, req);
         expected.setTimeoutId(se.sics.gvod.timer.UUID.nextUUID());
         int expectedSize = expected.getSize();
         ByteBuf buf = expected.toByteArray();

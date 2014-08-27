@@ -52,7 +52,7 @@ public class JoinOverlayMsg {
         
         @Override
         public Request copy() {
-            return new Request(reqId, new HashSet<>(overlayIds));
+            return new Request(reqId, new HashSet<Integer>(overlayIds));
         }
         
         @Override
@@ -99,9 +99,9 @@ public class JoinOverlayMsg {
 
         @Override
         public Response copy() {
-            Map<Integer, Set<VodAddress>> newOverlaySamples = new HashMap<>();
+            Map<Integer, Set<VodAddress>> newOverlaySamples = new HashMap<Integer,Set<VodAddress>>();
             for(Map.Entry<Integer, Set<VodAddress>> e : overlaySamples.entrySet()) {
-                newOverlaySamples.put(e.getKey(), new HashSet<>(e.getValue()));
+                newOverlaySamples.put(e.getKey(), new HashSet<VodAddress>(e.getValue()));
             }
             return new Response(reqId, status, newOverlaySamples);
         }

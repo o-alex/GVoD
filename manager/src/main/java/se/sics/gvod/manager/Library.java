@@ -35,7 +35,7 @@ public class Library {
 
     public Library(String path) throws ManagerExceptions.LibraryException {
         this.path = path;
-        this.files = new TreeMap<>();
+        this.files = new TreeMap<String, FileDescriptor>();
         this.view = Collections.unmodifiableMap(files);
 
         loadLibrary();

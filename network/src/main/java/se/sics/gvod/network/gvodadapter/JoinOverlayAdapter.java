@@ -85,11 +85,11 @@ public class JoinOverlayAdapter {
             Map<Integer, Set<VodAddress>> overlaySamples = null;
             if (status == ReqStatus.SUCCESS) {
                 int sampleMapSize = buffer.readInt();
-                overlaySamples = new HashMap<>();
+                overlaySamples = new HashMap<Integer, Set<VodAddress>>();
                 for (int i = 0; i < sampleMapSize; i++) {
                     int overlayId = buffer.readInt();
                     int sampleSize = buffer.readInt();
-                    Set<VodAddress> overlaySample = new HashSet<>();
+                    Set<VodAddress> overlaySample = new HashSet<VodAddress>();
                     overlaySamples.put(overlayId, overlaySample);
                     for(int j = 0; j < sampleSize; j++) {
                         VodAddress peer = Util.decodeVodAddress(buffer);

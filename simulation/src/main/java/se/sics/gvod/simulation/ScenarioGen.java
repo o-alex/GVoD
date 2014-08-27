@@ -94,12 +94,12 @@ public class ScenarioGen {
         SimulationScenario scen = new SimulationScenario() {
             {
                 final Random rand = new Random(seed);
-                final Distribution<Integer> bootstrapIdDist = new ConstantDistribution<>(Integer.class, 0);
+                final Distribution<Integer> bootstrapIdDist = new ConstantDistribution<Integer>(Integer.class, 0);
                 final Distribution<Integer> vodPeerIdDist = new IntegerUniformDistribution(1, 65535, new Random(seed));
-                final Distribution<Integer> videoIdDist = new ConstantDistribution<>(Integer.class, 1);
+                final Distribution<Integer> videoIdDist = new ConstantDistribution<Integer>(Integer.class, 1);
                 //generate the same ids - first id will be the uploader
                 final Distribution<Integer> videoPeerIdDist = new IntegerUniformDistribution(1, 65535, new Random(seed));
-                final Distribution<Integer> uploaderIdDist = new ConstantDistribution<>(Integer.class, videoPeerIdDist.draw());
+                final Distribution<Integer> uploaderIdDist = new ConstantDistribution<Integer>(Integer.class, videoPeerIdDist.draw());
                 final Distribution<Integer> downloaderIdDist = videoPeerIdDist;
 
                 StochasticProcess startBootstrapServerProc = new StochasticProcess() {
