@@ -18,7 +18,7 @@
  */
 package se.sics.gvod.common.msg.impl;
 
-import java.util.Objects;
+import com.google.common.base.Objects;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
@@ -72,7 +72,7 @@ public class AddOverlayMsg {
                 return false;
             }
             final Request other = (Request) obj;
-            if (!Objects.equals(this.reqId, other.reqId)) {
+            if (!Objects.equal(this.reqId, other.reqId)) {
                 return false;
             }
             if (this.overlayId != other.overlayId) {
@@ -115,7 +115,7 @@ public class AddOverlayMsg {
                 return false;
             }
             final Response other = (Response) obj;
-            if (!Objects.equals(this.reqId, other.reqId)) {
+            if (!Objects.equal(this.reqId, other.reqId)) {
                 return false;
             }
             if (this.status != other.status) {

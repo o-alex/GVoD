@@ -21,7 +21,7 @@ package se.sics.gvod.common.msg.impl;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
+import com.google.common.base.Objects;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
@@ -78,10 +78,10 @@ public class JoinOverlayMsg {
                 return false;
             }
             final Request other = (Request) obj;
-            if (!Objects.equals(this.reqId, other.reqId)) {
+            if (!Objects.equal(this.reqId, other.reqId)) {
                 return false;
             }
-            if (!Objects.equals(this.overlayIds, other.overlayIds)) {
+            if (!Objects.equal(this.overlayIds, other.overlayIds)) {
                 return false;
             }
             return true;
@@ -128,10 +128,10 @@ public class JoinOverlayMsg {
                 return false;
             }
             final Response other = (Response) obj;
-            if (!Objects.equals(this.reqId, other.reqId)) {
+            if (!Objects.equal(this.reqId, other.reqId)) {
                 return false;
             }
-            if (!Objects.equals(this.overlaySamples, other.overlaySamples)) {
+            if (!Objects.equal(this.overlaySamples, other.overlaySamples)) {
                 return false;
             }
             return true;

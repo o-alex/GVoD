@@ -20,7 +20,7 @@
 package se.sics.gvod.common.msg.impl;
 
 import java.util.HashSet;
-import java.util.Objects;
+import com.google.common.base.Objects;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
@@ -67,7 +67,7 @@ public class BootstrapGlobalMsg {
                 return false;
             }
             final Request other = (Request) that;
-            if (!Objects.equals(this.reqId, other.reqId)) {
+            if (!Objects.equal(this.reqId, other.reqId)) {
                 return false;
             }
             return true;
@@ -109,13 +109,13 @@ public class BootstrapGlobalMsg {
                 return false;
             }
             final Response other = (Response) obj;
-            if (!Objects.equals(this.systemSample, other.systemSample)) {
+            if (!Objects.equal(this.systemSample, other.systemSample)) {
                 return false;
             }
             if (this.status != other.status) {
                 return false;
             }
-            if (!Objects.equals(this.reqId, other.reqId)) {
+            if (!Objects.equal(this.reqId, other.reqId)) {
                 return false;
             }
             return true;

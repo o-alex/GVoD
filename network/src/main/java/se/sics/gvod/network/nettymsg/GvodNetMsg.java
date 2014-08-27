@@ -19,7 +19,7 @@
 package se.sics.gvod.network.nettymsg;
 
 import io.netty.buffer.ByteBuf;
-import java.util.Objects;
+import com.google.common.base.Objects;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msgs.DirectMsgNetty;
 import se.sics.gvod.common.msgs.MessageEncodingException;
@@ -94,7 +94,7 @@ public class GvodNetMsg {
                 return false;
             }
             final Request<E> other = (Request<E>) obj;
-            if (!Objects.equals(this.payload, other.payload)) {
+            if (!Objects.equal(this.payload, other.payload)) {
                 return false;
             }
             return true;
@@ -158,7 +158,7 @@ public class GvodNetMsg {
                 return false;
             }
             final Response<E> other = (Response<E>) obj;
-            if (!Objects.equals(this.payload, other.payload)) {
+            if (!Objects.equal(this.payload, other.payload)) {
                 return false;
             }
             return true;
@@ -222,7 +222,7 @@ public class GvodNetMsg {
                 return false;
             }
             final OneWay<E> other = (OneWay<E>) obj;
-            if (!Objects.equals(this.payload, other.payload)) {
+            if (!Objects.equal(this.payload, other.payload)) {
                 return false;
             }
             return true;
