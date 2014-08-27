@@ -18,6 +18,8 @@
  */
 package se.sics.gvod.system;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +56,7 @@ public class Launcher extends ComponentDefinition {
 
     public static int seed = 1234;
     public static byte[] bseed = new byte[]{1,2,3,4};
-    public static int port = 22001;
+    public static int port = 22009;
     public static int id = 100;
 
     private Component timer;
@@ -66,6 +68,9 @@ public class Launcher extends ComponentDefinition {
     
     private static VoDManager vodManager;
     
+    //TODO ALEX fix
+    private Config config;
+    //fix
     public static VoDManager getVoDManager() {
         return vodManager;
     }
@@ -73,7 +78,10 @@ public class Launcher extends ComponentDefinition {
     public Launcher() {
         System.setProperty("java.net.preferIPv4Stack", "true");
         subscribe(handleStart, control);
-
+        
+        config = ConfigFactory.load("vod.conf");
+        port = config.getInt("vod.address.port");
+        id = config.getInt("vod.address.id");
         phase1();
     }
 

@@ -19,6 +19,8 @@
 
 package se.sics.gvod.system;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import se.sics.gvod.manager.VoDManager;
 import se.sics.kompics.Kompics;
 
@@ -50,6 +52,11 @@ public class Main {
     }
     
     private static void doStuff() {
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
         VoDManager manager = Launcher.getVoDManager();
         manager.uploadVideo(1);
     }

@@ -18,6 +18,8 @@
  */
 package se.sics.gvod.bootstrap.server;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,20 +55,25 @@ public class Launcher extends ComponentDefinition {
 
     public static int seed = 1234;
     public static byte[] bseed = new byte[]{1,2,3,4};
-    public static int port = 23456;
-    public static int id = 123;
-
+    private int port;
+    private int id;
+    //TODO ALEX fix
+    private Config config;
+    //fix
     private Component timer;
     private Component resolveIp;
     private Component network;
     private Component manager;
 
     private Address selfAddress;
+    
 
     public Launcher() {
         System.setProperty("java.net.preferIPv4Stack", "true");
         subscribe(handleStart, control);
-
+        config = ConfigFactory.load("server.conf");
+        port = config.getInt("bootstrap.address.port");
+        id = config.getInt("bootstrap.address.id");
         phase1();
     }
 
