@@ -6,3 +6,6 @@
 /common/target/
 /manager/target/
 /network/target/
+/bootstrap/caracal-client/target/
+/bootstrap/gserver/target/
+/bootstrap/cserver/target/

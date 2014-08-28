@@ -13,6 +13,7 @@
         <module>server</module>
         <module>client</module>
         <module>common</module>
-        <module>caracal-client</module>
+        <module>gserver</module>
+        <module>cserver</module>
     </modules>
 </project>

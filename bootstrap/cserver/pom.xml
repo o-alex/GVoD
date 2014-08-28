@@ -6,9 +6,9 @@
         <artifactId>bootstrap</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <name>Bootstrap Client</name>
     <groupId>se.sics.gvod.bootstrap</groupId>
-    <artifactId>client</artifactId>
+    <artifactId>cserver</artifactId>
+    <name>Bootstrap CServer</name>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     
@@ -23,22 +23,23 @@
             <artifactId>common</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>se.sics.gvod</groupId>
-            <artifactId>network</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         
         <dependency>
-            <groupId>se.sics.kompics</groupId>
-            <artifactId>kompics-core</artifactId>
+            <groupId>se.sics.kompics.basic</groupId>
+            <artifactId>kompics-key-address</artifactId>
             <version>${kompics.version}</version>
         </dependency>
         <dependency>
             <groupId>se.sics.kompics.basic</groupId>
-            <artifactId>kompics-component-netty-network</artifactId>
+            <artifactId>kompics-port-virtual-network</artifactId>
             <version>${kompics.version}</version>
-            <type>jar</type>
         </dependency>
+        
+        <dependency>
+            <groupId>se.sics.caracaldb</groupId>
+            <artifactId>caracaldb-core</artifactId>
+            <version>0.0.5-SNAPSHOT</version>
+        </dependency>
+        
     </dependencies>
 </project>
