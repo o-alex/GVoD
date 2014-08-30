@@ -17,16 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.cserver.operations;
-
-import java.util.UUID;
-import se.sics.caracaldb.operations.CaracalOp;
+package se.sics.gvod.cserver;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface Operation {
-    public UUID getId();
-    public void start();
-    public void handle(CaracalOp resp);
+public class CServerManager {
+    
 }

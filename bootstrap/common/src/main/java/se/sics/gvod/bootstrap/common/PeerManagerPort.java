@@ -19,9 +19,9 @@
 
 package se.sics.gvod.bootstrap.common;
 
-import se.sics.gvod.common.msg.impl.AddOverlayMsg;
-import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
-import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.bootstrap.common.msg.AddOverlay;
+import se.sics.gvod.bootstrap.common.msg.AddOverlayPeer;
+import se.sics.gvod.bootstrap.common.msg.GetOverlaySample;
 import se.sics.kompics.PortType;
 
 /**
@@ -29,11 +29,12 @@ import se.sics.kompics.PortType;
  */
 public class PeerManagerPort extends PortType {
     {
-        request(BootstrapGlobalMsg.Request.class);
-        request(AddOverlayMsg.Request.class);
-        request(JoinOverlayMsg.Request.class);
-        indication(BootstrapGlobalMsg.Response.class);
-        indication(AddOverlayMsg.Response.class);
-        indication(JoinOverlayMsg.Response.class);
+        request(AddOverlay.Request.class);
+        request(AddOverlayPeer.Request.class);
+        request(GetOverlaySample.Request.class);
+        
+        indication(AddOverlay.Response.class);
+        indication(AddOverlayPeer.Response.class);
+        indication(GetOverlaySample.Response.class);
     }
 }

@@ -17,16 +17,30 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.cserver.operations;
+package se.sics.gvod.cserver;
 
-import java.util.UUID;
-import se.sics.caracaldb.operations.CaracalOp;
+import se.sics.caracaldb.Key;
+import se.sics.caracaldb.KeyRange;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface Operation {
-    public UUID getId();
-    public void start();
-    public void handle(CaracalOp resp);
+public class CaracalKeyFactory {
+    public static KeyRange getOverlayRange(int overlayId) {
+        if(overlayId == Integer.MAX_VALUE) {
+            return new KeyRange(KeyRange.Bound.CLOSED, new Key(overlayId), Key.INF, KeyRange.Bound.OPEN);
+        } else {
+            return new KeyRange(KeyRange.Bound.CLOSED, new Key(overlayId), new Key(overlayId + 1), KeyRange.Bound.OPEN);
+        }
+    }
+    
+    public static Key getOverlayPeerKey(int overlayId, int nodeId) {
+        return new Key(overlayId, nodeId);
+    }
+    
+    public static class KeyException extends Exception {
+        public KeyException(String message) {
+            super(message);
+        }
+    }
 }

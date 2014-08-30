@@ -35,12 +35,14 @@ public class BCServerConfig {
     public final Address caracalServer;
     public final Config config;
     public final byte[] seed;
+    public final int sampleSize;
 
-    private BCServerConfig(Config config, Address self, Address caracalServer, byte[] seed) {
+    private BCServerConfig(Config config, Address self, Address caracalServer, byte[] seed, int sampleSize) {
         this.config = config;
         this.self = self;
         this.caracalServer = caracalServer;
         this.seed = seed;
+        this.sampleSize = sampleSize;
     }
 
     public static class ExecBuilder {
@@ -48,6 +50,7 @@ public class BCServerConfig {
         private Config config;
         private Address selfAddress;
         private byte[] seed;
+        private int sampleSize;
 
         public ExecBuilder() {
             this.config = ConfigFactory.load();
@@ -77,13 +80,14 @@ public class BCServerConfig {
                         InetAddress.getByName(config.getString("caracal.address.ip")),
                         config.getInt("caracal.address.port"),
                         null);
+                sampleSize = config.getInt("bootstrap.sampleSize");
 
             } catch (UnknownHostException ex) {
                 throw new GVoDConfigException.Missing("ip");
             } catch (ConfigException.Missing ex) {
                 throw new GVoDConfigException.Missing("ip");
             }
-            return new BCServerConfig(config, selfAddress, caracalServer, seed);
+            return new BCServerConfig(config, selfAddress, caracalServer, seed, sampleSize);
         }
     }
 }
