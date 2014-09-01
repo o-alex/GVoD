@@ -17,16 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.storage;
-
-import java.util.Set;
+package se.sics.gvod.system.video;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface Storage {
-    public Set<Integer> nextPieces(int n, int startPos);
-    public void writePiece(int pieceId, byte[] piece);
-    public byte[] readPiece(int pieceId);
-    public boolean isComplete(int readPos);
+public class VodDescriptor {
+    public final int downloadPos;
+    
+    public VodDescriptor(int downloadPosition) {
+        this.downloadPos = downloadPosition;
+    }
 }

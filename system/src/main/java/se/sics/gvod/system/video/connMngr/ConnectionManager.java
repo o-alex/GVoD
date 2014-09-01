@@ -17,16 +17,18 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.storage;
+package se.sics.gvod.system.video.connMngr;
 
+import java.util.Map;
 import java.util.Set;
+import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.system.video.VodDescriptor;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface Storage {
-    public Set<Integer> nextPieces(int n, int startPos);
-    public void writePiece(int pieceId, byte[] piece);
-    public byte[] readPiece(int pieceId);
-    public boolean isComplete(int readPos);
+public interface ConnectionManager {
+    public void updateConnections(Map<VodAddress, VodDescriptor> vodSamples);
+    public Map<Integer, VodAddress> getPeersForPieces(Set<Integer> pieces);
+    public void finishedPieceDownload(int peerId);
 }

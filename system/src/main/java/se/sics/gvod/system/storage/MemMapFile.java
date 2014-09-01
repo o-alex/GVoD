@@ -23,30 +23,30 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
-import org.javatuples.Pair;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class MemMapFile implements Storage {
-    private static final int PIECE_LENGTH = 1024;
 
-    private final long length;
+    private static final int PIECE_LENGTH = 1024; //1KB
+
+    private final int length;
 
     private final MappedByteBuffer mbb;
-    private final List<Pair<Long,Long>> pieceRanges;
-    private final long readPos;
+    private final TreeMap<Integer, Integer> pieceRanges;
 
     public static MemMapFile getExistingFile(String pathname) throws IOException {
         File file = new File(pathname);
         return new MemMapFile(file);
     }
 
-    public static MemMapFile getEmptyFile(String pathname, long length) throws IOException {
+    public static MemMapFile getEmptyFile(String pathname, int length) throws IOException {
         File file = new File(pathname);
         if (!file.createNewFile()) {
             throw new IOException("Could not create file " + pathname);
@@ -55,57 +55,127 @@ public class MemMapFile implements Storage {
     }
 
     private MemMapFile(File file) throws IOException {
-        this.length = file.length();
-        
+        this.length = (int) file.length();
+
         RandomAccessFile raf = new RandomAccessFile(file, "r");
         mbb = raf.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, length);
         //load whole file in memory
         mbb.load();
         raf.close();
-        
-        this.pieceRanges = new ArrayList<Pair<Long,Long>>();
-        this.readPos = 0;
+
+        this.pieceRanges = new TreeMap<Integer, Integer>();
     }
-    
-    private MemMapFile(File file, long length) throws IOException {
+
+    private MemMapFile(File file, int length) throws IOException {
         this.length = length;
-        
+
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
         mbb = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, length);
         raf.close();
-        
-        this.pieceRanges = new ArrayList<Pair<Long,Long>>();
-        this.readPos = 0;
+
+        this.pieceRanges = new TreeMap<Integer, Integer>();
     }
-    
+
     @Override
-    public synchronized Set<Integer> nextPieces(int n) {
+    public synchronized Set<Integer> nextPieces(int n, int startPos) {
         Set<Integer> result = new TreeSet<Integer>();
-        for(Pair<Long, Long> pieceRange : pieceRanges) {
-            if(readPos > pieceRange.getValue1()) {
+        int nextPos = startPos;
+
+        Iterator<Map.Entry<Integer, Integer>> it = pieceRanges.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Integer, Integer> pieceRange = it.next();
+            if (nextPos >= pieceRange.getValue()) {
                 continue;
+            } else {
+                while (nextPos < pieceRange.getKey()) {
+                    result.add(nextPos);
+                    if (result.size() == n) {
+                        break;
+                    }
+                    nextPos++;
+                }
+                nextPos = pieceRange.getValue() + 1;
             }
-            long startPos = (readPos < pieceRange.getValue0() ? readPos : pieceRange.getValue0());
-            for(long i = startPos; i < pieceRange.getValue1(); i++) {
-                //here
-            }
-            
+        }
+        int lastPiece = length / PIECE_LENGTH;
+        while (result.size() < n && nextPos <= lastPiece) {
+            result.add(nextPos);
+            nextPos++;
         }
         return result;
     }
 
     @Override
     public synchronized void writePiece(int pieceId, byte[] piece) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (addToRanges(pieceId)) {
+            int writeStart = pieceId * PIECE_LENGTH;
+            mbb.position(writeStart);
+            int writeBytes = (piece.length < PIECE_LENGTH ? piece.length : PIECE_LENGTH);
+            mbb.put(piece, 0, writeBytes);
+            mbb.force();
+            System.out.println(pieceRanges);
+        }
+    }
+
+    private boolean addToRanges(Integer pieceId) {
+        Iterator<Integer> it = pieceRanges.keySet().iterator();
+        Integer key = null;
+        Integer nextKey = null;
+        nextKey = (it.hasNext() ? it.next() : null);
+        key = nextKey;
+        while (key != null) {
+            nextKey = (it.hasNext() ? it.next() : null);
+            if (key <= pieceId && pieceId <= pieceRanges.get(key)) {
+                //piece exists already
+                return false;
+            }
+            if (pieceRanges.get(key) == pieceId - 1) {
+                if (nextKey != null && nextKey == pieceId + 1) {
+                    //pieceRange = [a, pieceId-1]
+                    //nextPieceRange = [pieceId + 1, b]
+                    //remove old intervals and add new [a,b] interval
+                    pieceRanges.put(key, pieceRanges.get(nextKey));
+                    pieceRanges.remove(nextKey);
+                    return true;
+                } else {
+                    //pieceRange = [a, pieceId-1] change to [a, pieceId]
+                    pieceRanges.put(key, pieceId);
+                    return true;
+                }
+            } else if (key == pieceId + 1) {
+                //pieceRange = [pieceId + 1, b] chance to [pieceId, b]
+                pieceRanges.put(pieceId, pieceRanges.get(key));
+                pieceRanges.remove(key);
+                return true;
+            }
+            key = nextKey;
+        }
+        pieceRanges.put(pieceId, pieceId);
+        return true;
     }
 
     @Override
     public synchronized byte[] readPiece(int pieceId) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        byte[] result;
+        int lastPiece = length / PIECE_LENGTH;
+        if (lastPiece == pieceId) {
+            result = new byte[length % PIECE_LENGTH];
+        } else {
+            result = new byte[PIECE_LENGTH];
+        }
+        int readStart = pieceId * PIECE_LENGTH;
+        mbb.position(readStart);
+        mbb.get(result, 0, result.length);
+
+        return result;
     }
 
     @Override
-    public synchronized int getLastCompletePieceId() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public boolean isComplete(int readPos) {
+        Map.Entry<Integer, Integer> lastPieceRange = pieceRanges.lastEntry();
+        if (lastPieceRange == null) {
+            return false;
+        }
+        return (lastPieceRange.getKey() <= readPos && readPos <= lastPieceRange.getValue() && lastPieceRange.getValue() == length / PIECE_LENGTH);
     }
 }
