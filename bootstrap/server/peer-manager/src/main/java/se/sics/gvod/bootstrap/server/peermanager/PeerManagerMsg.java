@@ -17,33 +17,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system;
+package se.sics.gvod.bootstrap.server.peermanager;
 
-import se.sics.kompics.Kompics;
+import java.util.UUID;
+import se.sics.gvod.common.msg.ReqStatus;
+import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-
-public class Main {
+public class PeerManagerMsg {
+    public abstract static class Request implements KompicsEvent {
+        public final UUID id;
+        
+        protected Request(UUID id) {
+            this.id = id;
+        }
+    }
     
-    public static void main(String[] args) {
-        start();
-        try {
-            Kompics.waitForTermination();
-        } catch (InterruptedException ex) {
-            throw new RuntimeException(ex.getMessage());
+    public abstract static class Response implements KompicsEvent {
+        public final UUID id;
+        public final ReqStatus status;
+        
+        protected Response(UUID id, ReqStatus status) {
+            this.id = id;
+            this.status = status;
         }
-    }
-
-    public static void start() {
-        if (Kompics.isOn()) {
-            Kompics.shutdown();
-        }
-        Kompics.createAndStart(Launcher.class, Runtime.getRuntime().availableProcessors(), 20); // Yes 20 is totally arbitrary
-    }
-
-    public static void stop() {
-        Kompics.shutdown();
     }
 }

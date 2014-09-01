@@ -16,7 +16,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.common.msg.impl;
 
 import java.util.HashSet;
@@ -31,8 +30,9 @@ import se.sics.gvod.net.VodAddress;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class BootstrapGlobalMsg {
+
     public static class Request extends GvodMsg.Request {
-        
+
         public Request(UUID reqId) {
             super(reqId);
         }
@@ -40,12 +40,16 @@ public class BootstrapGlobalMsg {
         public Response success(Set<VodAddress> systemSample) {
             return new Response(reqId, ReqStatus.SUCCESS, systemSample);
         }
-        
+
+        public Response fail() {
+            return new Response(reqId, ReqStatus.FAIL, null);
+        }
+
         @Override
         public Request copy() {
             return new Request(reqId);
         }
-        
+
         @Override
         public String toString() {
             return "BootstrapGlobalRequest " + reqId.toString();
@@ -73,24 +77,26 @@ public class BootstrapGlobalMsg {
             return true;
         }
     }
-    
+
     public static class Response extends GvodMsg.Response {
+
         public final Set<VodAddress> systemSample;
+
         public Response(UUID reqId, ReqStatus status, Set<VodAddress> systemSample) {
             super(reqId, status);
             this.systemSample = systemSample;
         }
-        
+
         @Override
         public Response copy() {
             return new Response(reqId, status, new HashSet<VodAddress>(systemSample));
         }
-        
+
         @Override
         public String toString() {
             return "BootstrapGlobalResponse<" + status.toString() + "> " + reqId.toString();
-        } 
-        
+        }
+
         @Override
         public int hashCode() {
             int hash = 3;

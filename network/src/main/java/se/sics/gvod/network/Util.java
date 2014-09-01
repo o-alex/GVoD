@@ -20,15 +20,12 @@ package se.sics.gvod.network;
 
 import io.netty.buffer.ByteBuf;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msgs.MessageDecodingException;
 import se.sics.gvod.common.msgs.MessageEncodingException;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.util.UserTypesDecoderFactory;
 import se.sics.gvod.net.util.UserTypesEncoderFactory;
-import se.sics.kompics.KompicsEvent;
 
 /**
  *

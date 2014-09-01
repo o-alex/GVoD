@@ -6,9 +6,9 @@
         <artifactId>bootstrap</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <name>Bootstrap Client</name>
     <groupId>se.sics.gvod.bootstrap</groupId>
     <artifactId>client</artifactId>
+    <name>Bootstrap Client</name>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     

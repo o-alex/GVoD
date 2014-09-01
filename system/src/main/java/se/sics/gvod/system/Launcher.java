@@ -18,14 +18,12 @@
  */
 package se.sics.gvod.system;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
 import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
+import se.sics.gvod.bootstrap.cclient.BCCManagerComp;
 import se.sics.gvod.common.util.GVoDConfigException;
-import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.net.NatNetworkControl;
 import se.sics.gvod.net.NettyInit;
 import se.sics.gvod.net.NettyNetwork;
@@ -55,7 +53,7 @@ public class Launcher extends ComponentDefinition {
     private static final Logger log = LoggerFactory.getLogger(Launcher.class);
 
     public static int seed = 1234;
-    public static byte[] bseed = new byte[]{1,2,3,4};
+    public static byte[] bseed = new byte[]{1, 2, 3, 4};
     public static int port = 22009;
     public static int id = 100;
 
@@ -65,23 +63,15 @@ public class Launcher extends ComponentDefinition {
     private Component manager;
 
     private Address selfAddress;
-    
-    private static VoDManager vodManager;
-    
-    //TODO ALEX fix
-    private Config config;
-    //fix
-    public static VoDManager getVoDManager() {
-        return vodManager;
-    }
+    private final HostConfiguration.ExecBuilder config;
 
     public Launcher() {
+        log.info("init");
         System.setProperty("java.net.preferIPv4Stack", "true");
         subscribe(handleStart, control);
-        
-        config = ConfigFactory.load();
-        port = config.getInt("vod.address.port");
-        id = config.getInt("vod.address.id");
+
+        config = new HostConfiguration.ExecBuilder();
+
         phase1();
     }
 
@@ -104,25 +94,21 @@ public class Launcher extends ComponentDefinition {
         subscribe(handlePsPortBindResponse, network.getPositive(NatNetworkControl.class));
         trigger(Start.event, network.getControl());
     }
-    
-    private void phase3() {
+
+    private void phase3(Address selfAddress) {
         log.info("phase 3 - starting with Address: {}", selfAddress);
-        HostConfiguration hostConfig = null;
         try {
-            hostConfig = new HostConfiguration.ExecBuilder().setSelfAddress(selfAddress).setSeed(bseed).finalise();
+            HostConfiguration hostConfig = config.setSelfAddress(selfAddress).finalise();
+            Component peerManager = create(BCCManagerComp.class, new BCCManagerComp.BCCManagerInit(hostConfig.getBCCManagerConfig()));
+            manager = create(HostManagerComp.class, new HostManagerInit(hostConfig, peerManager));
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
-        manager = create(HostManagerComp.class, new HostManagerInit(hostConfig));
-        
+
         connect(manager.getNegative(VodNetwork.class), network.getPositive(VodNetwork.class));
         connect(manager.getNegative(Timer.class), timer.getPositive(Timer.class));
-        
+
         trigger(Start.event, manager.control());
-        
-        //TODO Alex Fix later
-        vodManager = ((HostManagerComp)manager.getComponent()).getVoDManager();
-        //done fix
     }
 
     public Handler<Start> handleStart = new Handler<Start>() {
@@ -137,33 +123,49 @@ public class Launcher extends ComponentDefinition {
         @Override
         public void handle(GetIpResponse resp) {
             phase2(resp.getIpAddress());
-            PortBindRequest pb1 = new PortBindRequest(selfAddress, Transport.UDP);
-            pb1.setResponse(new PsPortBindResponse(pb1));
+            BootstrapPortBind.Request pb1 = new BootstrapPortBind.Request(selfAddress, Transport.UDP);
+            pb1.setResponse(new BootstrapPortBind.Response(pb1));
             trigger(pb1, network.getPositive(NatNetworkControl.class));
         }
     };
 
-    public Handler<PsPortBindResponse> handlePsPortBindResponse = new Handler<PsPortBindResponse>() {
+    public Handler<BootstrapPortBind.Response> handlePsPortBindResponse = new Handler<BootstrapPortBind.Response>() {
 
         @Override
-        public void handle(PsPortBindResponse event) {
-            if (event.getStatus() != PortBindResponse.Status.SUCCESS) {
+        public void handle(BootstrapPortBind.Response resp) {
+            if (resp.getStatus() != PortBindResponse.Status.SUCCESS) {
                 log.warn("Couldn't bind to port {}. Either another instance of the program is"
                         + "already running, or that port is being used by a different program. Go"
-                        + "to settings to change the port in use. Status: ", event.getPort(),
-                        event.getStatus());
+                        + "to settings to change the port in use. Status: ", resp.getPort(),
+                        resp.getStatus());
                 Kompics.shutdown();
                 System.exit(-1);
             } else {
-                phase3();
+                phase3(resp.boundAddress);
             }
         }
     };
 
-    public static class PsPortBindResponse extends PortBindResponse {
+    private static class BootstrapPortBind {
 
-        public PsPortBindResponse(PortBindRequest request) {
-            super(request);
+        private static class Request extends PortBindRequest {
+
+            public final Address boundAddress;
+
+            public Request(Address address, Transport transport) {
+                super(address, transport);
+                this.boundAddress = address;
+            }
+        }
+
+        private static class Response extends PortBindResponse {
+
+            public final Address boundAddress;
+
+            public Response(Request req) {
+                super(req);
+                this.boundAddress = req.boundAddress;
+            }
         }
     }
 }

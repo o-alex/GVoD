@@ -17,33 +17,16 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system;
+package se.sics.gvod.bootstrap.server.peermanager;
 
-import se.sics.kompics.Kompics;
+import se.sics.kompics.PortType;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-
-public class Main {
-    
-    public static void main(String[] args) {
-        start();
-        try {
-            Kompics.waitForTermination();
-        } catch (InterruptedException ex) {
-            throw new RuntimeException(ex.getMessage());
-        }
-    }
-
-    public static void start() {
-        if (Kompics.isOn()) {
-            Kompics.shutdown();
-        }
-        Kompics.createAndStart(Launcher.class, Runtime.getRuntime().availableProcessors(), 20); // Yes 20 is totally arbitrary
-    }
-
-    public static void stop() {
-        Kompics.shutdown();
+public class PeerManagerPort extends PortType {
+    {
+        request(PeerManagerMsg.Request.class);
+        indication(PeerManagerMsg.Response.class);
     }
 }

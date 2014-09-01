@@ -6,14 +6,13 @@
         <artifactId>GVoD</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <name>Bootstrap</name>
+    <groupId>se.sics.gvod</groupId>
     <artifactId>bootstrap</artifactId>
+    <name>Bootstrap</name>
     <packaging>pom</packaging>
     <modules>
-        <module>server</module>
         <module>client</module>
         <module>common</module>
-        <module>gserver</module>
-        <module>cserver</module>
+        <module>server</module>
     </modules>
 </project>
