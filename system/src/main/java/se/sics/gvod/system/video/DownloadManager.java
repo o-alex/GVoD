@@ -20,7 +20,6 @@
 package se.sics.gvod.system.video;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class DownloadManager {

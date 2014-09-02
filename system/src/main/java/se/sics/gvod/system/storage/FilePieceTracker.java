@@ -20,25 +20,35 @@
 package se.sics.gvod.system.storage;
 
 import java.util.Set;
+import org.javatuples.Triplet;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface Storage {
-    public void setReadPosition(int pieceId) throws OutOfBoundsException;
-    public int getReadPosition();
-    /**
-     * @throws OutOfBoundsException if startPos is not between [readPos, lastPiece]
-     */
-    public Set<Integer> nextPieces(int n, int startPos) throws OutOfBoundsException;
-    public void writePiece(int pieceId, byte[] piece) throws OutOfBoundsException;
-    /**
-     * randomAccess read, will not move the readPosition
-     * @throws OutOfBoundsException if pieceId is not between [readPos, lastPiece]
-     */
-    public byte[] readPiece(int pieceId) throws PieceNotReadyException, OutOfBoundsException;
-    /**
-     * @return true if [readPosition,lastPiece] form a contiguous interval, false otherwise
-     */
-    public boolean isComplete();
+public interface FilePieceTracker {
+    public void setReadPos(int pieceId) throws OutOfBoundsException;
+    public Triplet<Integer, Integer, Boolean> getReadRange();
+    public void addPiece(int pieceId) throws OutOfBoundsException;
+    public Set<Integer> nextPieces(int n, int startPos);
+    
+    public static class FPTrackerException extends Exception {
+        public FPTrackerException(String message) {
+            super(message);
+        }
+        public FPTrackerException() {
+            super();
+        }
+    }
+    
+    public static class PieceNotReadyException extends FPTrackerException {
+        public PieceNotReadyException(String message) {
+            super(message);
+        }
+    }
+    
+    public static class OutOfBoundsException extends FPTrackerException {
+        public OutOfBoundsException() {
+            super();
+        }
+    }
 }

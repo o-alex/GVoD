@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+ import org.javatuples.Triplet;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -37,9 +38,13 @@ public class MemMapFile implements Storage {
     private static final int PIECE_LENGTH = 1024; //1KB
 
     private final int length;
+    private final int lastPiece;
 
     private final MappedByteBuffer mbb;
     private final TreeMap<Integer, Integer> pieceRanges;
+
+    private int readPos;
+    private Triplet<Integer, Integer, Boolean> readRange; //largest contiguous range [a,b] such that a <= readPos <= b; boolean sets the range type - true [], false ()
 
     public static MemMapFile getExistingFile(String pathname) throws IOException {
         File file = new File(pathname);
@@ -64,6 +69,10 @@ public class MemMapFile implements Storage {
         raf.close();
 
         this.pieceRanges = new TreeMap<Integer, Integer>();
+        this.lastPiece = length / PIECE_LENGTH;
+        this.readPos = 0;
+        this.readRange = Triplet.with(0, lastPiece, true);
+
     }
 
     private MemMapFile(File file, int length) throws IOException {
@@ -74,10 +83,53 @@ public class MemMapFile implements Storage {
         raf.close();
 
         this.pieceRanges = new TreeMap<Integer, Integer>();
+        this.lastPiece = length / PIECE_LENGTH;
+        this.readPos = 0;
+        this.readRange = Triplet.with(0, 0, false);
     }
 
     @Override
-    public synchronized Set<Integer> nextPieces(int n, int startPos) {
+    public synchronized void setReadPosition(int pieceId) throws OutOfBoundsException {
+        if (pieceId > lastPiece) {
+            throw new OutOfBoundsException();
+        }
+        readPos = pieceId;
+        setReadRange();
+    }
+    
+    private void setReadRange() {
+        if(readRange.getValue0() <= readPos && readPos <= readRange.getValue1()) {
+            return;
+        }
+        for(Integer startRPos : pieceRanges.keySet()) {
+            if(startRPos > readPos) {
+                break;
+            }
+            int endRPos = pieceRanges.get(startRPos);
+            if(startRPos <= readPos && readPos <= endRPos) {
+                readRange = Triplet.with(startRPos, endRPos, true);
+                return;
+            }
+        }
+        readRange = Triplet.with(readPos,readPos, false);
+    }
+    
+    private void checkReadRange(int startRPos, int endRPos) {
+        if(startRPos <= readRange.getValue0() && readRange.getValue1() < endRPos) {
+            readRange = Triplet.with(startRPos, endRPos, true);
+        }
+    }
+
+    @Override
+    public synchronized int getReadPosition() {
+        return readPos;
+    }
+
+    @Override
+    public synchronized Set<Integer> nextPieces(int n, int startPos) throws OutOfBoundsException {
+        if (startPos < readPos || startPos > lastPiece) {
+            throw new OutOfBoundsException();
+        }
         Set<Integer> result = new TreeSet<Integer>();
         int nextPos = startPos;
 
@@ -113,49 +165,18 @@ public class MemMapFile implements Storage {
             int writeBytes = (piece.length < PIECE_LENGTH ? piece.length : PIECE_LENGTH);
             mbb.put(piece, 0, writeBytes);
             mbb.force();
-            System.out.println(pieceRanges);
         }
     }
 
     private boolean addToRanges(Integer pieceId) {
-        Iterator<Integer> it = pieceRanges.keySet().iterator();
-        Integer key = null;
-        Integer nextKey = null;
-        nextKey = (it.hasNext() ? it.next() : null);
-        key = nextKey;
-        while (key != null) {
-            nextKey = (it.hasNext() ? it.next() : null);
-            if (key <= pieceId && pieceId <= pieceRanges.get(key)) {
-                //piece exists already
-                return false;
-            }
-            if (pieceRanges.get(key) == pieceId - 1) {
-                if (nextKey != null && nextKey == pieceId + 1) {
-                    //pieceRange = [a, pieceId-1]
-                    //nextPieceRange = [pieceId + 1, b]
-                    //remove old intervals and add new [a,b] interval
-                    pieceRanges.put(key, pieceRanges.get(nextKey));
-                    pieceRanges.remove(nextKey);
-                    return true;
-                } else {
-                    //pieceRange = [a, pieceId-1] change to [a, pieceId]
-                    pieceRanges.put(key, pieceId);
-                    return true;
-                }
-            } else if (key == pieceId + 1) {
-                //pieceRange = [pieceId + 1, b] chance to [pieceId, b]
-                pieceRanges.put(pieceId, pieceRanges.get(key));
-                pieceRanges.remove(key);
-                return true;
-            }
-            key = nextKey;
-        }
-        pieceRanges.put(pieceId, pieceId);
-        return true;
+        
     }
 
     @Override
-    public synchronized byte[] readPiece(int pieceId) {
+    public synchronized byte[] readPiece(int pieceId) throws OutOfBoundsException {
+        if (pieceId < readPos || lastPiece < pieceId) {
+            throw new OutOfBoundsException();
+        }
         byte[] result;
         int lastPiece = length / PIECE_LENGTH;
         if (lastPiece == pieceId) {

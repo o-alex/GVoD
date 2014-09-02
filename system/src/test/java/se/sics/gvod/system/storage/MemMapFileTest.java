@@ -24,7 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.security.SecureRandom;
 import java.util.Random;
 import java.util.Set;
 import org.junit.Assert;
@@ -35,7 +34,9 @@ import org.junit.Test;
  */
 public class MemMapFileTest {
 
-//    @Test
+    //TODO Alex testEquality of MemMapFiles.. will be expensive - check temp File
+    
+    @Test
     public void testSuccess() throws IOException {
         File uploadFile = File.createTempFile("memMapTest", "upload");
         System.out.println(uploadFile.getPath());
@@ -93,7 +94,6 @@ public class MemMapFileTest {
                 if(rand.nextInt(failingRate) == 0) {
                     continue;
                 }
-                System.out.println(pieceId);
                 download.writePiece(pieceId, upload.readPiece(pieceId));
             }
         }
