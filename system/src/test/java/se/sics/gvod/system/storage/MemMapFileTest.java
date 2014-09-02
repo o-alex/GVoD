@@ -37,7 +37,7 @@ public class MemMapFileTest {
     //TODO Alex testEquality of MemMapFiles.. will be expensive - check temp File
     
     @Test
-    public void testSuccess() throws IOException {
+    public void testSuccess() throws IOException, FilePieceTracker.OutOfBoundsException, FilePieceTracker.PieceNotReadyException {
         File uploadFile = File.createTempFile("memMapTest", "upload");
         System.out.println(uploadFile.getPath());
         File downloadFile = File.createTempFile("memMapTest", "download");
@@ -52,10 +52,10 @@ public class MemMapFileTest {
         writer.flush();
         writer.close();
         
-        Storage upload = MemMapFile.getExistingFile(uploadFile.getPath());
-        Storage download = MemMapFile.getEmptyFile(downloadPath, (int)uploadFile.length());
+        Storage upload = StorageFactory.getExistingFile(uploadFile.getPath());
+        Storage download = StorageFactory.getEmptyFile(downloadPath, (int)uploadFile.length());
         
-        while(!download.isComplete(0)) {
+        while(!download.isComplete()) {
             Set<Integer> nextPieces = download.nextPieces(5, 0);
             for(Integer pieceId : nextPieces) {
 //                System.out.println(pieceId);
@@ -67,7 +67,7 @@ public class MemMapFileTest {
     }
     
     @Test
-    public void testSuccessRandomFailingPackages() throws IOException {
+    public void testSuccessRandomFailingPackages() throws IOException, FilePieceTracker.OutOfBoundsException, FilePieceTracker.PieceNotReadyException {
         Random rand = new Random(1234);
         int failingRate = 2; //1 in 5 failing rate
         
@@ -85,10 +85,10 @@ public class MemMapFileTest {
         writer.flush();
         writer.close();
         
-        Storage upload = MemMapFile.getExistingFile(uploadFile.getPath());
-        Storage download = MemMapFile.getEmptyFile(downloadPath, (int)uploadFile.length());
+        Storage upload = StorageFactory.getExistingFile(uploadFile.getPath());
+        Storage download = StorageFactory.getEmptyFile(downloadPath, (int)uploadFile.length());
         
-        while(!download.isComplete(0)) {
+        while(!download.isComplete()) {
             Set<Integer> nextPieces = download.nextPieces(5, 0);
             for(Integer pieceId : nextPieces) {
                 if(rand.nextInt(failingRate) == 0) {

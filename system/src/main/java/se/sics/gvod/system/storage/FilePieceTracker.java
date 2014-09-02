@@ -30,6 +30,8 @@ public interface FilePieceTracker {
     public Triplet<Integer, Integer, Boolean> getReadRange();
     public void addPiece(int pieceId) throws OutOfBoundsException;
     public Set<Integer> nextPieces(int n, int startPos);
+    public boolean isComplete();
+    public boolean containsPiece(int pieceId);
     
     public static class FPTrackerException extends Exception {
         public FPTrackerException(String message) {
@@ -41,8 +43,8 @@ public interface FilePieceTracker {
     }
     
     public static class PieceNotReadyException extends FPTrackerException {
-        public PieceNotReadyException(String message) {
-            super(message);
+        public PieceNotReadyException() {
+            super();
         }
     }
     

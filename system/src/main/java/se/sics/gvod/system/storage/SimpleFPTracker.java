@@ -19,9 +19,7 @@
 package se.sics.gvod.system.storage;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import org.javatuples.Triplet;
 
@@ -32,22 +30,22 @@ public class SimpleFPTracker implements FilePieceTracker {
 
     private final TreeSet<Integer> previousPieces;
     private final TreeSet<Integer> readPieces;
-    private final int finalPiece;
+    private final int lastPos;
     private int readPos;
 
     public SimpleFPTracker(int readPos, int finalPiece) {
         this.previousPieces = new TreeSet<Integer>();
         this.readPieces = new TreeSet<Integer>();
         this.readPos = readPos;
-        this.finalPiece = finalPiece;
+        this.lastPos = finalPiece;
     }
 
     @Override
     public void setReadPos(int pieceId) throws OutOfBoundsException {
-        if (pieceId < readPos || finalPiece < pieceId) {
+        if (pieceId < readPos || lastPos < pieceId) {
             throw new OutOfBoundsException();
         }
-        this.readPos = readPos;
+        this.readPos = pieceId;
         
         TreeSet<Integer> move = new TreeSet<Integer>(readPieces.headSet(pieceId, true));
         previousPieces.addAll(move);
@@ -56,31 +54,60 @@ public class SimpleFPTracker implements FilePieceTracker {
 
     @Override
     public Triplet<Integer, Integer, Boolean> getReadRange() {
-        int currentPiece = readPieces.first();
-        if(readPos != currentPiece) {
-            return Triplet.with(readPos, readPos, false);
+        if(readPieces.isEmpty() || readPieces.first() != readPos) {
+           return Triplet.with(readPos, readPos, false); 
         }
         Iterator<Integer> it = readPieces.iterator();
-        int previousPiece = currentPiece;
+        int previousPiece = readPieces.first();
+        int currentPiece;
         while(it.hasNext()) {
             currentPiece = it.next();
-            if(currentPiece == previousPiece + 1) {
-                previousPiece = currentPiece;
+            if(currentPiece == previousPiece) {
+                previousPiece++;
             } else {
                 break;
             }
         }
-        return Triplet.with(readPos, previousPiece, true);
+        return Triplet.with(readPos, previousPiece-1, true);
     }
 
     @Override
     public void addPiece(int pieceId) throws OutOfBoundsException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if(pieceId < readPos) {
+            previousPieces.add(pieceId);
+        } else {
+            readPieces.add(pieceId);
+        }
     }
 
     @Override
     public Set<Integer> nextPieces(int n, int startPos) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        TreeSet<Integer> result = new TreeSet<Integer>();
+        int pieceToAdd = readPos;
+        for(Integer piece : readPieces) {
+            while(pieceToAdd < piece) {
+                result.add(pieceToAdd);
+                pieceToAdd++;
+                if(result.size() == n) {
+                    break;
+                }
+            }
+            pieceToAdd++;
+        }
+        while(result.size() < n && pieceToAdd <= lastPos) {
+            result.add(pieceToAdd);
+            pieceToAdd++;
+        }
+        return result;
     }
 
+    @Override
+    public boolean isComplete() {
+        return lastPos - readPos + 1 == readPieces.size();
+    }
+
+    @Override
+    public boolean containsPiece(int pieceId) {
+        return previousPieces.contains(pieceId) || readPieces.contains(pieceId);
+    }
 }
