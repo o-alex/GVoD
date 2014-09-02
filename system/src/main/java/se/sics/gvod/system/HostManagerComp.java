@@ -78,6 +78,7 @@ public class HostManagerComp extends ComponentDefinition {
             connect(vodMngr.getNegative(VoDPort.class), vod.getPositive(VoDPort.class));
             connect(vod.getNegative(VodNetwork.class), network);
             connect(vod.getNegative(BootstrapClientPort.class), bootstrapClient.getPositive(BootstrapClientPort.class));
+            connect(vod.getNegative(Timer.class), timer);
             connect(bootstrapClient.getNegative(VodNetwork.class), network);
 
         } catch (GVoDConfigException.Missing ex) {

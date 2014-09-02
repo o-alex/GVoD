@@ -16,35 +16,43 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 package se.sics.gvod.system.video;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Init;
-import se.sics.kompics.Positive;
-import se.sics.kompics.network.Network;
-import se.sics.kompics.timer.Timer;
+import com.typesafe.config.Config;
+import se.sics.gvod.common.util.GVoDConfigException;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VideoComp extends ComponentDefinition {
-
-    private static final Logger log = LoggerFactory.getLogger(VideoComp.class);
-
-    private Positive<Network> network = requires(Network.class);
-    private Positive<Timer> timer = requires(Timer.class);
-
-    public VideoComp(VideoInit init) {
-
+public class VideoConfig {
+    private final Config config;
+    public final boolean downloader;
+    
+    private VideoConfig(Config config, boolean downloader) {
+        this.config = config;
+        this.downloader = downloader;
     }
-
-    public static class VideoInit extends Init<VideoComp> {
-        public final VideoConfig config;
+    
+    public static class Builder {
+        private final Config config;
+        private Boolean downloader;
         
-        public VideoInit(VideoConfig config) {
+        public Builder(Config config) {
             this.config = config;
+        }
+        
+        public Builder setDownloader(boolean downloader) {
+            this.downloader = downloader;
+            return this;
+        }
+        
+        public VideoConfig finalise() throws GVoDConfigException.Missing {
+            if(downloader == null) {
+                throw new GVoDConfigException.Missing("downloader not set");
+            }
+            return new VideoConfig(config, downloader);
         }
     }
 }

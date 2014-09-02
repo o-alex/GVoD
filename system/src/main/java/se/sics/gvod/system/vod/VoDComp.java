@@ -18,21 +18,27 @@
  */
 package se.sics.gvod.system.vod;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodNetwork;
+import se.sics.gvod.system.video.VideoComp;
 import se.sics.gvod.system.vod.msg.DownloadVideo;
 import se.sics.gvod.system.vod.msg.UploadVideo;
+import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
-import se.sics.kompics.Start;
+import se.sics.kompics.timer.Timer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -41,17 +47,20 @@ public class VoDComp extends ComponentDefinition {
 
     private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
 
+    Positive<Timer> timer = requires(Timer.class);
     Positive<VodNetwork> network = requires(VodNetwork.class);
     Positive<BootstrapClientPort> bootstrap = requires(BootstrapClientPort.class);
     Negative<VoDPort> myPort = provides(VoDPort.class);
 
     private final VoDConfiguration config;
+    
+    private final Map<Integer, Component> videoComp;
 
     public VoDComp(VoDInit init) {
         log.debug("init");
         this.config = init.config;
+        this.videoComp = new HashMap<Integer, Component>();
 
-        subscribe(handleStart, control);
         subscribe(handleBootstrapGlobalResponse, bootstrap);
         subscribe(handleUploadVideoRequest, myPort);
         subscribe(handleDownloadVideoRequest, myPort);
@@ -59,14 +68,6 @@ public class VoDComp extends ComponentDefinition {
         subscribe(handleJoinOverlayResponse, bootstrap);
     }
 
-    public Handler<Start> handleStart = new Handler<Start>() {
-
-        @Override
-        public void handle(Start event) {
-            
-        }
-    };
-    
     public Handler<BootstrapGlobalMsg.Response> handleBootstrapGlobalResponse = new Handler<BootstrapGlobalMsg.Response>() {
         @Override
         public void handle(BootstrapGlobalMsg.Response event) {
@@ -98,6 +99,16 @@ public class VoDComp extends ComponentDefinition {
         @Override
         public void handle(AddOverlayMsg.Response resp) {
             log.trace("{} - {}", new Object[]{config.self.toString(), resp.toString()});
+            
+            Component video;
+            try {
+                video = create(VideoComp.class, new VideoComp.VideoInit(config.getVideoConfig().setDownloader(false).finalise()));
+            } catch (GVoDConfigException.Missing ex) {
+                throw new RuntimeException(ex);
+            }
+            connect(video.getNegative(Timer.class), timer);
+            connect(video.getNegative(VodNetwork.class), network);
+            
         }
     };
     public Handler<JoinOverlayMsg.Response> handleJoinOverlayResponse = new Handler<JoinOverlayMsg.Response>() {

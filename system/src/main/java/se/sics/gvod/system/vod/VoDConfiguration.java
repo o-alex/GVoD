@@ -22,15 +22,22 @@ package se.sics.gvod.system.vod;
 import com.typesafe.config.Config;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.system.video.VideoConfig;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class VoDConfiguration {
+    private final Config config;
     public final VodAddress self;
     
-    private VoDConfiguration(VodAddress self) {
+    private VoDConfiguration(Config config, VodAddress self) {
+        this.config = config;
         this.self = self;
+    }
+    
+    public VideoConfig.Builder getVideoConfig() {
+        return new VideoConfig.Builder(config);
     }
     
     public static class Builder {
@@ -43,7 +50,7 @@ public class VoDConfiguration {
         }
         
         public VoDConfiguration finalise() throws GVoDConfigException.Missing {
-            return new VoDConfiguration(self);
+            return new VoDConfiguration(config, self);
         }
     }
 }
