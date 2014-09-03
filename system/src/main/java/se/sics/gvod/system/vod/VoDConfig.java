@@ -17,47 +17,45 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.video;
+package se.sics.gvod.system.vod;
 
 import com.typesafe.config.Config;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.system.video.VideoConfig;
+import se.sics.gvod.system.video.connMngr.ConnMngrConfig;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VideoConfig {
+public class VoDConfig {
     private final Config config;
     public final VodAddress selfAddress;
-    public final boolean downloader;
     
-    private VideoConfig(Config config, VodAddress selfAddress, boolean downloader) {
+    private VoDConfig(Config config, VodAddress selfAddress) {
         this.config = config;
         this.selfAddress = selfAddress;
-        this.downloader = downloader;
+    }
+    
+    public VideoConfig.Builder getVideoConfig() {
+        return new VideoConfig.Builder(config, selfAddress);
+    }
+    
+    public ConnMngrConfig.Builder getConnMngrConfig() {
+        return new ConnMngrConfig.Builder(config);
     }
     
     public static class Builder {
         private final Config config;
         private final VodAddress selfAddress;
-        private Boolean downloader;
         
         public Builder(Config config, VodAddress selfAddress) {
             this.config = config;
             this.selfAddress = selfAddress;
         }
         
-        public Builder setDownloader(boolean downloader) {
-            this.downloader = downloader;
-            return this;
-        }
-        
-        public VideoConfig finalise() throws GVoDConfigException.Missing {
-            if(downloader == null) {
-                throw new GVoDConfigException.Missing("downloader not set");
-            }
-            return new VideoConfig(config, selfAddress, downloader);
+        public VoDConfig finalise() throws GVoDConfigException.Missing {
+            return new VoDConfig(config, selfAddress);
         }
     }
 }

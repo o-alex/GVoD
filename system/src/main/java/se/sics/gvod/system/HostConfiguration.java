@@ -29,7 +29,7 @@ import se.sics.gvod.bootstrap.client.BootstrapClientConfig;
 import se.sics.gvod.bootstrap.server.BootstrapServerConfig;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.system.vod.VoDConfiguration;
+import se.sics.gvod.system.vod.VoDConfig;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -52,8 +52,8 @@ public class HostConfiguration {
         return new BootstrapClientConfig.Builder(config, self, server, seed);
     }
 
-    public VoDConfiguration.Builder getVoDConfiguration() {
-        return new VoDConfiguration.Builder(config, self);
+    public VoDConfig.Builder getVoDConfiguration() {
+        return new VoDConfig.Builder(config, self);
     }
     
     public BootstrapServerConfig getBootstrapServerConfig() {

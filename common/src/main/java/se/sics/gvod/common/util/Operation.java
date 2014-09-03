@@ -16,12 +16,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+package se.sics.gvod.common.util;
 
-package se.sics.gvod.system.video;
+import java.util.UUID;
+import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VideoFile {
-    
+public interface Operation<E extends KompicsEvent> {
+
+    public UUID getId();
+
+    public void start();
+
+    public void handle(E resp);
 }

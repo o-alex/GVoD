@@ -20,6 +20,7 @@ package se.sics.gvod.system.vod.msg;
 
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
+import se.sics.gvod.manager.UploadFileInfo;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -28,16 +29,16 @@ public class UploadVideo {
 
     public static class Request extends GvodMsg.Request {
 
-        public final int overlayId;
+        public final UploadFileInfo fileInfo;
 
-        public Request(int overlayId) {
+        public Request(UploadFileInfo vfMeta) {
             super(UUID.randomUUID());
-            this.overlayId = overlayId;
+            this.fileInfo = vfMeta;
         }
         
         @Override
         public Request copy() {
-            return new Request(overlayId);
+            return new Request(fileInfo);
         }
         
         @Override

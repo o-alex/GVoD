@@ -26,11 +26,12 @@ import se.sics.caracaldb.operations.ResponseCode;
 import se.sics.gvod.bootstrap.cclient.CaracalKeyFactory;
 import se.sics.gvod.bootstrap.cclient.CaracalOpManager;
 import se.sics.gvod.bootstrap.server.peermanager.msg.JoinOverlay;
+import se.sics.gvod.common.util.Operation;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class AddOverlayPeerOp implements Operation {
+public class AddOverlayPeerOp implements Operation<CaracalOp> {
 
     private final CaracalOpManager opMngr;
     private final JoinOverlay.Request req;

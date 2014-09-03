@@ -29,11 +29,11 @@ import se.sics.caracaldb.operations.CaracalMsg;
 import se.sics.caracaldb.operations.CaracalOp;
 import se.sics.gvod.bootstrap.cclient.operations.AddOverlayPeerOp;
 import se.sics.gvod.bootstrap.cclient.operations.GetOverlaySampleOp;
-import se.sics.gvod.bootstrap.cclient.operations.Operation;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
-import se.sics.gvod.bootstrap.server.peermanager.msg.JoinOverlay;
 import se.sics.gvod.bootstrap.server.peermanager.msg.GetOverlaySample;
+import se.sics.gvod.bootstrap.server.peermanager.msg.JoinOverlay;
+import se.sics.gvod.common.util.Operation;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
@@ -52,13 +52,13 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
 
     private final BCClientConfig config;
 
-    private final Map<UUID, Operation> pendingOps;
+    private final Map<UUID, Operation<CaracalOp>> pendingOps;
     private final Map<UUID, UUID> pendingCaracalOps;
 
     public BCClientComp(BCClientInit init) {
         log.debug("init");
         this.config = init.config;
-        this.pendingOps = new HashMap<UUID, Operation>();
+        this.pendingOps = new HashMap<UUID, Operation<CaracalOp>>();
         this.pendingCaracalOps = new HashMap<UUID, UUID>();
 
         subscribe(handleCaracalResponse, network);

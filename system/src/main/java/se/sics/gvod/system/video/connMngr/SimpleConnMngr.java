@@ -28,11 +28,11 @@ import se.sics.gvod.system.video.VodDescriptor;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class SimpleConnMngr implements ConnectionManager {
-    private final ConnectionManagerConfig config;
+public class SimpleConnMngr implements ConnMngr {
+    private final ConnMngrConfig config;
     private final Map<Integer, LocalVodDescriptor> myDownloadConn;
 
-    public SimpleConnMngr(ConnectionManagerConfig config) {
+    public SimpleConnMngr(ConnMngrConfig config) {
         this.config = config;
         this.myDownloadConn = new HashMap<Integer, LocalVodDescriptor>();
     }

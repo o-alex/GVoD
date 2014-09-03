@@ -17,16 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.cclient.operations;
-
-import java.util.UUID;
-import se.sics.caracaldb.operations.CaracalOp;
+package se.sics.gvod.system.video;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface Operation {
-    public UUID getId();
-    public void start();
-    public void handle(CaracalOp resp);
+public class VideoFileMeta {
+    public final String filePath;
+    public final int size;
+    
+    public VideoFileMeta(String filePath, int size) {
+        this.filePath = filePath;
+        this.size = size;
+    }
 }

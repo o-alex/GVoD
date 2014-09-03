@@ -19,7 +19,10 @@
 
 package se.sics.gvod.system;
 
+import se.sics.gvod.manager.DownloadFileInfo;
+import se.sics.gvod.manager.UploadFileInfo;
 import se.sics.gvod.manager.VoDManager;
+import se.sics.gvod.system.video.VideoFileMeta;
 import se.sics.gvod.system.vod.VoDPort;
 import se.sics.gvod.system.vod.msg.DownloadVideo;
 import se.sics.gvod.system.vod.msg.UploadVideo;
@@ -42,12 +45,12 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     }
 
     @Override
-    public void uploadVideo(int overlayId) {
-        trigger(new UploadVideo.Request(overlayId), vodPort);
+    public void uploadVideo(UploadFileInfo fileInfo) {
+        trigger(new UploadVideo.Request(fileInfo), vodPort);
     }
 
     @Override
-    public void downloadVideo(int overlayId) {
-        trigger(new DownloadVideo.Request(overlayId), vodPort);
+    public void downloadVideo(DownloadFileInfo fileInfo) {
+        trigger(new DownloadVideo.Request(fileInfo), vodPort);
     }
 }

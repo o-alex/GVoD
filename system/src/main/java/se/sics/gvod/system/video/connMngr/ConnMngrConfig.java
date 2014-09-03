@@ -26,11 +26,11 @@ import se.sics.gvod.common.util.GVoDConfigException;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class ConnectionManagerConfig {
+public class ConnMngrConfig {
     private final Config config;
     public final int defaultMaxPipeline;
     
-    private ConnectionManagerConfig(Config config, int defaulMaxPipeline) {
+    private ConnMngrConfig(Config config, int defaulMaxPipeline) {
         this.config = config;
         this.defaultMaxPipeline = defaulMaxPipeline;
     }
@@ -42,14 +42,14 @@ public class ConnectionManagerConfig {
             this.config = config;
         }
         
-        public ConnectionManagerConfig finalise() throws GVoDConfigException.Missing {
+        public ConnMngrConfig finalise() throws GVoDConfigException.Missing {
             int defaultMaxPipeline;
             try {
                 defaultMaxPipeline = config.getInt("vod.maxPipeline");
             } catch(ConfigException.Missing ex) {
                 throw new GVoDConfigException.Missing(ex);
             }
-            return new ConnectionManagerConfig(config, defaultMaxPipeline);
+            return new ConnMngrConfig(config, defaultMaxPipeline);
         }
     }
 }

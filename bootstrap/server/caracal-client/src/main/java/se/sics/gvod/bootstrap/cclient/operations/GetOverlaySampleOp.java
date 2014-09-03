@@ -33,11 +33,12 @@ import se.sics.caracaldb.store.TFFactory;
 import se.sics.gvod.bootstrap.cclient.CaracalKeyFactory;
 import se.sics.gvod.bootstrap.cclient.CaracalOpManager;
 import se.sics.gvod.bootstrap.server.peermanager.msg.GetOverlaySample;
+import se.sics.gvod.common.util.Operation;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class GetOverlaySampleOp implements Operation {
+public class GetOverlaySampleOp implements Operation<CaracalOp> {
     
     private final CaracalOpManager opMngr;
     private final GetOverlaySample.Request req;

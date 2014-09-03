@@ -83,7 +83,8 @@ public class AddOverlayMsg {
     }
     
     public static class Response extends GvodMsg.Response {
-        
+
+        public  
         public Response(UUID reqId, ReqStatus status) {
             super(reqId, status);
         }

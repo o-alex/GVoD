@@ -20,6 +20,9 @@ package se.sics.gvod.system.video;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.system.storage.Storage;
+import se.sics.gvod.system.video.connMngr.ConnMngr;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Init;
 import se.sics.kompics.Positive;
@@ -36,15 +39,27 @@ public class VideoComp extends ComponentDefinition {
     private Positive<Network> network = requires(Network.class);
     private Positive<Timer> timer = requires(Timer.class);
 
+    private final VideoConfig config;
+    private final ConnMngr connMngr;
+    private final Storage videoFile;
+    
     public VideoComp(VideoInit init) {
-
+        this.config = init.config;
+        this.connMngr = init.connMngr;
+        this.videoFile = init.videoFile;
+        
+        log.info("{} video component init", config.);
     }
 
     public static class VideoInit extends Init<VideoComp> {
         public final VideoConfig config;
+        public final ConnMngr connMngr;
+        public final Storage videoFile;
         
-        public VideoInit(VideoConfig config) {
+        public VideoInit(VideoConfig config, ConnMngr connMngr, Storage videoFile) {
             this.config = config;
+            this.connMngr = connMngr;
+            this.videoFile = videoFile;
         }
     }
 }

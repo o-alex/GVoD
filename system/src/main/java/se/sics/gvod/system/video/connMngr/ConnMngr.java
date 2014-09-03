@@ -17,40 +17,18 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.vod;
+package se.sics.gvod.system.video.connMngr;
 
-import com.typesafe.config.Config;
-import se.sics.gvod.common.util.GVoDConfigException;
+import java.util.Map;
+import java.util.Set;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.system.video.VideoConfig;
+import se.sics.gvod.system.video.VodDescriptor;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDConfiguration {
-    private final Config config;
-    public final VodAddress self;
-    
-    private VoDConfiguration(Config config, VodAddress self) {
-        this.config = config;
-        this.self = self;
-    }
-    
-    public VideoConfig.Builder getVideoConfig() {
-        return new VideoConfig.Builder(config);
-    }
-    
-    public static class Builder {
-        private final Config config;
-        private final VodAddress self;
-        
-        public Builder(Config config, VodAddress self) {
-            this.config = config;
-            this.self = self;
-        }
-        
-        public VoDConfiguration finalise() throws GVoDConfigException.Missing {
-            return new VoDConfiguration(config, self);
-        }
-    }
+public interface ConnMngr {
+    public void updateConnections(Map<VodAddress, VodDescriptor> vodSamples);
+    public Map<Integer, VodAddress> getPeersForPieces(Set<Integer> pieces);
+    public void finishedPieceDownload(int peerId);
 }

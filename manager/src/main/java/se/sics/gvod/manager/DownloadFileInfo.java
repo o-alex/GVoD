@@ -17,18 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.video.connMngr;
-
-import java.util.Map;
-import java.util.Set;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.system.video.VodDescriptor;
+package se.sics.gvod.manager;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface ConnectionManager {
-    public void updateConnections(Map<VodAddress, VodDescriptor> vodSamples);
-    public Map<Integer, VodAddress> getPeersForPieces(Set<Integer> pieces);
-    public void finishedPieceDownload(int peerId);
+public class DownloadFileInfo {
+    public final int overlayId;
+    public final String filePath;
+    
+    public DownloadFileInfo(int overlayId, String filePath) {
+        this.overlayId = overlayId;
+        this.filePath = filePath;
+    }
 }

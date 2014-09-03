@@ -17,12 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.video;
+package se.sics.gvod.manager;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class PlayManager {
+public class UploadFileInfo {
+    public final int overlayId;
+    public final String videoPath;
     
+    public UploadFileInfo(int overlayId, String videoPath) {
+        this.overlayId = overlayId;
+        this.videoPath = videoPath;
+    }
 }
