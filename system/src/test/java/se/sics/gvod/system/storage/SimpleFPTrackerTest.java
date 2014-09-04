@@ -18,6 +18,8 @@
  */
 package se.sics.gvod.system.storage;
 
+import se.sics.gvod.system.video.storage.FilePieceTracker;
+import se.sics.gvod.system.video.storage.SimpleFPTracker;
 import java.util.Set;
 import junit.framework.Assert;
 import org.javatuples.Triplet;

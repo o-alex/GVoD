@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.storage;
+package se.sics.gvod.system.video.storage;
 
 import java.util.Set;
 import org.javatuples.Triplet;

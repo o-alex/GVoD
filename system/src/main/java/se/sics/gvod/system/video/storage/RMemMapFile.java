@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system.storage;
+package se.sics.gvod.system.video.storage;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,11 +32,14 @@ import java.util.Set;
 public class RMemMapFile implements Storage {
 
     private final int fileLength;
+    private final int pieceSize;
 
     private final MappedByteBuffer mbb;
 
-    RMemMapFile(File file) throws IOException {
+    RMemMapFile(File file, int pieceSize) throws IOException {
         this.fileLength = (int)file.length();
+        this.pieceSize = pieceSize;
+        
         RandomAccessFile raf = new RandomAccessFile(file, "r");
         mbb = raf.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, fileLength);
         raf.close();
@@ -65,13 +68,13 @@ public class RMemMapFile implements Storage {
     @Override
     public byte[] readPiece(int pieceId) throws FilePieceTracker.PieceNotReadyException, FilePieceTracker.OutOfBoundsException {
         byte[] result;
-        int lastPiece = fileLength / Storage.PIECE_LENGTH;
+        int lastPiece = fileLength / pieceSize;
         if (lastPiece == pieceId) {
-            result = new byte[fileLength % Storage.PIECE_LENGTH];
+            result = new byte[fileLength % pieceSize];
         } else {
-            result = new byte[Storage.PIECE_LENGTH];
+            result = new byte[pieceSize];
         }
-        int readStart = pieceId * Storage.PIECE_LENGTH;
+        int readStart = pieceId * pieceSize;
         mbb.position(readStart);
         mbb.get(result, 0, result.length);
 

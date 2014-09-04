@@ -20,8 +20,7 @@ package se.sics.gvod.system.video;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.system.storage.Storage;
+import se.sics.gvod.system.video.storage.Storage;
 import se.sics.gvod.system.video.connMngr.ConnMngr;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Init;
@@ -48,7 +47,7 @@ public class VideoComp extends ComponentDefinition {
         this.connMngr = init.connMngr;
         this.videoFile = init.videoFile;
         
-        log.info("{} video component init", config.);
+        log.info("{} video component init", config.selfAddress);
     }
 
     public static class VideoInit extends Init<VideoComp> {

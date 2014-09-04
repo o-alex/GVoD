@@ -33,6 +33,7 @@ import org.junit.Test;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
 
@@ -44,9 +45,7 @@ public class JoinOverlayTest {
     @Test
     public void testRequest() {
         GVoDAdapter<JoinOverlayMsg.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_REQUEST);
-        Set<Integer> overlayIds = new HashSet<Integer>();
-        overlayIds.add(1);
-        JoinOverlayMsg.Request expected = new JoinOverlayMsg.Request(UUID.randomUUID(), overlayIds);
+        JoinOverlayMsg.Request expected = new JoinOverlayMsg.Request(UUID.randomUUID(), 1);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
@@ -61,11 +60,9 @@ public class JoinOverlayTest {
      @Test
     public void testResponseSuccess() throws UnknownHostException {
         GVoDAdapter<JoinOverlayMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
-        Map<Integer,Set<VodAddress>> overlaySamples = new HashMap<Integer, Set<VodAddress>>();
         Set<VodAddress> overlaySample = new HashSet<VodAddress>();
-        overlaySamples.put(1, overlaySample);
         overlaySample.add(new VodAddress(new Address(InetAddress.getLocalHost(), 12345, 1), -1));
-        JoinOverlayMsg.Response expected = new JoinOverlayMsg.Response(UUID.randomUUID(), ReqStatus.SUCCESS, overlaySamples);
+        JoinOverlayMsg.Response expected = new JoinOverlayMsg.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1, overlaySample, new FileMetadata(10000, 1024));
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
@@ -80,7 +77,7 @@ public class JoinOverlayTest {
     @Test
     public void tesResponsetFail() {
         GVoDAdapter<JoinOverlayMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
-        JoinOverlayMsg.Response expected = new JoinOverlayMsg.Response(UUID.randomUUID(), ReqStatus.FAIL, null);
+        JoinOverlayMsg.Response expected = new JoinOverlayMsg.Response(UUID.randomUUID(), ReqStatus.FAIL, 1, null, null);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);

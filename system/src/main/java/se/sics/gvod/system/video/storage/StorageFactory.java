@@ -16,20 +16,26 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+package se.sics.gvod.system.video.storage;
 
-package se.sics.gvod.manager;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class UploadFileInfo {
-    public final int overlayId;
-    public final String libDir;
-    public final String fileName;
+public class StorageFactory {
+
+    public static Storage getExistingFile(String pathname, int pieceSize) throws IOException {
+        File file = new File(pathname);
+        return new RMemMapFile(file, pieceSize);
+    }
     
-    public UploadFileInfo(int overlayId, String libDir, String fileName) {
-        this.overlayId = overlayId;
-        this.libDir = libDir;
-        this.fileName = fileName;
+    public static Storage getEmptyFile(String pathname, int length, int pieceSize) throws IOException {
+        File file = new File(pathname);
+        if (!file.createNewFile()) {
+            throw new IOException("Could not create file " + pathname);
+        }
+        return new RWMemMapFile(file, length, pieceSize);
     }
 }

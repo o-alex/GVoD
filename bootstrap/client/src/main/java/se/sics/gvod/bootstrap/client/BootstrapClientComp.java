@@ -129,7 +129,7 @@ public class BootstrapClientComp extends ComponentDefinition {
 
         @Override
         public void handle(JoinOverlayMsg.Request req) {
-            log.trace("{} {} - overlay:{}", new Object[]{config.self, req, req.overlayIds});
+            log.trace("{} {} - overlay:{}", new Object[]{config.self, req, req.overlayId});
             
             GvodNetMsg.Request<JoinOverlayMsg.Request> netReq = new GvodNetMsg.Request(config.self, config.server, req);
             log.trace("{} sending {}", new Object[]{config.self, netReq});

@@ -16,26 +16,44 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system.storage;
 
-import java.io.File;
-import java.io.IOException;
+package se.sics.gvod.common.util;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class StorageFactory {
-
-    public static Storage getExistingFile(String pathname) throws IOException {
-        File file = new File(pathname);
-        return new RMemMapFile(file);
-    }
+public class FileMetadata {
+    public final int size;
+    public final int pieceSize;
     
-    public static Storage getEmptyFile(String pathname, int length) throws IOException {
-        File file = new File(pathname);
-        if (!file.createNewFile()) {
-            throw new IOException("Could not create file " + pathname);
+    public FileMetadata(int size, int pieceSize) {
+        this.size = size;
+        this.pieceSize = pieceSize;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 53 * hash + this.size;
+        hash = 53 * hash + this.pieceSize;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
         }
-        return new RWMemMapFile(file, length);
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final FileMetadata other = (FileMetadata) obj;
+        if (this.size != other.size) {
+            return false;
+        }
+        if (this.pieceSize != other.pieceSize) {
+            return false;
+        }
+        return true;
     }
 }

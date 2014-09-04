@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.network.GVoDAdapterFactory;
 
 /**
@@ -37,7 +38,7 @@ public class AddOverlayTest {
     @Test
     public void testRequest() {
         GVoDAdapter<AddOverlayMsg.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_REQUEST);
-        AddOverlayMsg.Request expected = new AddOverlayMsg.Request(UUID.randomUUID(), 1);
+        AddOverlayMsg.Request expected = new AddOverlayMsg.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024));
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);

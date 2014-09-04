@@ -22,6 +22,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.UUID;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.network.GVoDAdapterFactory;
 import se.sics.gvod.network.Util;
 
@@ -37,8 +38,9 @@ public class AddOverlayAdapter {
         public AddOverlayMsg.Request decode(ByteBuf buffer) {
             UUID reqId = Util.decodeUUID(buffer);
             int overlayId = buffer.readInt();
+            FileMetadata fileMeta = Util.decodeFileMeta(buffer);
 
-            return new AddOverlayMsg.Request(reqId, overlayId);
+            return new AddOverlayMsg.Request(reqId, overlayId, fileMeta);
         }
 
         @Override
@@ -47,7 +49,8 @@ public class AddOverlayAdapter {
 
             Util.encodeUUID(buffer, req.reqId);
             buffer.writeInt(req.overlayId);
-
+            Util.encodeFileMeta(buffer, req.fileMeta);
+            
             return buffer;
         }
         
@@ -57,6 +60,7 @@ public class AddOverlayAdapter {
             size += 1; //type
             size += Util.getUUIDEncodedSize();
             size += 4; //overlayId;
+            size += Util.getFileMetaSize();
             return size;
         }
 

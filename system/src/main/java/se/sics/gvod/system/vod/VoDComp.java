@@ -18,26 +18,29 @@
  */
 package se.sics.gvod.system.vod;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
-import se.sics.gvod.common.msg.GvodMsg;
+import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.common.util.GVoDConfigException;
+import se.sics.gvod.manager.DownloadFileInfo;
+import se.sics.gvod.manager.UploadFileInfo;
 import se.sics.gvod.net.VodNetwork;
-import se.sics.gvod.system.storage.Storage;
-import se.sics.gvod.system.storage.StorageFactory;
+import se.sics.gvod.system.video.storage.Storage;
+import se.sics.gvod.system.video.storage.StorageFactory;
 import se.sics.gvod.system.video.VideoComp;
 import se.sics.gvod.system.video.VideoConfig;
-import se.sics.gvod.system.video.VideoFileMeta;
 import se.sics.gvod.system.video.connMngr.ConnMngr;
+import se.sics.gvod.system.video.connMngr.ConnMngrConfig;
 import se.sics.gvod.system.video.connMngr.SimpleConnMngr;
 import se.sics.gvod.system.vod.msg.DownloadVideo;
 import se.sics.gvod.system.vod.msg.UploadVideo;
@@ -65,10 +68,15 @@ public class VoDComp extends ComponentDefinition {
 
     private final Map<Integer, Component> videoComps;
 
+    private final Map<UUID, UploadFileInfo> pendingUploads;
+    private final Map<UUID, DownloadFileInfo> pendingDownloads;
+
     public VoDComp(VoDInit init) {
         log.debug("init");
         this.config = init.config;
         this.videoComps = new HashMap<Integer, Component>();
+        this.pendingDownloads = new HashMap<UUID, DownloadFileInfo>();
+        this.pendingUploads = new HashMap<UUID, UploadFileInfo>();
 
         subscribe(handleBootstrapGlobalResponse, bootstrap);
         subscribe(handleUploadVideoRequest, myPort);
@@ -87,10 +95,10 @@ public class VoDComp extends ComponentDefinition {
 
         @Override
         public void handle(UploadVideo.Request req) {
-            log.debug("{} - {} - overlay: {}", new Object[]{config.selfAddress.toString(), req.toString(), req.fileInfo.overlayId});
-            trigger(new AddOverlayMsg.Request(req.reqId, req.overlayId), bootstrap);
-
-            startVideoComp(req.overlayId, req.fileInfo, false);
+            log.info("{} - {} - overlay: {}", new Object[]{config.selfAddress, req, req.fileInfo.overlayId});
+            File f = new File(req.fileInfo.libDir + File.pathSeparator + req.fileInfo.fileName);
+            trigger(new AddOverlayMsg.Request(req.reqId, req.fileInfo.overlayId, new FileMetadata((int) f.length(), config.pieceSize)), bootstrap);
+            pendingUploads.put(req.reqId, req.fileInfo);
         }
     };
 
@@ -98,10 +106,9 @@ public class VoDComp extends ComponentDefinition {
 
         @Override
         public void handle(DownloadVideo.Request req) {
-            log.debug("{} - {} - overlay: {}", new Object[]{config.selfAddress.toString(), req.toString(), req.overlayId});
-            HashSet<Integer> overlayIds = new HashSet<Integer>();
-            overlayIds.add(req.overlayId);
-            trigger(new JoinOverlayMsg.Request(req.reqId, overlayIds), bootstrap);
+            log.info("{} - {} - overlay: {}", new Object[]{config.selfAddress, req, req.fileInfo.overlayId});
+            trigger(new JoinOverlayMsg.Request(req.reqId, req.fileInfo.overlayId), bootstrap);
+            pendingDownloads.put(req.reqId, req.fileInfo);
         }
     };
 
@@ -109,7 +116,17 @@ public class VoDComp extends ComponentDefinition {
 
         @Override
         public void handle(AddOverlayMsg.Response resp) {
-            log.trace("{} - {}", new Object[]{config.selfAddress.toString(), resp.toString()});
+            log.trace("{} - {}", new Object[]{config.selfAddress, resp});
+
+            if (resp.status == ReqStatus.SUCCESS) {
+                try {
+                    UploadFileInfo fileInfo = pendingUploads.remove(resp.reqId);
+                    Storage videoStorage = StorageFactory.getExistingFile(fileInfo.libDir + File.pathSeparator + fileInfo.fileName, config.pieceSize);
+                    startVideoComp(fileInfo.overlayId, videoStorage);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
         }
     };
 
@@ -117,30 +134,35 @@ public class VoDComp extends ComponentDefinition {
 
         @Override
         public void handle(JoinOverlayMsg.Response resp) {
-            log.trace("{} - {} - peers:{}", new Object[]{config.selfAddress.toString(), resp.toString(), resp.overlaySamples.toString()});
+            log.trace("{} - {} - peers:{}", new Object[]{config.selfAddress, resp, resp.overlaySample});
+
+            if (resp.status == ReqStatus.SUCCESS) {
+                try {
+                    DownloadFileInfo fileInfo = pendingDownloads.remove(resp.reqId);
+                    Storage videoStorage = StorageFactory.getEmptyFile(fileInfo.libDir + File.pathSeparator + fileInfo.fileName, resp.fileMeta.size, resp.fileMeta.pieceSize);
+                    startVideoComp(fileInfo.overlayId, videoStorage);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
         }
     };
 
-    private void startVideoComp(int overlayId, VideoFileMeta vfMeta, boolean downloader) {
+    private void startVideoComp(int overlayId, Storage videoStorage) {
+        VideoConfig videoConfig;
+        ConnMngrConfig connMngrConfig;
 
-        Component video;
-        
         try {
-            Storage videoStorage;
-            if (downloader) {
-                videoStorage = StorageFactory.getExistingFile(vfMeta.filePath);
-            } else {
-                videoStorage = StorageFactory.getEmptyFile(vfMeta.filePath, vfMeta.size);
-            }
-            ConnMngr connMngr = new SimpleConnMngr(config.getConnMngrConfig().finalise());
-            VideoConfig videoConfig = config.getVideoConfig().setDownloader(false).finalise();
-            video = create(VideoComp.class, new VideoComp.VideoInit(videoConfig, connMngr, videoStorage));
-            videoComps.put(overlayId, video);
+            videoConfig = config.getVideoConfig().setDownloader(false).finalise();
+            connMngrConfig = config.getConnMngrConfig().finalise();
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
         }
+
+        ConnMngr connMngr = new SimpleConnMngr(connMngrConfig);
+        Component video = create(VideoComp.class, new VideoComp.VideoInit(videoConfig, connMngr, videoStorage));
+        videoComps.put(overlayId, video);
+
         connect(video.getNegative(Timer.class), timer);
         connect(video.getNegative(VodNetwork.class), network);
 

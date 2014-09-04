@@ -198,7 +198,7 @@ public class SimManagerComp extends ComponentDefinition {
             }
             se.sics.gvod.system.HostManagerComp nodeHost = (se.sics.gvod.system.HostManagerComp) node.getComponent();
             VoDManager vodMngr = nodeHost.getVoDManager();
-            vodMngr.uploadVideo(cmd.overlayId);
+            vodMngr.uploadVideo(cmd.fileInfo);
         }
     };
 
@@ -213,7 +213,7 @@ public class SimManagerComp extends ComponentDefinition {
             }
             se.sics.gvod.system.HostManagerComp nodeHost = (se.sics.gvod.system.HostManagerComp) node.getComponent();
             VoDManager vodMngr = nodeHost.getVoDManager();
-            vodMngr.downloadVideo(cmd.overlayId);
+            vodMngr.downloadVideo(cmd.fileInfo);
         }
     };
 

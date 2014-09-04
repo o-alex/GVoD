@@ -18,6 +18,9 @@
  */
 package se.sics.gvod.system.storage;
 
+import se.sics.gvod.system.video.storage.FilePieceTracker;
+import se.sics.gvod.system.video.storage.Storage;
+import se.sics.gvod.system.video.storage.StorageFactory;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -52,8 +55,8 @@ public class MemMapFileTest {
         writer.flush();
         writer.close();
         
-        Storage upload = StorageFactory.getExistingFile(uploadFile.getPath());
-        Storage download = StorageFactory.getEmptyFile(downloadPath, (int)uploadFile.length());
+        Storage upload = StorageFactory.getExistingFile(uploadFile.getPath(), 1024);
+        Storage download = StorageFactory.getEmptyFile(downloadPath, (int)uploadFile.length(), 1024);
         
         while(!download.isComplete()) {
             Set<Integer> nextPieces = download.nextPieces(5, 0);
@@ -85,8 +88,8 @@ public class MemMapFileTest {
         writer.flush();
         writer.close();
         
-        Storage upload = StorageFactory.getExistingFile(uploadFile.getPath());
-        Storage download = StorageFactory.getEmptyFile(downloadPath, (int)uploadFile.length());
+        Storage upload = StorageFactory.getExistingFile(uploadFile.getPath(), 1024);
+        Storage download = StorageFactory.getEmptyFile(downloadPath, (int)uploadFile.length(), 1024);
         
         while(!download.isComplete()) {
             Set<Integer> nextPieces = download.nextPieces(5, 0);

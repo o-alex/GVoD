@@ -30,6 +30,7 @@ import se.sics.gvod.address.Address;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.common.msgs.MessageEncodingException;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
 import se.sics.gvod.network.GVoDNetFrameDecoder;
@@ -43,7 +44,7 @@ import se.sics.gvod.network.nettymsg.GvodNetMsg;
 public class NettyAdapterTest {
     @Test
     public void testRequest() throws UnknownHostException, MessageEncodingException, Exception {
-        AddOverlayMsg.Request req = new AddOverlayMsg.Request(UUID.randomUUID(), 1);
+        AddOverlayMsg.Request req = new AddOverlayMsg.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024));
         VodAddress src = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 1), -1);
         VodAddress dest = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 2), -1);
         GvodNetMsg.Request<AddOverlayMsg.Request> expected = new GvodNetMsg.Request<AddOverlayMsg.Request>(src, dest, req);

@@ -18,14 +18,15 @@
  */
 package se.sics.gvod.common.msg.impl;
 
+import com.google.common.base.Objects;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import com.google.common.base.Objects;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
 
 /**
@@ -35,24 +36,24 @@ public class JoinOverlayMsg {
 
     public static class Request extends GvodMsg.Request {
 
-        public final Set<Integer> overlayIds;
+        public final int overlayId;
 
-        public Request(UUID reqId, Set<Integer> overlayId) {
+        public Request(UUID reqId, int overlayId) {
             super(reqId);
-            this.overlayIds = overlayId;
+            this.overlayId = overlayId;
         }
 
-        public Response success(Map<Integer, Set<VodAddress>> overlaySample) {
-            return new Response(reqId, ReqStatus.SUCCESS, overlaySample);
+        public Response success(Set<VodAddress> overlaySample, FileMetadata fileMeta) {
+            return new Response(reqId, ReqStatus.SUCCESS, overlayId, overlaySample, fileMeta);
         }
 
         public Response fail() {
-            return new Response(reqId, ReqStatus.FAIL, null);
+            return new Response(reqId, ReqStatus.FAIL, overlayId, null, null);
         }
         
         @Override
         public Request copy() {
-            return new Request(reqId, new HashSet<Integer>(overlayIds));
+            return new Request(reqId, overlayId);
         }
         
         @Override
@@ -63,14 +64,12 @@ public class JoinOverlayMsg {
         @Override
         public int hashCode() {
             int hash = 3;
-            hash = 71 * hash + Objects.hashCode(this.reqId);
-            hash = 71 * hash + Objects.hashCode(this.overlayIds);
+            hash = 29 * hash + this.overlayId;
             return hash;
         }
 
         @Override
-        public boolean equals(Object obj
-        ) {
+        public boolean equals(Object obj) {
             if (obj == null) {
                 return false;
             }
@@ -78,10 +77,7 @@ public class JoinOverlayMsg {
                 return false;
             }
             final Request other = (Request) obj;
-            if (!Objects.equal(this.reqId, other.reqId)) {
-                return false;
-            }
-            if (!Objects.equal(this.overlayIds, other.overlayIds)) {
+            if (this.overlayId != other.overlayId) {
                 return false;
             }
             return true;
@@ -90,32 +86,33 @@ public class JoinOverlayMsg {
 
     public static class Response extends GvodMsg.Response {
 
-        public final Map<Integer, Set<VodAddress>> overlaySamples;
+        public final int overlayId;
+        public final Set<VodAddress> overlaySample;
+        public final FileMetadata fileMeta;
 
-        public Response(UUID reqId, ReqStatus status, Map<Integer, Set<VodAddress>> overlaySamples) {
+        public Response(UUID reqId, ReqStatus status, int overlayId, Set<VodAddress> overlaySample, FileMetadata fileMeta) {
             super(reqId, status);
-            this.overlaySamples = overlaySamples;
+            this.overlayId = overlayId;
+            this.overlaySample = overlaySample;
+            this.fileMeta = fileMeta;
         }
 
         @Override
         public Response copy() {
-            Map<Integer, Set<VodAddress>> newOverlaySamples = new HashMap<Integer,Set<VodAddress>>();
-            for(Map.Entry<Integer, Set<VodAddress>> e : overlaySamples.entrySet()) {
-                newOverlaySamples.put(e.getKey(), new HashSet<VodAddress>(e.getValue()));
-            }
-            return new Response(reqId, status, newOverlaySamples);
+            return new Response(reqId, status, overlayId, new HashSet<VodAddress>(overlaySample), fileMeta);
         }
         
         @Override
         public String toString() {
             return "JoinOverlayMsgResponse<" + status.toString() + "> " + reqId.toString();
         }
-        
+
         @Override
         public int hashCode() {
-            int hash = 7;
-            hash = 17 * hash + Objects.hashCode(this.reqId);
-            hash = 17 * hash + Objects.hashCode(this.overlaySamples);
+            int hash = 5;
+            hash = 71 * hash + this.overlayId;
+            hash = 71 * hash + (this.overlaySample != null ? this.overlaySample.hashCode() : 0);
+            hash = 71 * hash + (this.fileMeta != null ? this.fileMeta.hashCode() : 0);
             return hash;
         }
 
@@ -128,14 +125,16 @@ public class JoinOverlayMsg {
                 return false;
             }
             final Response other = (Response) obj;
-            if (!Objects.equal(this.reqId, other.reqId)) {
+            if (this.overlayId != other.overlayId) {
                 return false;
             }
-            if (!Objects.equal(this.overlaySamples, other.overlaySamples)) {
+            if (this.overlaySample != other.overlaySample && (this.overlaySample == null || !this.overlaySample.equals(other.overlaySample))) {
+                return false;
+            }
+            if (this.fileMeta != other.fileMeta && (this.fileMeta == null || !this.fileMeta.equals(other.fileMeta))) {
                 return false;
             }
             return true;
         }
     }
-
 }

@@ -20,6 +20,7 @@
 package se.sics.gvod.system.vod;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.system.video.VideoConfig;
@@ -31,10 +32,12 @@ import se.sics.gvod.system.video.connMngr.ConnMngrConfig;
 public class VoDConfig {
     private final Config config;
     public final VodAddress selfAddress;
+    public final int pieceSize;
     
-    private VoDConfig(Config config, VodAddress selfAddress) {
+    private VoDConfig(Config config, VodAddress selfAddress, int pieceSize) {
         this.config = config;
         this.selfAddress = selfAddress;
+        this.pieceSize = pieceSize;
     }
     
     public VideoConfig.Builder getVideoConfig() {
@@ -55,7 +58,13 @@ public class VoDConfig {
         }
         
         public VoDConfig finalise() throws GVoDConfigException.Missing {
-            return new VoDConfig(config, selfAddress);
+            int pieceSize;
+            try {
+                pieceSize = config.getInt("vod.video.pieceSize");
+            } catch(ConfigException.Missing ex) {
+                throw new GVoDConfigException.Missing(ex);
+            }
+            return new VoDConfig(config, selfAddress, pieceSize);
         }
     }
 }

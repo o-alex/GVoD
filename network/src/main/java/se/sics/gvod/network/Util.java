@@ -23,6 +23,7 @@ import java.util.UUID;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msgs.MessageDecodingException;
 import se.sics.gvod.common.msgs.MessageEncodingException;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.util.UserTypesDecoderFactory;
 import se.sics.gvod.net.util.UserTypesEncoderFactory;
@@ -103,5 +104,24 @@ public class Util {
 
     public static int getReqStatusEncodedSize() {
         return 1;
+    }
+
+    public static ByteBuf encodeFileMeta(ByteBuf buffer, FileMetadata fileMeta) {
+        buffer.writeInt(fileMeta.size);
+        buffer.writeInt(fileMeta.pieceSize);
+        return buffer;
+    }
+
+    public static FileMetadata decodeFileMeta(ByteBuf buffer) {
+        int fileSize = buffer.readInt();
+        int pieceSize = buffer.readInt();
+        return new FileMetadata(fileSize, pieceSize);
+    }
+
+    public static int getFileMetaSize() {
+        int size = 0;
+        size += 4; //fileSize
+        size += 4; //pieceSize
+        return size;
     }
 }

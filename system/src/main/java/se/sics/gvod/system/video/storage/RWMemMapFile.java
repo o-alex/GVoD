@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system.storage;
+package se.sics.gvod.system.video.storage;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,17 +31,20 @@ import java.util.Set;
 public class RWMemMapFile implements Storage {
 
     private final int fileLength;
+    private final int pieceSize;
     
     private final MappedByteBuffer mbb;
     private final FilePieceTracker fpt;
 
-    RWMemMapFile(File file, int length) throws IOException {
+    RWMemMapFile(File file, int length, int pieceSize) throws IOException {
         this.fileLength = length;
+        this.pieceSize = pieceSize;
+        
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
         mbb = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, fileLength);
         raf.close();
 
-        this.fpt = new SimpleFPTracker(0, length / Storage.PIECE_LENGTH);
+        this.fpt = new SimpleFPTracker(0, length / pieceSize);
     }
 
     @Override
@@ -62,9 +65,9 @@ public class RWMemMapFile implements Storage {
     @Override
     public synchronized void writePiece(int pieceId, byte[] piece) throws FilePieceTracker.OutOfBoundsException {
         fpt.addPiece(pieceId);
-        int writeStart = pieceId * Storage.PIECE_LENGTH;
+        int writeStart = pieceId * pieceSize;
         mbb.position(writeStart);
-        int writeBytes = (piece.length < Storage.PIECE_LENGTH ? piece.length : Storage.PIECE_LENGTH);
+        int writeBytes = (piece.length < pieceSize ? piece.length : pieceSize);
         mbb.put(piece, 0, writeBytes);
         mbb.force();
     }
@@ -75,13 +78,13 @@ public class RWMemMapFile implements Storage {
             throw new FilePieceTracker.PieceNotReadyException();
         }
         byte[] result;
-        int lastPiece = fileLength / Storage.PIECE_LENGTH;
+        int lastPiece = fileLength / pieceSize;
         if (lastPiece == pieceId) {
-            result = new byte[fileLength % Storage.PIECE_LENGTH];
+            result = new byte[fileLength % pieceSize];
         } else {
-            result = new byte[Storage.PIECE_LENGTH];
+            result = new byte[pieceSize];
         }
-        int readStart = pieceId * Storage.PIECE_LENGTH;
+        int readStart = pieceId * pieceSize;
         mbb.position(readStart);
         mbb.get(result, 0, result.length);
 

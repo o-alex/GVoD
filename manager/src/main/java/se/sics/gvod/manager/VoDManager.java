@@ -24,7 +24,7 @@ package se.sics.gvod.manager;
  */
 public interface VoDManager {
 
-    public void uploadVideo(UploadFileInfo fileMeta);
+    public void uploadVideo(UploadFileInfo fileInfo);
 
-    public void downloadVideo(DownloadFileInfo fileMeta);
+    public void downloadVideo(DownloadFileInfo fileInfo);
 }

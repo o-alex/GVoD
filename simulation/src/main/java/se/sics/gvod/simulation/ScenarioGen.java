@@ -18,7 +18,19 @@
  */
 package se.sics.gvod.simulation;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import se.sics.gvod.manager.DownloadFileInfo;
+import se.sics.gvod.manager.UploadFileInfo;
 import se.sics.gvod.simulation.cmd.operations.DownloadVideoCmd;
 import se.sics.gvod.simulation.cmd.operations.UploadVideoCmd;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
@@ -36,6 +48,21 @@ import se.sics.kompics.p2p.experiment.dsl.distribution.Distribution;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class ScenarioGen {
+
+    static final Map<Integer, String> fileNames = new HashMap<Integer, String>();
+    static final Distribution<Integer> videoIdDist = new ConstantDistribution<Integer>(Integer.class, 1);
+    static String experimentDir;
+
+    static {
+        fileNames.put(1, "video1");
+        try {
+            File f = File.createTempFile("vodExperiment", "");
+            f.mkdir();
+            experimentDir = f.getPath();
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
 
     static Operation1<StartBSCmd, Integer> startBootstrapServer
             = new Operation1<StartBSCmd, Integer>() {
@@ -77,16 +104,35 @@ public class ScenarioGen {
 
                 @Override
                 public UploadVideoCmd generate(Integer nodeId, Integer overlayId) {
-                    return new UploadVideoCmd(nodeId, overlayId);
+                    String libDir;
+                    try {
+                        File nodeLibDir = new File(experimentDir + File.pathSeparator + "node" + nodeId);
+                        nodeLibDir.mkdir();
+                        libDir = nodeLibDir.getPath();
+                        File file = new File(libDir + File.pathSeparator + fileNames.get(overlayId));
+                        Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file.getPath())));
+                        for (int i = 0; i < 10000; i++) {
+                            writer.write("abc" + i + "\n");
+                        }
+                        writer.flush();
+                        writer.close();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                    return new UploadVideoCmd(nodeId, new UploadFileInfo(overlayId, libDir, fileNames.get(overlayId)));
                 }
             };
-    
+
     static Operation2<DownloadVideoCmd, Integer, Integer> downloadVideo
             = new Operation2<DownloadVideoCmd, Integer, Integer>() {
 
                 @Override
                 public DownloadVideoCmd generate(Integer nodeId, Integer overlayId) {
-                    return new DownloadVideoCmd(nodeId, overlayId);
+                    String libDir;
+                    File nodeLibDir = new File(experimentDir + File.pathSeparator + "node" + nodeId);
+                    nodeLibDir.mkdir();
+                    libDir = nodeLibDir.getPath();
+                    return new DownloadVideoCmd(nodeId, new DownloadFileInfo(overlayId, libDir, fileNames.get(overlayId)));
                 }
             };
 
@@ -96,7 +142,6 @@ public class ScenarioGen {
                 final Random rand = new Random(seed);
                 final Distribution<Integer> bootstrapIdDist = new ConstantDistribution<Integer>(Integer.class, 0);
                 final Distribution<Integer> vodPeerIdDist = new IntegerUniformDistribution(1, 65535, new Random(seed));
-                final Distribution<Integer> videoIdDist = new ConstantDistribution<Integer>(Integer.class, 1);
                 //generate the same ids - first id will be the uploader
                 final Distribution<Integer> videoPeerIdDist = new IntegerUniformDistribution(1, 65535, new Random(seed));
                 final Distribution<Integer> uploaderIdDist = new ConstantDistribution<Integer>(Integer.class, videoPeerIdDist.draw());
@@ -136,7 +181,7 @@ public class ScenarioGen {
                         raise(1, uploadVideo, uploaderIdDist, videoIdDist);
                     }
                 };
-                
+
                 StochasticProcess downloadVideoProc = new StochasticProcess() {
                     {
                         eventInterArrivalTime(constant(1000));
@@ -147,7 +192,7 @@ public class ScenarioGen {
                 startBootstrapServerProc.start();
                 startVodPeersProc.startAfterTerminationOf(1000, startBootstrapServerProc);
                 uploadVideoProc.startAfterTerminationOf(1000, startVodPeersProc);
-                downloadVideoProc.startAfterStartOf(10*1000,uploadVideoProc);
+                downloadVideoProc.startAfterStartOf(10 * 1000, uploadVideoProc);
                 terminateAfterTerminationOf(1000 * 1000, uploadVideoProc);
             }
         };

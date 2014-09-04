@@ -22,6 +22,7 @@ import com.google.common.base.Objects;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
+import se.sics.gvod.common.util.FileMetadata;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -31,10 +32,12 @@ public class AddOverlayMsg {
     public static class Request extends GvodMsg.Request {
 
         public final int overlayId;
-
-        public Request(UUID reqId, int overlayId) {
+        public final FileMetadata fileMeta;
+        
+        public Request(UUID reqId, int overlayId, FileMetadata fileMeta) {
             super(reqId);
             this.overlayId = overlayId;
+            this.fileMeta = fileMeta;
         }
         
         public Response fail() {
@@ -47,7 +50,7 @@ public class AddOverlayMsg {
         
         @Override
         public Request copy() {
-            return new Request(reqId, overlayId);
+            return new Request(reqId, overlayId, fileMeta);
         }
         
         @Override
@@ -60,6 +63,7 @@ public class AddOverlayMsg {
             int hash = 3;
             hash = 61 * hash + Objects.hashCode(this.reqId);
             hash = 61 * hash + this.overlayId;
+            hash = 61 * hash + Objects.hashCode(this.fileMeta);
             return hash;
         }
 
@@ -78,13 +82,15 @@ public class AddOverlayMsg {
             if (this.overlayId != other.overlayId) {
                 return false;
             }
+            if(!Objects.equal(this.fileMeta, other.fileMeta)) {
+                return false;
+            }
             return true;
         }
     }
     
     public static class Response extends GvodMsg.Response {
 
-        public  
         public Response(UUID reqId, ReqStatus status) {
             super(reqId, status);
         }
