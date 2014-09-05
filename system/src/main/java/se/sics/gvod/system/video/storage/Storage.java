@@ -25,6 +25,8 @@ import java.util.Set;
  */
 public interface Storage {
 
+    public int nrPieces();
+    
     public void setReadPosition(int pieceId) throws FilePieceTracker.OutOfBoundsException;
 
     public int getReadPosition();

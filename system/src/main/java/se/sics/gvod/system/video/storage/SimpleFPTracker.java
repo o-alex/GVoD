@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 import org.javatuples.Triplet;
+import se.sics.gvod.system.video.storage.FilePieceTracker;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>

@@ -44,6 +44,11 @@ public class RMemMapFile implements Storage {
         mbb = raf.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, fileLength);
         raf.close();
     }
+    
+    @Override
+    public int nrPieces() {
+        return fileLength/pieceSize + 1;
+    }
 
     @Override
     public void setReadPosition(int pieceId) throws FilePieceTracker.OutOfBoundsException {

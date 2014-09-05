@@ -48,6 +48,11 @@ public class RWMemMapFile implements Storage {
     }
 
     @Override
+    public int nrPieces() {
+        return fileLength/pieceSize + 1;
+    }
+    
+    @Override
     public synchronized void setReadPosition(int pieceId) throws FilePieceTracker.OutOfBoundsException {
         fpt.setReadPos(pieceId);
     }
