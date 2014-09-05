@@ -24,5 +24,11 @@
             <artifactId>netty</artifactId>
             <version>1.1-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.javatuples</groupId>
+            <artifactId>javatuples</artifactId>
+            <version>1.2</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 </project>

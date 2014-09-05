@@ -18,8 +18,8 @@
  */
 package se.sics.gvod.common.msg.impl;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
@@ -30,43 +30,46 @@ import se.sics.gvod.net.VodAddress;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class JoinOverlayMsg {
+public class JoinOverlay {
 
     public static class Request extends GvodMsg.Request {
 
         public final int overlayId;
+        public final int utility;
 
-        public Request(UUID reqId, int overlayId) {
+        public Request(UUID reqId, int overlayId, int utility) {
             super(reqId);
             this.overlayId = overlayId;
+            this.utility = utility;
         }
         
         public ResponseBuilder getResponseBuilder() {
-            return new ResponseBuilder(reqId, overlayId);
+            return new ResponseBuilder(id, overlayId);
         }
 
-        public Response success(Set<VodAddress> overlaySample, FileMetadata fileMeta) {
-            return new Response(reqId, ReqStatus.SUCCESS, overlayId, overlaySample, fileMeta);
+        public Response success(Map<VodAddress, Integer> overlaySample, FileMetadata fileMeta) {
+            return new Response(id, ReqStatus.SUCCESS, overlayId, overlaySample, fileMeta);
         }
 
         public Response fail() {
-            return new Response(reqId, ReqStatus.FAIL, overlayId, null, null);
+            return new Response(id, ReqStatus.FAIL, overlayId, null, null);
         }
 
         @Override
         public Request copy() {
-            return new Request(reqId, overlayId);
+            return new Request(id, overlayId, utility);
         }
 
         @Override
         public String toString() {
-            return "JoinOverlayRequest " + reqId.toString();
+            return "JoinOverlayRequest " + id.toString();
         }
 
         @Override
         public int hashCode() {
             int hash = 3;
             hash = 29 * hash + this.overlayId;
+            hash = 29 * hash + this.utility;
             return hash;
         }
 
@@ -82,6 +85,9 @@ public class JoinOverlayMsg {
             if (this.overlayId != other.overlayId) {
                 return false;
             }
+            if(this.utility != other.utility) {
+                return false;
+            }
             return true;
         }
     }
@@ -89,10 +95,10 @@ public class JoinOverlayMsg {
     public static class Response extends GvodMsg.Response {
 
         public final int overlayId;
-        public final Set<VodAddress> overlaySample;
+        public final Map<VodAddress, Integer> overlaySample; //<peer, utility>
         public final FileMetadata fileMeta;
 
-        public Response(UUID reqId, ReqStatus status, int overlayId, Set<VodAddress> overlaySample, FileMetadata fileMeta) {
+        public Response(UUID reqId, ReqStatus status, int overlayId, Map<VodAddress, Integer> overlaySample, FileMetadata fileMeta) {
             super(reqId, status);
             this.overlayId = overlayId;
             this.overlaySample = overlaySample;
@@ -101,12 +107,12 @@ public class JoinOverlayMsg {
 
         @Override
         public Response copy() {
-            return new Response(reqId, status, overlayId, new HashSet<VodAddress>(overlaySample), fileMeta);
+            return new Response(id, status, overlayId, new HashMap<VodAddress, Integer>(overlaySample), fileMeta);
         }
 
         @Override
         public String toString() {
-            return "JoinOverlayMsgResponse<" + status.toString() + "> " + reqId.toString();
+            return "JoinOverlayMsgResponse<" + status.toString() + "> " + id.toString();
         }
 
         @Override
@@ -143,14 +149,14 @@ public class JoinOverlayMsg {
     public static class ResponseBuilder {
         public final UUID reqId;
         public final int overlayId;
-        private Set<VodAddress> overlaySample = null;
+        private Map<VodAddress, Integer> overlaySample = null;
         private FileMetadata fileMetadata = null;
         
         public ResponseBuilder(UUID reqId, int overlayId) {
             this.reqId = reqId;
             this.overlayId = overlayId;
         }
-        public void setOverlaySample(Set<VodAddress> overlaySample) {
+        public void setOverlaySample(Map<VodAddress, Integer> overlaySample) {
             this.overlaySample = overlaySample;
         }
         

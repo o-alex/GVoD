@@ -28,10 +28,10 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
-import se.sics.gvod.bootstrap.server.peermanager.msg.AddFileMetadata;
-import se.sics.gvod.bootstrap.server.peermanager.msg.GetFileMetadata;
-import se.sics.gvod.bootstrap.server.peermanager.msg.GetOverlaySample;
-import se.sics.gvod.bootstrap.server.peermanager.msg.JoinOverlay;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMAddFileMetadata;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetFileMetadata;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
@@ -66,25 +66,25 @@ public class SimPMComp extends ComponentDefinition {
             subscribe(handleGetFileMetadata, peerManager);
     }
 
-     public Handler<JoinOverlay.Request> handleJoinOverlay = new Handler<JoinOverlay.Request>() {
+     public Handler<PMJoinOverlay.Request> handleJoinOverlay = new Handler<PMJoinOverlay.Request>() {
 
         @Override
-        public void handle(JoinOverlay.Request req) {
+        public void handle(PMJoinOverlay.Request req) {
             log.debug("{} received {}", new Object[]{config.selfAddress, req});
             List<byte[]> overlayIds = overlays.get(req.overlayId);
             if(overlayIds == null) {
                 overlayIds = new ArrayList<byte[]>();
                 overlays.put(req.overlayId, overlayIds);
             }
-            overlayIds.add(req.peer);
+            overlayIds.add(req.data);
             trigger(req.success(), peerManager);
         }
     };
 
-    public Handler<GetOverlaySample.Request> handleGetOverlaySample = new Handler<GetOverlaySample.Request>() {
+    public Handler<PMGetOverlaySample.Request> handleGetOverlaySample = new Handler<PMGetOverlaySample.Request>() {
 
         @Override
-        public void handle(GetOverlaySample.Request req) {
+        public void handle(PMGetOverlaySample.Request req) {
             log.debug("{} received {}", new Object[]{config.selfAddress, req});
             List<byte[]> overlayIds = overlays.get(req.overlayId);
             if(overlayIds == null) {
@@ -95,10 +95,10 @@ public class SimPMComp extends ComponentDefinition {
         }
     };
 
-    public Handler<AddFileMetadata.Request> handleAddFileMetadata = new Handler<AddFileMetadata.Request>() {
+    public Handler<PMAddFileMetadata.Request> handleAddFileMetadata = new Handler<PMAddFileMetadata.Request>() {
 
         @Override
-        public void handle(AddFileMetadata.Request req) {
+        public void handle(PMAddFileMetadata.Request req) {
             log.debug("{} received {}", new Object[]{config.selfAddress, req});
             List<byte[]> overlayIds = overlays.get(req.overlayId);
             if(overlayIds == null) {
@@ -110,10 +110,10 @@ public class SimPMComp extends ComponentDefinition {
         }
     };
     
-    public Handler<GetFileMetadata.Request> handleGetFileMetadata = new Handler<GetFileMetadata.Request>() {
+    public Handler<PMGetFileMetadata.Request> handleGetFileMetadata = new Handler<PMGetFileMetadata.Request>() {
 
         @Override
-        public void handle(GetFileMetadata.Request req) {
+        public void handle(PMGetFileMetadata.Request req) {
             log.debug("{} received {}", new Object[]{config.selfAddress, req});
             List<byte[]> overlayIds = overlays.get(req.overlayId);
             if(overlayIds == null) {

@@ -21,7 +21,7 @@ package se.sics.gvod.network.gvodadapter;
 import io.netty.buffer.ByteBuf;
 import java.util.UUID;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.AddOverlayMsg;
+import se.sics.gvod.common.msg.impl.AddOverlay;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.network.GVoDAdapterFactory;
 import se.sics.gvod.network.Util;
@@ -32,22 +32,22 @@ import se.sics.gvod.network.Util;
  */
 public class AddOverlayAdapter {
 
-    public static class Request implements GVoDAdapter<AddOverlayMsg.Request> {
+    public static class Request implements GVoDAdapter<AddOverlay.Request> {
 
         @Override
-        public AddOverlayMsg.Request decode(ByteBuf buffer) {
+        public AddOverlay.Request decode(ByteBuf buffer) {
             UUID reqId = Util.decodeUUID(buffer);
             int overlayId = buffer.readInt();
             FileMetadata fileMeta = Util.decodeFileMeta(buffer);
 
-            return new AddOverlayMsg.Request(reqId, overlayId, fileMeta);
+            return new AddOverlay.Request(reqId, overlayId, fileMeta);
         }
 
         @Override
-        public ByteBuf encode(AddOverlayMsg.Request req, ByteBuf buffer) {
+        public ByteBuf encode(AddOverlay.Request req, ByteBuf buffer) {
             buffer.writeByte(GVoDAdapterFactory.ADD_OVERLAY_REQUEST);
 
-            Util.encodeUUID(buffer, req.reqId);
+            Util.encodeUUID(buffer, req.id);
             buffer.writeInt(req.overlayId);
             Util.encodeFileMeta(buffer, req.fileMeta);
             
@@ -55,33 +55,33 @@ public class AddOverlayAdapter {
         }
         
         @Override
-        public int getEncodedSize(AddOverlayMsg.Request req) {
+        public int getEncodedSize(AddOverlay.Request req) {
             int size = 0;
             size += 1; //type
             size += Util.getUUIDEncodedSize();
             size += 4; //overlayId;
-            size += Util.getFileMetaSize();
+            size += Util.getFileMetaEncodedSize();
             return size;
         }
 
     }
 
-    public static class Response implements GVoDAdapter<AddOverlayMsg.Response> {
+    public static class Response implements GVoDAdapter<AddOverlay.Response> {
 
         @Override
-        public AddOverlayMsg.Response decode(ByteBuf buffer) {
+        public AddOverlay.Response decode(ByteBuf buffer) {
             UUID respId = Util.decodeUUID(buffer);
             ReqStatus status = Util.decodeReqStatus(buffer);
             int overlayId = buffer.readInt();
             
-            return new AddOverlayMsg.Response(respId, status, overlayId);
+            return new AddOverlay.Response(respId, status, overlayId);
         }
 
         @Override
-        public ByteBuf encode(AddOverlayMsg.Response resp, ByteBuf buffer) {
+        public ByteBuf encode(AddOverlay.Response resp, ByteBuf buffer) {
             buffer.writeByte(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
 
-            Util.encodeUUID(buffer, resp.reqId);
+            Util.encodeUUID(buffer, resp.id);
             Util.encodeReqStatus(buffer, resp.status);
             buffer.writeInt(resp.overlayId);
 
@@ -89,7 +89,7 @@ public class AddOverlayAdapter {
         }
 
         @Override
-        public int getEncodedSize(AddOverlayMsg.Response resp) {
+        public int getEncodedSize(AddOverlay.Response resp) {
             int size = 0;
             size += 1; //type
             size += Util.getUUIDEncodedSize();

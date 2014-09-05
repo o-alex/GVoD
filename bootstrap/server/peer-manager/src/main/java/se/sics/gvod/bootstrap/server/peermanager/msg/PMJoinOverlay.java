@@ -25,18 +25,18 @@ import se.sics.gvod.common.msg.ReqStatus;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class JoinOverlay {
+public class PMJoinOverlay {
 
     public static class Request extends PeerManagerMsg.Request {
         public final int overlayId;
         public final int nodeId;
-        public final byte[] peer;
+        public final byte[] data;
         
-        public Request(UUID id, int overlayId, int nodeId, byte[] peer) {
+        public Request(UUID id, int overlayId, int nodeId, byte[] data) {
             super(id);
             this.overlayId = overlayId;
             this.nodeId = nodeId;
-            this.peer = peer;
+            this.data = data;
         }
         
         public Response success() {

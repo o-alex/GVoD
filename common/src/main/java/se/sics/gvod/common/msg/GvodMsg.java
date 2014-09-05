@@ -29,10 +29,10 @@ public class GvodMsg {
 
     public static abstract class Request implements KompicsEvent {
 
-        public final UUID reqId;
+        public final UUID id;
 
-        public Request(UUID reqId) {
-            this.reqId = reqId;
+        public Request(UUID id) {
+            this.id = id;
         }
         
         public abstract <E extends Request> E copy();
@@ -40,11 +40,11 @@ public class GvodMsg {
 
     public static abstract class Response implements KompicsEvent {
 
-        public final UUID reqId;
+        public final UUID id;
         public final ReqStatus status;
 
-        public Response(UUID reqId, ReqStatus status) {
-            this.reqId = reqId;
+        public Response(UUID id, ReqStatus status) {
+            this.id = id;
             this.status = status;
         }
         
@@ -53,10 +53,10 @@ public class GvodMsg {
 
     public static abstract class OneWay implements KompicsEvent {
 
-        public final UUID reqId;
+        public final UUID id;
 
-        public OneWay(UUID reqId) {
-            this.reqId = reqId;
+        public OneWay(UUID id) {
+            this.id = id;
         }
         
         public abstract <E extends OneWay> E copy();

@@ -43,7 +43,7 @@ public class DownloadVideo {
 
         @Override
         public String toString() {
-            return "DownloadVideo.Request " + reqId.toString();
+            return "DownloadVideo.Request " + id.toString();
         }
     }
 }

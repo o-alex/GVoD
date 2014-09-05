@@ -24,44 +24,45 @@ import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.common.msg.ReqStatus;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class GetFileMetadata {
-     public static class Request extends PeerManagerMsg.Request {
+public class PMAddFileMetadata {
+    public static class Request extends PeerManagerMsg.Request {
         public final int overlayId;
+        public final byte[] fileMetadata;
         
-        public Request(UUID id, int overlayId) {
+        public Request(UUID id, int overlayId, byte[] fileMetadata) {
             super(id);
             this.overlayId = overlayId;
+            this.fileMetadata = fileMetadata;
         }
         
-        public Response success(byte[] fileMetadata) {
-            return new Response(id, ReqStatus.SUCCESS, overlayId, fileMetadata);
+        public Response success() {
+            return new Response(id, ReqStatus.SUCCESS, overlayId);
         }
         
         public Response fail() {
-            return new Response(id, ReqStatus.FAIL, overlayId, null);
+            return new Response(id, ReqStatus.FAIL, overlayId);
         }
         
         @Override
         public String toString() {
-            return "GetFileMetadataRequest " + id;
+            return "AddFileMetadataRequest " + id;
         }
     }
     
     public static class Response extends PeerManagerMsg.Response {
         public final int overlayId;
-        public final byte[] fileMetadata;
         
-        public Response(UUID id, ReqStatus status, int overlayId, byte[] fileMetadata) {
+        public Response(UUID id, ReqStatus status, int overlayId) {
             super(id, status);
             this.overlayId = overlayId;
-            this.fileMetadata = fileMetadata;
         }
         
         @Override
         public String toString() {
-            return "GetFileMetadataResponse<" + status + "> " + id;
+            return "AddFileMetadataResponse<" + status + "> " + id;
         }
     }
 }

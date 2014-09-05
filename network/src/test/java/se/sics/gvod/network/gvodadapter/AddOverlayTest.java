@@ -25,7 +25,7 @@ import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Test;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.AddOverlayMsg;
+import se.sics.gvod.common.msg.impl.AddOverlay;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.network.GVoDAdapterFactory;
 
@@ -37,45 +37,45 @@ public class AddOverlayTest {
     
     @Test
     public void testRequest() {
-        GVoDAdapter<AddOverlayMsg.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_REQUEST);
-        AddOverlayMsg.Request expected = new AddOverlayMsg.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024));
+        GVoDAdapter<AddOverlay.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_REQUEST);
+        AddOverlay.Request expected = new AddOverlay.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024));
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
         byte type = newBuf.readByte();
         Assert.assertEquals(GVoDAdapterFactory.ADD_OVERLAY_REQUEST, type);
-        AddOverlayMsg.Request decoded = adapter.decode(newBuf);
+        AddOverlay.Request decoded = adapter.decode(newBuf);
         Assert.assertEquals(expected, decoded);
         Assert.assertEquals(expectedSize, buf.readableBytes());
     }
     
     @Test
     public void tesResponsetSuccess() {
-        GVoDAdapter<AddOverlayMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
-        AddOverlayMsg.Response expected = new AddOverlayMsg.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1);
+        GVoDAdapter<AddOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
+        AddOverlay.Response expected = new AddOverlay.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
         byte type = newBuf.readByte();
         Assert.assertEquals(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE, type);
-        AddOverlayMsg.Response decoded = adapter.decode(newBuf);
+        AddOverlay.Response decoded = adapter.decode(newBuf);
         Assert.assertEquals(expected, decoded);
         Assert.assertEquals(expectedSize, buf.readableBytes());
     }
     
     @Test
     public void tesResponsetFail() {
-        GVoDAdapter<AddOverlayMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
-        AddOverlayMsg.Response expected = new AddOverlayMsg.Response(UUID.randomUUID(), ReqStatus.FAIL, 1);
+        GVoDAdapter<AddOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
+        AddOverlay.Response expected = new AddOverlay.Response(UUID.randomUUID(), ReqStatus.FAIL, 1);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
         byte type = newBuf.readByte();
         Assert.assertEquals(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE, type);
-        AddOverlayMsg.Response decoded = adapter.decode(newBuf);
+        AddOverlay.Response decoded = adapter.decode(newBuf);
         Assert.assertEquals(expected, decoded);
         Assert.assertEquals(expectedSize, buf.readableBytes());
     }

@@ -27,14 +27,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.server.operations.AddOverlayOp;
 import se.sics.gvod.bootstrap.server.operations.BootstrapGlobalOp;
+import se.sics.gvod.bootstrap.server.operations.HeartbeatOp;
 import se.sics.gvod.bootstrap.server.operations.JoinOverlayOp;
 import se.sics.gvod.bootstrap.server.operations.Operation;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.common.msg.impl.AddOverlayMsg;
-import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
-import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.common.msg.impl.AddOverlay;
+import se.sics.gvod.common.msg.impl.BootstrapGlobal;
+import se.sics.gvod.common.msg.impl.Heartbeat;
+import se.sics.gvod.common.msg.impl.JoinOverlay;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.network.nettymsg.GvodNetMsg;
@@ -65,6 +67,7 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
         this.pendingPeerReqs = new HashMap<UUID, UUID>();
 
         subscribe(handleNetRequest, network);
+        subscribe(handleNetOneWay, network);
         subscribe(handlePeerManagerResponse, peerManager);
     }
 
@@ -74,23 +77,42 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
         public void handle(GvodNetMsg.Request<GvodMsg.Request> netReq) {
             log.debug("{} received {}", new Object[]{config.self, netReq});
             Operation op = null;
-            if(netReq.payload instanceof BootstrapGlobalMsg.Request) {
-                BootstrapGlobalMsg.Request gvodReq = (BootstrapGlobalMsg.Request)netReq.payload;
+            
+            if (netReq.payload instanceof BootstrapGlobal.Request) {
+                BootstrapGlobal.Request gvodReq = (BootstrapGlobal.Request) netReq.payload;
                 op = new BootstrapGlobalOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
-            } else if(netReq.payload instanceof AddOverlayMsg.Request) {
-                AddOverlayMsg.Request gvodReq = (AddOverlayMsg.Request)netReq.payload;
+            } else if (netReq.payload instanceof AddOverlay.Request) {
+                AddOverlay.Request gvodReq = (AddOverlay.Request) netReq.payload;
                 op = new AddOverlayOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
-            } else if(netReq.payload instanceof JoinOverlayMsg.Request) {
-                JoinOverlayMsg.Request gvodReq = (JoinOverlayMsg.Request)netReq.payload;
+            } else if (netReq.payload instanceof JoinOverlay.Request) {
+                JoinOverlay.Request gvodReq = (JoinOverlay.Request) netReq.payload;
                 op = new JoinOverlayOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
             } else {
                 throw new RuntimeException("wrong message");
             }
-            pendingOps.put(netReq.payload.reqId, op);
+            pendingOps.put(netReq.payload.id, op);
             op.start();
         }
     };
-    
+
+    public Handler<GvodNetMsg.OneWay<GvodMsg.OneWay>> handleNetOneWay = new Handler<GvodNetMsg.OneWay<GvodMsg.OneWay>>() {
+
+        @Override
+        public void handle(GvodNetMsg.OneWay<GvodMsg.OneWay> netOneWay) {
+            log.debug("{} received {}", new Object[]{config.self, netOneWay});
+            Operation op = null;
+            if (netOneWay.payload instanceof Heartbeat.OneWay) {
+                Heartbeat.OneWay gvodOneWay = (Heartbeat.OneWay) netOneWay.payload;
+                op = new HeartbeatOp(BootstrapServerComp.this, gvodOneWay, netOneWay.getVodSource());
+            } else {
+                throw new RuntimeException("wrong message");
+            }
+            pendingOps.put(netOneWay.payload.id, op);
+            op.start();
+        }
+
+    };
+
     public Handler<PeerManagerMsg.Response> handlePeerManagerResponse = new Handler<PeerManagerMsg.Response>() {
 
         @Override
@@ -107,13 +129,21 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
 
     //**********OperationManager
     @Override
-    public void finish(VodAddress src, GvodMsg.Response resp) {
-        if (pendingOps.remove(resp.reqId) == null) {
+    public void finish(UUID opId, VodAddress src, GvodMsg.Response resp) {
+        if (pendingOps.remove(opId) == null) {
             throw new RuntimeException("pendingOp should not be null");
         }
-        cleanRequests(resp.reqId);
+        cleanRequests(opId);
         log.debug("{} sending {}", new Object[]{config.self, resp});
         trigger(new GvodNetMsg.Response<GvodMsg.Response>(config.self, src, resp), network);
+    }
+    
+    @Override
+    public void finish(UUID opId) {
+        if (pendingOps.remove(opId) == null) {
+            throw new RuntimeException("pendingOp should not be null");
+        }
+        cleanRequests(opId);
     }
 
     @Override
@@ -132,7 +162,7 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
             }
         }
     }
-    
+
     public static class BootstrapServerInit extends Init<BootstrapServerComp> {
 
         public final BootstrapServerConfig config;

@@ -171,9 +171,6 @@ public class GvodNetMsg {
 
         public OneWay(VodAddress vodSrc, VodAddress vodDest, E payload) {
             super(vodSrc, vodDest);
-            //TODO ALEX fix later
-            setTimeoutId(se.sics.gvod.timer.UUID.nextUUID());
-            //fix
             this.payload = payload;
         }
         

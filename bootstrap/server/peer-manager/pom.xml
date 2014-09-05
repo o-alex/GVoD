@@ -24,5 +24,11 @@
             <artifactId>kompics-core</artifactId>
             <version>${kompics.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.javatuples</groupId>
+            <artifactId>javatuples</artifactId>
+            <version>1.2</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 </project>

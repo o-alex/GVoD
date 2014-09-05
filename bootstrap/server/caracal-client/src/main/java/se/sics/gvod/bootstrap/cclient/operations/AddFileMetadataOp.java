@@ -26,7 +26,7 @@ import se.sics.caracaldb.operations.PutResponse;
 import se.sics.caracaldb.operations.ResponseCode;
 import se.sics.gvod.bootstrap.cclient.CaracalKeyFactory;
 import se.sics.gvod.bootstrap.cclient.CaracalOpManager;
-import se.sics.gvod.bootstrap.server.peermanager.msg.AddFileMetadata;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMAddFileMetadata;
 import se.sics.gvod.common.util.Operation;
 
 /**
@@ -34,9 +34,9 @@ import se.sics.gvod.common.util.Operation;
  */
 public class AddFileMetadataOp implements Operation<CaracalOp> {
     private final CaracalOpManager opMngr;
-    private final AddFileMetadata.Request req;
+    private final PMAddFileMetadata.Request req;
 
-    public AddFileMetadataOp(CaracalOpManager opMngr, AddFileMetadata.Request req) {
+    public AddFileMetadataOp(CaracalOpManager opMngr, PMAddFileMetadata.Request req) {
         this.opMngr = opMngr;
         this.req = req;
     }

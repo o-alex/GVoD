@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
+import se.sics.gvod.common.msg.impl.BootstrapGlobal;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
 import se.sics.gvod.network.Util;
@@ -34,23 +34,23 @@ import se.sics.gvod.network.Util;
  */
 public class BootstrapGlobalAdapter {
 
-    public static class Request implements GVoDAdapter<BootstrapGlobalMsg.Request> {
+    public static class Request implements GVoDAdapter<BootstrapGlobal.Request> {
 
         @Override
-        public BootstrapGlobalMsg.Request decode(ByteBuf buffer) {
+        public BootstrapGlobal.Request decode(ByteBuf buffer) {
             UUID reqId = Util.decodeUUID(buffer);
-            return new BootstrapGlobalMsg.Request(reqId);
+            return new BootstrapGlobal.Request(reqId);
         }
 
         @Override
-        public ByteBuf encode(BootstrapGlobalMsg.Request req, ByteBuf buffer) {
+        public ByteBuf encode(BootstrapGlobal.Request req, ByteBuf buffer) {
             buffer.writeByte(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_REQUEST);
-            Util.encodeUUID(buffer, req.reqId);
+            Util.encodeUUID(buffer, req.id);
             return buffer;
         }
 
         @Override
-        public int getEncodedSize(BootstrapGlobalMsg.Request req) {
+        public int getEncodedSize(BootstrapGlobal.Request req) {
             int size = 0;
             size += 1; //type
             size += Util.getUUIDEncodedSize();
@@ -58,10 +58,10 @@ public class BootstrapGlobalAdapter {
         }
     }
 
-    public static class Response implements GVoDAdapter<BootstrapGlobalMsg.Response> {
+    public static class Response implements GVoDAdapter<BootstrapGlobal.Response> {
 
         @Override
-        public BootstrapGlobalMsg.Response decode(ByteBuf buffer) {
+        public BootstrapGlobal.Response decode(ByteBuf buffer) {
 
             UUID reqId = Util.decodeUUID(buffer);
             ReqStatus status = Util.decodeReqStatus(buffer);
@@ -76,14 +76,14 @@ public class BootstrapGlobalAdapter {
                     systemSample.add(address);
                 }
             }
-            return new BootstrapGlobalMsg.Response(reqId, status, systemSample);
+            return new BootstrapGlobal.Response(reqId, status, systemSample);
         }
 
         @Override
-        public ByteBuf encode(BootstrapGlobalMsg.Response resp, ByteBuf buffer) {
+        public ByteBuf encode(BootstrapGlobal.Response resp, ByteBuf buffer) {
             buffer.writeByte(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE);
 
-            Util.encodeUUID(buffer, resp.reqId);
+            Util.encodeUUID(buffer, resp.id);
             Util.encodeReqStatus(buffer, resp.status);
 
             if (resp.status == ReqStatus.SUCCESS) {
@@ -96,7 +96,7 @@ public class BootstrapGlobalAdapter {
         }
 
         @Override
-        public int getEncodedSize(BootstrapGlobalMsg.Response resp) {
+        public int getEncodedSize(BootstrapGlobal.Response resp) {
             int size = 0;
             size += 1; //type
             size += Util.getUUIDEncodedSize();

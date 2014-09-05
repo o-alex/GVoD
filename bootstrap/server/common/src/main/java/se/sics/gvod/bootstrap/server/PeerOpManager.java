@@ -28,6 +28,7 @@ import se.sics.gvod.net.VodAddress;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public interface PeerOpManager {
-    public void finish(VodAddress src, GvodMsg.Response resp);
+    public void finish(UUID opId, VodAddress src, GvodMsg.Response resp);
+    public void finish(UUID opId);
     public void sendPeerManagerReq(UUID opId, PeerManagerMsg.Request req);
 }

@@ -18,7 +18,14 @@
             <artifactId>kompics-core</artifactId>
             <version>${kompics.version}</version>
         </dependency>
-        
+
+        <dependency>
+            <groupId>se.sics.kompics.basic</groupId>
+            <artifactId>kompics-port-timer</artifactId>
+            <version>${kompics.version}</version>
+            <type>jar</type>
+        </dependency>
+                    
         <dependency>
             <groupId>se.sics.net</groupId>
             <artifactId>netty</artifactId>

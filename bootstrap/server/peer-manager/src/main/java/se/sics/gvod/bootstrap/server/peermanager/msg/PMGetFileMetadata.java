@@ -16,9 +16,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 package se.sics.gvod.bootstrap.server.peermanager.msg;
 
-import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.common.msg.ReqStatus;
@@ -26,45 +26,42 @@ import se.sics.gvod.common.msg.ReqStatus;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class GetOverlaySample {
-
-    public static class Request extends PeerManagerMsg.Request {
-
+public class PMGetFileMetadata {
+     public static class Request extends PeerManagerMsg.Request {
         public final int overlayId;
-
+        
         public Request(UUID id, int overlayId) {
             super(id);
             this.overlayId = overlayId;
         }
-
-        public Response success(Set<byte[]> overlaySample) {
-            return new Response(id, ReqStatus.SUCCESS, overlayId, overlaySample);
+        
+        public Response success(byte[] fileMetadata) {
+            return new Response(id, ReqStatus.SUCCESS, overlayId, fileMetadata);
         }
-
+        
         public Response fail() {
             return new Response(id, ReqStatus.FAIL, overlayId, null);
         }
-
+        
         @Override
         public String toString() {
-            return "GetOverlaySampleRequest " + id;
+            return "GetFileMetadataRequest " + id;
         }
     }
-
+    
     public static class Response extends PeerManagerMsg.Response {
-
         public final int overlayId;
-        public final Set<byte[]> overlaySample;
-
-        public Response(UUID id, ReqStatus status, int overlayId, Set<byte[]> overlaySample) {
+        public final byte[] fileMetadata;
+        
+        public Response(UUID id, ReqStatus status, int overlayId, byte[] fileMetadata) {
             super(id, status);
             this.overlayId = overlayId;
-            this.overlaySample = overlaySample;
+            this.fileMetadata = fileMetadata;
         }
-
+        
         @Override
         public String toString() {
-            return "GetOverlaySampleResponse<" + status + "> " + id;
+            return "GetFileMetadataResponse<" + status + "> " + id;
         }
     }
 }

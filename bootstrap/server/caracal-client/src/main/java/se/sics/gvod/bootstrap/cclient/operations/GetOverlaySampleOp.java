@@ -32,7 +32,7 @@ import se.sics.caracaldb.store.Limit;
 import se.sics.caracaldb.store.TFFactory;
 import se.sics.gvod.bootstrap.cclient.CaracalKeyFactory;
 import se.sics.gvod.bootstrap.cclient.CaracalOpManager;
-import se.sics.gvod.bootstrap.server.peermanager.msg.GetOverlaySample;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.common.util.Operation;
 
 /**
@@ -41,10 +41,10 @@ import se.sics.gvod.common.util.Operation;
 public class GetOverlaySampleOp implements Operation<CaracalOp> {
     
     private final CaracalOpManager opMngr;
-    private final GetOverlaySample.Request req;
+    private final PMGetOverlaySample.Request req;
     private final int sampleSize;
     
-    public GetOverlaySampleOp(CaracalOpManager opMngr, GetOverlaySample.Request req, int sampleSize) {
+    public GetOverlaySampleOp(CaracalOpManager opMngr, PMGetOverlaySample.Request req, int sampleSize) {
         this.opMngr = opMngr;
         this.req = req;
         this.sampleSize = sampleSize;

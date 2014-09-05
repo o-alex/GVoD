@@ -32,7 +32,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.common.msg.impl.JoinOverlay;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
@@ -44,47 +44,47 @@ import se.sics.gvod.network.GVoDAdapterFactory;
 public class JoinOverlayTest {
     @Test
     public void testRequest() {
-        GVoDAdapter<JoinOverlayMsg.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_REQUEST);
-        JoinOverlayMsg.Request expected = new JoinOverlayMsg.Request(UUID.randomUUID(), 1);
+        GVoDAdapter<JoinOverlay.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_REQUEST);
+        JoinOverlay.Request expected = new JoinOverlay.Request(UUID.randomUUID(), 1, 0);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
         byte type = newBuf.readByte();
         Assert.assertEquals(GVoDAdapterFactory.JOIN_OVERLAY_REQUEST, type);
-        JoinOverlayMsg.Request decoded = adapter.decode(newBuf);
+        JoinOverlay.Request decoded = adapter.decode(newBuf);
         Assert.assertEquals(expected, decoded);
         Assert.assertEquals(expectedSize, buf.readableBytes());
     }
     
      @Test
     public void testResponseSuccess() throws UnknownHostException {
-        GVoDAdapter<JoinOverlayMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
-        Set<VodAddress> overlaySample = new HashSet<VodAddress>();
-        overlaySample.add(new VodAddress(new Address(InetAddress.getLocalHost(), 12345, 1), -1));
-        JoinOverlayMsg.Response expected = new JoinOverlayMsg.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1, overlaySample, new FileMetadata(10000, 1024));
+        GVoDAdapter<JoinOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
+        Map<VodAddress, Integer> overlaySample = new HashMap<VodAddress, Integer>();
+        overlaySample.put(new VodAddress(new Address(InetAddress.getLocalHost(), 12345, 1), -1), 1);
+        JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1, overlaySample, new FileMetadata(10000, 1024));
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
         byte type = newBuf.readByte();
         Assert.assertEquals(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE, type);
-        JoinOverlayMsg.Response decoded = adapter.decode(newBuf);
+        JoinOverlay.Response decoded = adapter.decode(newBuf);
         Assert.assertEquals(expected, decoded);
         Assert.assertEquals(expectedSize, buf.readableBytes());
     }
     
     @Test
     public void tesResponsetFail() {
-        GVoDAdapter<JoinOverlayMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
-        JoinOverlayMsg.Response expected = new JoinOverlayMsg.Response(UUID.randomUUID(), ReqStatus.FAIL, 1, null, null);
+        GVoDAdapter<JoinOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
+        JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.FAIL, 1, null, null);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
         byte type = newBuf.readByte();
         Assert.assertEquals(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE, type);
-        JoinOverlayMsg.Response decoded = adapter.decode(newBuf);
+        JoinOverlay.Response decoded = adapter.decode(newBuf);
         Assert.assertEquals(expected, decoded);
         Assert.assertEquals(expectedSize, buf.readableBytes());
     }

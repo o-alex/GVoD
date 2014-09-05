@@ -33,10 +33,10 @@ import se.sics.gvod.bootstrap.cclient.operations.GetFileMetadataOp;
 import se.sics.gvod.bootstrap.cclient.operations.GetOverlaySampleOp;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
-import se.sics.gvod.bootstrap.server.peermanager.msg.AddFileMetadata;
-import se.sics.gvod.bootstrap.server.peermanager.msg.GetFileMetadata;
-import se.sics.gvod.bootstrap.server.peermanager.msg.GetOverlaySample;
-import se.sics.gvod.bootstrap.server.peermanager.msg.JoinOverlay;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMAddFileMetadata;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetFileMetadata;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.util.Operation;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -85,10 +85,10 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
         }
     };
 
-    public Handler<JoinOverlay.Request> handleJoinOverlay = new Handler<JoinOverlay.Request>() {
+    public Handler<PMJoinOverlay.Request> handleJoinOverlay = new Handler<PMJoinOverlay.Request>() {
 
         @Override
-        public void handle(JoinOverlay.Request req) {
+        public void handle(PMJoinOverlay.Request req) {
             log.debug("{} received {}", new Object[]{config.self, req});
             Operation op = new AddOverlayPeerOp(BCClientComp.this, req);
             pendingOps.put(req.id, op);
@@ -96,10 +96,10 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
         }
     };
 
-    public Handler<GetOverlaySample.Request> handleGetOverlaySample = new Handler<GetOverlaySample.Request>() {
+    public Handler<PMGetOverlaySample.Request> handleGetOverlaySample = new Handler<PMGetOverlaySample.Request>() {
 
         @Override
-        public void handle(GetOverlaySample.Request req) {
+        public void handle(PMGetOverlaySample.Request req) {
             log.debug("{} received {}", new Object[]{config.self, req});
             Operation op = new GetOverlaySampleOp(BCClientComp.this, req, config.sampleSize);
             pendingOps.put(req.id, op);
@@ -107,10 +107,10 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
         }
     };
     
-    public Handler<AddFileMetadata.Request> handleAddFileMetadata = new Handler<AddFileMetadata.Request>() {
+    public Handler<PMAddFileMetadata.Request> handleAddFileMetadata = new Handler<PMAddFileMetadata.Request>() {
 
         @Override
-        public void handle(AddFileMetadata.Request req) {
+        public void handle(PMAddFileMetadata.Request req) {
             log.debug("{} received {}", new Object[]{config.self, req});
             Operation op = new AddFileMetadataOp(BCClientComp.this, req);
             pendingOps.put(req.id, op);
@@ -118,10 +118,10 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
         }
     };
     
-    public Handler<GetFileMetadata.Request> handleGetFileMetadata = new Handler<GetFileMetadata.Request>() {
+    public Handler<PMGetFileMetadata.Request> handleGetFileMetadata = new Handler<PMGetFileMetadata.Request>() {
 
         @Override
-        public void handle(GetFileMetadata.Request req) {
+        public void handle(PMGetFileMetadata.Request req) {
             log.debug("{} received {}", new Object[]{config.self, req});
             Operation op = new GetFileMetadataOp(BCClientComp.this, req);
             pendingOps.put(req.id, op);

@@ -26,7 +26,7 @@ import se.sics.caracaldb.operations.GetResponse;
 import se.sics.caracaldb.operations.ResponseCode;
 import se.sics.gvod.bootstrap.cclient.CaracalKeyFactory;
 import se.sics.gvod.bootstrap.cclient.CaracalOpManager;
-import se.sics.gvod.bootstrap.server.peermanager.msg.GetFileMetadata;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetFileMetadata;
 import se.sics.gvod.common.util.Operation;
 
 /**
@@ -34,9 +34,9 @@ import se.sics.gvod.common.util.Operation;
  */
 public class GetFileMetadataOp implements Operation<CaracalOp> {
     private final CaracalOpManager opMngr;
-    private final GetFileMetadata.Request req;
+    private final PMGetFileMetadata.Request req;
 
-    public GetFileMetadataOp(CaracalOpManager opMngr, GetFileMetadata.Request req) {
+    public GetFileMetadataOp(CaracalOpManager opMngr, PMGetFileMetadata.Request req) {
         this.opMngr = opMngr;
         this.req = req;
     }

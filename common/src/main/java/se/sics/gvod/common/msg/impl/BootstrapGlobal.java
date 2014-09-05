@@ -18,101 +18,91 @@
  */
 package se.sics.gvod.common.msg.impl;
 
+import java.util.HashSet;
 import com.google.common.base.Objects;
+import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.util.FileMetadata;
+import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class AddOverlayMsg {
+public class BootstrapGlobal {
 
     public static class Request extends GvodMsg.Request {
 
-        public final int overlayId;
-        public final FileMetadata fileMeta;
-        
-        public Request(UUID reqId, int overlayId, FileMetadata fileMeta) {
+        public Request(UUID reqId) {
             super(reqId);
-            this.overlayId = overlayId;
-            this.fileMeta = fileMeta;
         }
-        
+
+        public Response success(Set<VodAddress> systemSample) {
+            return new Response(id, ReqStatus.SUCCESS, systemSample);
+        }
+
         public Response fail() {
-            return new Response(reqId, ReqStatus.FAIL, overlayId);
+            return new Response(id, ReqStatus.FAIL, null);
         }
-        
-        public Response success() {
-            return new Response(reqId, ReqStatus.SUCCESS, overlayId);
-        }
-        
+
         @Override
         public Request copy() {
-            return new Request(reqId, overlayId, fileMeta);
+            return new Request(id);
         }
-        
+
         @Override
         public String toString() {
-            return "AddOverlayRequest " + reqId.toString();
+            return "BootstrapGlobalRequest " + id.toString();
         }
-        
+
         @Override
         public int hashCode() {
-            int hash = 3;
-            hash = 61 * hash + Objects.hashCode(this.reqId);
-            hash = 61 * hash + this.overlayId;
-            hash = 61 * hash + Objects.hashCode(this.fileMeta);
+            int hash = 5;
+            hash = 37 * hash + Objects.hashCode(this.id);
             return hash;
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
+        public boolean equals(Object that) {
+            if (that == null) {
                 return false;
             }
-            if (getClass() != obj.getClass()) {
+            if (getClass() != that.getClass()) {
                 return false;
             }
-            final Request other = (Request) obj;
-            if (!Objects.equal(this.reqId, other.reqId)) {
-                return false;
-            }
-            if (this.overlayId != other.overlayId) {
-                return false;
-            }
-            if(!Objects.equal(this.fileMeta, other.fileMeta)) {
+            final Request other = (Request) that;
+            if (!Objects.equal(this.id, other.id)) {
                 return false;
             }
             return true;
         }
     }
-    
+
     public static class Response extends GvodMsg.Response {
-        public final int overlayId;
-        
-        public Response(UUID reqId, ReqStatus status, int overlayId) {
+
+        public final Set<VodAddress> systemSample;
+
+        public Response(UUID reqId, ReqStatus status, Set<VodAddress> systemSample) {
             super(reqId, status);
-            this.overlayId = overlayId;
+            this.systemSample = systemSample;
         }
-        
+
         @Override
         public Response copy() {
-            return new Response(reqId, status, overlayId);
+            return new Response(id, status, new HashSet<VodAddress>(systemSample));
         }
-     
+
         @Override
         public String toString() {
-            return "AddOverlayResponse<" + status.toString() + "> "+ reqId.toString();
+            return "BootstrapGlobalResponse<" + status.toString() + "> " + id.toString();
         }
-        
+
         @Override
         public int hashCode() {
-            int hash = 7;
-            hash = 23 * hash + Objects.hashCode(this.reqId);
-            hash = 23 * hash + Objects.hashCode(this.status);
-            hash = 23 * hash + this.overlayId;
+            int hash = 3;
+            hash = 47 * hash + Objects.hashCode(this.systemSample);
+            hash = 47 * hash + Objects.hashCode(this.status);
+            hash = 47 * hash + Objects.hashCode(this.id);
             return hash;
         }
 
@@ -125,13 +115,13 @@ public class AddOverlayMsg {
                 return false;
             }
             final Response other = (Response) obj;
-            if (!Objects.equal(this.reqId, other.reqId)) {
+            if (!Objects.equal(this.systemSample, other.systemSample)) {
                 return false;
             }
             if (this.status != other.status) {
                 return false;
             }
-            if (this.overlayId != other.overlayId) {
+            if (!Objects.equal(this.id, other.id)) {
                 return false;
             }
             return true;

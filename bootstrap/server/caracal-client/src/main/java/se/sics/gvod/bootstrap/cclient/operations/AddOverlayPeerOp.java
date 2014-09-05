@@ -25,7 +25,7 @@ import se.sics.caracaldb.operations.PutResponse;
 import se.sics.caracaldb.operations.ResponseCode;
 import se.sics.gvod.bootstrap.cclient.CaracalKeyFactory;
 import se.sics.gvod.bootstrap.cclient.CaracalOpManager;
-import se.sics.gvod.bootstrap.server.peermanager.msg.JoinOverlay;
+import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.util.Operation;
 
 /**
@@ -34,9 +34,9 @@ import se.sics.gvod.common.util.Operation;
 public class AddOverlayPeerOp implements Operation<CaracalOp> {
 
     private final CaracalOpManager opMngr;
-    private final JoinOverlay.Request req;
+    private final PMJoinOverlay.Request req;
 
-    public AddOverlayPeerOp(CaracalOpManager opMngr, JoinOverlay.Request req) {
+    public AddOverlayPeerOp(CaracalOpManager opMngr, PMJoinOverlay.Request req) {
         this.opMngr = opMngr;
         this.req = req;
     }
@@ -48,7 +48,7 @@ public class AddOverlayPeerOp implements Operation<CaracalOp> {
 
     @Override
     public void start() {
-        opMngr.sendCaracalReq(req.id, new PutRequest(UUID.randomUUID(), CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId), req.peer));
+        opMngr.sendCaracalReq(req.id, new PutRequest(UUID.randomUUID(), CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId), req.data));
     }
 
     @Override

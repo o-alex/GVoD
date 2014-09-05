@@ -33,12 +33,12 @@ public class Connect {
 
         @Override
         public Request copy() {
-            return new Request(reqId);
+            return new Request(id);
         }
         
         @Override
         public String toString() {
-            return "ConnectRequest " + reqId;
+            return "ConnectRequest " + id;
         }
     }
 }

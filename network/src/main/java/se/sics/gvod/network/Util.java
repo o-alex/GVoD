@@ -20,6 +20,7 @@ package se.sics.gvod.network;
 
 import io.netty.buffer.ByteBuf;
 import java.util.UUID;
+import org.javatuples.Pair;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msgs.MessageDecodingException;
 import se.sics.gvod.common.msgs.MessageEncodingException;
@@ -118,10 +119,29 @@ public class Util {
         return new FileMetadata(fileSize, pieceSize);
     }
 
-    public static int getFileMetaSize() {
+    public static int getFileMetaEncodedSize() {
         int size = 0;
         size += 4; //fileSize
         size += 4; //pieceSize
+        return size;
+    }
+    
+    public static ByteBuf encodeHeartbeatEntry(ByteBuf buffer, VodAddress peer, int utility) {
+        encodeVodAddress(buffer, peer);
+        buffer.writeInt(utility);
+        return buffer;
+    }
+    
+    public static Pair<VodAddress, Integer> decodeHeartbeatEntry(ByteBuf buffer) {
+        VodAddress peer = decodeVodAddress(buffer);
+        int utility = buffer.readInt();
+        return Pair.with(peer, utility);
+    }
+    
+    public static int getHeartbeatEntryEncodedSize(VodAddress peer) {
+        int size = 0;
+        size += getVodAddressEncodedSize(peer);
+        size += 4; //utility
         return size;
     }
 }

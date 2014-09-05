@@ -23,15 +23,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.AddOverlayMsg;
-import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
-import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.common.msg.impl.AddOverlay;
+import se.sics.gvod.common.msg.impl.BootstrapGlobal;
+import se.sics.gvod.common.msg.impl.JoinOverlay;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.manager.DownloadFileInfo;
@@ -47,18 +46,20 @@ import se.sics.gvod.system.video.storage.Storage;
 import se.sics.gvod.system.video.storage.StorageFactory;
 import se.sics.gvod.system.vod.msg.DownloadVideo;
 import se.sics.gvod.system.vod.msg.UploadVideo;
+import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
-import se.sics.kompics.timer.Timer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class VoDComp extends ComponentDefinition {
+    //TODO ALEX fix resume. for the moment everyone who joins starts download from 0
+    public static int noDownloadResume = 0; 
 
     private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
 
@@ -88,9 +89,9 @@ public class VoDComp extends ComponentDefinition {
         subscribe(handleJoinOverlayResponse, bootstrap);
     }
 
-    public Handler<BootstrapGlobalMsg.Response> handleBootstrapGlobalResponse = new Handler<BootstrapGlobalMsg.Response>() {
+    public Handler<BootstrapGlobal.Response> handleBootstrapGlobalResponse = new Handler<BootstrapGlobal.Response>() {
         @Override
-        public void handle(BootstrapGlobalMsg.Response event) {
+        public void handle(BootstrapGlobal.Response event) {
         }
     };
 
@@ -100,8 +101,8 @@ public class VoDComp extends ComponentDefinition {
         public void handle(UploadVideo.Request req) {
             log.info("{} - {} - overlay: {}", new Object[]{config.selfAddress, req, req.fileInfo.overlayId});
             File f = new File(req.fileInfo.libDir + File.pathSeparator + req.fileInfo.fileName);
-            trigger(new AddOverlayMsg.Request(req.reqId, req.fileInfo.overlayId, new FileMetadata((int) f.length(), config.pieceSize)), bootstrap);
-            pendingUploads.put(req.reqId, req.fileInfo);
+            trigger(new AddOverlay.Request(req.id, req.fileInfo.overlayId, new FileMetadata((int) f.length(), config.pieceSize)), bootstrap);
+            pendingUploads.put(req.id, req.fileInfo);
         }
     };
 
@@ -110,22 +111,22 @@ public class VoDComp extends ComponentDefinition {
         @Override
         public void handle(DownloadVideo.Request req) {
             log.info("{} - {} - overlay: {}", new Object[]{config.selfAddress, req, req.fileInfo.overlayId});
-            trigger(new JoinOverlayMsg.Request(req.reqId, req.fileInfo.overlayId), bootstrap);
-            pendingDownloads.put(req.reqId, req.fileInfo);
+            trigger(new JoinOverlay.Request(req.id, req.fileInfo.overlayId, noDownloadResume), bootstrap);
+            pendingDownloads.put(req.id, req.fileInfo);
         }
     };
 
-    public Handler<AddOverlayMsg.Response> handleAddOverlayResponse = new Handler<AddOverlayMsg.Response>() {
+    public Handler<AddOverlay.Response> handleAddOverlayResponse = new Handler<AddOverlay.Response>() {
 
         @Override
-        public void handle(AddOverlayMsg.Response resp) {
+        public void handle(AddOverlay.Response resp) {
             log.trace("{} - {}", new Object[]{config.selfAddress, resp});
 
             if (resp.status == ReqStatus.SUCCESS) {
                 try {
-                    UploadFileInfo fileInfo = pendingUploads.remove(resp.reqId);
+                    UploadFileInfo fileInfo = pendingUploads.remove(resp.id);
                     Storage videoStorage = StorageFactory.getExistingFile(fileInfo.libDir + File.pathSeparator + fileInfo.fileName, config.pieceSize);
-                    startVideoComp(fileInfo.overlayId, videoStorage, new HashSet<VodAddress>());
+                    startVideoComp(fileInfo.overlayId, videoStorage, new HashMap<VodAddress, Integer>());
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -133,15 +134,15 @@ public class VoDComp extends ComponentDefinition {
         }
     };
 
-    public Handler<JoinOverlayMsg.Response> handleJoinOverlayResponse = new Handler<JoinOverlayMsg.Response>() {
+    public Handler<JoinOverlay.Response> handleJoinOverlayResponse = new Handler<JoinOverlay.Response>() {
 
         @Override
-        public void handle(JoinOverlayMsg.Response resp) {
+        public void handle(JoinOverlay.Response resp) {
             log.trace("{} - {} - peers:{}", new Object[]{config.selfAddress, resp, resp.overlaySample});
 
             if (resp.status == ReqStatus.SUCCESS) {
                 try {
-                    DownloadFileInfo fileInfo = pendingDownloads.remove(resp.reqId);
+                    DownloadFileInfo fileInfo = pendingDownloads.remove(resp.id);
                     Storage videoStorage = StorageFactory.getEmptyFile(fileInfo.libDir + File.pathSeparator + fileInfo.fileName, resp.fileMeta.size, resp.fileMeta.pieceSize);
                     startVideoComp(fileInfo.overlayId, videoStorage, resp.overlaySample);
                 } catch (IOException ex) {
@@ -151,7 +152,7 @@ public class VoDComp extends ComponentDefinition {
         }
     };
 
-    private void startVideoComp(int overlayId, Storage videoStorage, Set<VodAddress> overlaySample) {
+    private void startVideoComp(int overlayId, Storage videoStorage, Map<VodAddress, Integer> overlaySample) {
         VideoConfig videoConfig;
         ConnMngrConfig connMngrConfig;
 
