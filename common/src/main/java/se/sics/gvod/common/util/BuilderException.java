@@ -16,32 +16,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.bootstrap.client.msg;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import se.sics.gvod.common.msg.GvodMsg;
+package se.sics.gvod.common.util;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public final class Heartbeat extends GvodMsg.OneWay {
-
-    public final Map<Integer, Integer> overlays;
-
-    public Heartbeat(UUID reqId, Map<Integer, Integer> overlays) {
-        super(reqId);
-        this.overlays = overlays;
-    }
-
-    @Override
-    public Heartbeat copy() {
-        return new Heartbeat(reqId, new HashMap<Integer, Integer>(overlays));
-    }
-    
-    @Override
-    public String toString() {
-        return "Heartbeat " + reqId.toString();
+public class BuilderException {
+    public static class Missing extends Exception {
+        public Missing() {
+            super();
+        }
     }
 }

@@ -72,8 +72,9 @@ public class AddOverlayAdapter {
         public AddOverlayMsg.Response decode(ByteBuf buffer) {
             UUID respId = Util.decodeUUID(buffer);
             ReqStatus status = Util.decodeReqStatus(buffer);
-
-            return new AddOverlayMsg.Response(respId, status);
+            int overlayId = buffer.readInt();
+            
+            return new AddOverlayMsg.Response(respId, status, overlayId);
         }
 
         @Override
@@ -82,6 +83,7 @@ public class AddOverlayAdapter {
 
             Util.encodeUUID(buffer, resp.reqId);
             Util.encodeReqStatus(buffer, resp.status);
+            buffer.writeInt(resp.overlayId);
 
             return buffer;
         }
@@ -92,6 +94,7 @@ public class AddOverlayAdapter {
             size += 1; //type
             size += Util.getUUIDEncodedSize();
             size += Util.getReqStatusEncodedSize();
+            size += 4; //overlayId
             return size;
         }
     }

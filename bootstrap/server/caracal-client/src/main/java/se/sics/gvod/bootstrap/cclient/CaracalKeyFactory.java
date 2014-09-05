@@ -16,9 +16,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.bootstrap.cclient;
 
+import java.nio.ByteBuffer;
 import se.sics.caracaldb.Key;
 import se.sics.caracaldb.KeyRange;
 
@@ -26,19 +26,40 @@ import se.sics.caracaldb.KeyRange;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class CaracalKeyFactory {
+
+    private final static byte peerKey = 0x01;
+    private final static byte fileMetaKey = 0x02;
+
     public static KeyRange getOverlayRange(int overlayId) {
-        if(overlayId == Integer.MAX_VALUE) {
-            return new KeyRange(KeyRange.Bound.CLOSED, new Key(overlayId), Key.INF, KeyRange.Bound.OPEN);
+        if (overlayId == Integer.MAX_VALUE) {
+            ByteBuffer startKey = ByteBuffer.allocate(4 + 1);
+            startKey.putInt(overlayId);
+            startKey.put(peerKey);
+            return new KeyRange(KeyRange.Bound.CLOSED, new Key(startKey), Key.INF, KeyRange.Bound.OPEN);
         } else {
-            return new KeyRange(KeyRange.Bound.CLOSED, new Key(overlayId), new Key(overlayId + 1), KeyRange.Bound.OPEN);
+            ByteBuffer startKey = ByteBuffer.allocate(4 + 1);
+            startKey.putInt(overlayId);
+            startKey.put(peerKey);
+            ByteBuffer endKey = ByteBuffer.allocate(4 + 1);
+            endKey.putInt(overlayId + 1);
+            endKey.put(peerKey);
+            return new KeyRange(KeyRange.Bound.CLOSED, new Key(startKey), new Key(endKey), KeyRange.Bound.OPEN);
         }
     }
-    
+
     public static Key getOverlayPeerKey(int overlayId, int nodeId) {
         return new Key(overlayId, nodeId);
     }
-    
+
+    public static Key getFileMetadataKey(int overlayId) {
+        ByteBuffer byteKey = ByteBuffer.allocate(4 + 1);
+        byteKey.putInt(overlayId);
+        byteKey.put(fileMetaKey);
+        return new Key(byteKey);
+    }
+
     public static class KeyException extends Exception {
+
         public KeyException(String message) {
             super(message);
         }

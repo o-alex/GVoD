@@ -18,7 +18,6 @@
  */
 package se.sics.gvod.bootstrap.server.simulation;
 
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +28,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
+import se.sics.gvod.bootstrap.server.peermanager.msg.AddFileMetadata;
+import se.sics.gvod.bootstrap.server.peermanager.msg.GetFileMetadata;
 import se.sics.gvod.bootstrap.server.peermanager.msg.GetOverlaySample;
 import se.sics.gvod.bootstrap.server.peermanager.msg.JoinOverlay;
 import se.sics.kompics.ComponentDefinition;
@@ -49,16 +50,20 @@ public class SimPMComp extends ComponentDefinition {
     
     private final Random rand;
     private final Map<Integer, List<byte[]>> overlays;
+    private final Map<Integer, byte[]> files;
 
     public SimPMComp(SimPMInit init) {
             log.debug("init");
             this.config = init.config;
             this.overlays = new HashMap<Integer, List<byte[]>>();
             this.overlays.put(0, new ArrayList<byte[]>());
-            this.rand = new SecureRandom(config.seed);
+            this.files = new HashMap<Integer, byte[]>();
+            this.rand = new Random(config.intSeed);
             
             subscribe(handleJoinOverlay, peerManager);
             subscribe(handleGetOverlaySample, peerManager);
+            subscribe(handleAddFileMetadata, peerManager);
+            subscribe(handleGetFileMetadata, peerManager);
     }
 
      public Handler<JoinOverlay.Request> handleJoinOverlay = new Handler<JoinOverlay.Request>() {
@@ -87,7 +92,35 @@ public class SimPMComp extends ComponentDefinition {
             } else {
                 trigger(req.success(getOverlaySample(req.overlayId)), peerManager);
             }
-            
+        }
+    };
+
+    public Handler<AddFileMetadata.Request> handleAddFileMetadata = new Handler<AddFileMetadata.Request>() {
+
+        @Override
+        public void handle(AddFileMetadata.Request req) {
+            log.debug("{} received {}", new Object[]{config.selfAddress, req});
+            List<byte[]> overlayIds = overlays.get(req.overlayId);
+            if(overlayIds == null) {
+                trigger(req.fail(), peerManager);
+            } else {
+                files.put(req.overlayId, req.fileMetadata);
+                trigger(req.success(), peerManager);
+            }
+        }
+    };
+    
+    public Handler<GetFileMetadata.Request> handleGetFileMetadata = new Handler<GetFileMetadata.Request>() {
+
+        @Override
+        public void handle(GetFileMetadata.Request req) {
+            log.debug("{} received {}", new Object[]{config.selfAddress, req});
+            List<byte[]> overlayIds = overlays.get(req.overlayId);
+            if(overlayIds == null) {
+                trigger(req.fail(), peerManager);
+            } else {
+                trigger(req.success(files.get(req.overlayId)), peerManager);
+            }
         }
     };
     

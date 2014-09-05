@@ -27,10 +27,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.caracaldb.operations.CaracalMsg;
 import se.sics.caracaldb.operations.CaracalOp;
+import se.sics.gvod.bootstrap.cclient.operations.AddFileMetadataOp;
 import se.sics.gvod.bootstrap.cclient.operations.AddOverlayPeerOp;
+import se.sics.gvod.bootstrap.cclient.operations.GetFileMetadataOp;
 import se.sics.gvod.bootstrap.cclient.operations.GetOverlaySampleOp;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
+import se.sics.gvod.bootstrap.server.peermanager.msg.AddFileMetadata;
+import se.sics.gvod.bootstrap.server.peermanager.msg.GetFileMetadata;
 import se.sics.gvod.bootstrap.server.peermanager.msg.GetOverlaySample;
 import se.sics.gvod.bootstrap.server.peermanager.msg.JoinOverlay;
 import se.sics.gvod.common.util.Operation;
@@ -64,6 +68,8 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
         subscribe(handleCaracalResponse, network);
         subscribe(handleJoinOverlay, peerManager);
         subscribe(handleGetOverlaySample, peerManager);
+        subscribe(handleAddFileMetadata, peerManager);
+        subscribe(handleGetFileMetadata, peerManager);
     }
 
     public Handler<CaracalMsg> handleCaracalResponse = new Handler<CaracalMsg>() {
@@ -96,6 +102,28 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
         public void handle(GetOverlaySample.Request req) {
             log.debug("{} received {}", new Object[]{config.self, req});
             Operation op = new GetOverlaySampleOp(BCClientComp.this, req, config.sampleSize);
+            pendingOps.put(req.id, op);
+            op.start();
+        }
+    };
+    
+    public Handler<AddFileMetadata.Request> handleAddFileMetadata = new Handler<AddFileMetadata.Request>() {
+
+        @Override
+        public void handle(AddFileMetadata.Request req) {
+            log.debug("{} received {}", new Object[]{config.self, req});
+            Operation op = new AddFileMetadataOp(BCClientComp.this, req);
+            pendingOps.put(req.id, op);
+            op.start();
+        }
+    };
+    
+    public Handler<GetFileMetadata.Request> handleGetFileMetadata = new Handler<GetFileMetadata.Request>() {
+
+        @Override
+        public void handle(GetFileMetadata.Request req) {
+            log.debug("{} received {}", new Object[]{config.self, req});
+            Operation op = new GetFileMetadataOp(BCClientComp.this, req);
             pendingOps.put(req.id, op);
             op.start();
         }

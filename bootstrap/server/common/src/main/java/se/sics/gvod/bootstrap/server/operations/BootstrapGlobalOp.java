@@ -41,15 +41,13 @@ public class BootstrapGlobalOp implements Operation {
         GET_SYSTEM_SAMPLE, JOIN_SYSTEM
     }
 
-    public final UUID id;
     private final PeerOpManager opMngr;
     private final BootstrapGlobalMsg.Request req;
     private final VodAddress src;
     private Phase phase;
     private BootstrapGlobalMsg.Response resp;
 
-    public BootstrapGlobalOp(UUID id, PeerOpManager opMngr, BootstrapGlobalMsg.Request req, VodAddress src) {
-        this.id = id;
+    public BootstrapGlobalOp(PeerOpManager opMngr, BootstrapGlobalMsg.Request req, VodAddress src) {
         this.opMngr = opMngr;
         this.req = req;
         this.src = src;
@@ -57,13 +55,13 @@ public class BootstrapGlobalOp implements Operation {
 
     @Override
     public UUID getId() {
-        return id;
+        return req.reqId;
     }
 
     @Override
     public void start() {
         phase = Phase.GET_SYSTEM_SAMPLE;
-        opMngr.sendPeerManagerReq(id, new GetOverlaySample.Request(UUID.randomUUID(), 0));
+        opMngr.sendPeerManagerReq(req.reqId, new GetOverlaySample.Request(UUID.randomUUID(), 0));
     }
 
     @Override

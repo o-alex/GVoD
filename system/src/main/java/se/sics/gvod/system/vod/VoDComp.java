@@ -21,7 +21,9 @@ package se.sics.gvod.system.vod;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,14 +36,15 @@ import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.manager.DownloadFileInfo;
 import se.sics.gvod.manager.UploadFileInfo;
+import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
-import se.sics.gvod.system.video.storage.Storage;
-import se.sics.gvod.system.video.storage.StorageFactory;
 import se.sics.gvod.system.video.VideoComp;
 import se.sics.gvod.system.video.VideoConfig;
 import se.sics.gvod.system.video.connMngr.ConnMngr;
 import se.sics.gvod.system.video.connMngr.ConnMngrConfig;
 import se.sics.gvod.system.video.connMngr.SimpleConnMngr;
+import se.sics.gvod.system.video.storage.Storage;
+import se.sics.gvod.system.video.storage.StorageFactory;
 import se.sics.gvod.system.vod.msg.DownloadVideo;
 import se.sics.gvod.system.vod.msg.UploadVideo;
 import se.sics.kompics.Component;
@@ -122,7 +125,7 @@ public class VoDComp extends ComponentDefinition {
                 try {
                     UploadFileInfo fileInfo = pendingUploads.remove(resp.reqId);
                     Storage videoStorage = StorageFactory.getExistingFile(fileInfo.libDir + File.pathSeparator + fileInfo.fileName, config.pieceSize);
-                    startVideoComp(fileInfo.overlayId, videoStorage);
+                    startVideoComp(fileInfo.overlayId, videoStorage, new HashSet<VodAddress>());
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -140,7 +143,7 @@ public class VoDComp extends ComponentDefinition {
                 try {
                     DownloadFileInfo fileInfo = pendingDownloads.remove(resp.reqId);
                     Storage videoStorage = StorageFactory.getEmptyFile(fileInfo.libDir + File.pathSeparator + fileInfo.fileName, resp.fileMeta.size, resp.fileMeta.pieceSize);
-                    startVideoComp(fileInfo.overlayId, videoStorage);
+                    startVideoComp(fileInfo.overlayId, videoStorage, resp.overlaySample);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -148,7 +151,7 @@ public class VoDComp extends ComponentDefinition {
         }
     };
 
-    private void startVideoComp(int overlayId, Storage videoStorage) {
+    private void startVideoComp(int overlayId, Storage videoStorage, Set<VodAddress> overlaySample) {
         VideoConfig videoConfig;
         ConnMngrConfig connMngrConfig;
 
@@ -160,7 +163,7 @@ public class VoDComp extends ComponentDefinition {
         }
 
         ConnMngr connMngr = new SimpleConnMngr(connMngrConfig);
-        Component video = create(VideoComp.class, new VideoComp.VideoInit(videoConfig, connMngr, videoStorage));
+        Component video = create(VideoComp.class, new VideoComp.VideoInit(videoConfig, connMngr, videoStorage, overlaySample));
         videoComps.put(overlayId, video);
 
         connect(video.getNegative(Timer.class), timer);

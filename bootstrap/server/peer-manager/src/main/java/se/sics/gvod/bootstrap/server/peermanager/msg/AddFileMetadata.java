@@ -16,6 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 package se.sics.gvod.bootstrap.server.peermanager.msg;
 
 import java.util.UUID;
@@ -23,20 +24,18 @@ import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.common.msg.ReqStatus;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class JoinOverlay {
-
+public class AddFileMetadata {
     public static class Request extends PeerManagerMsg.Request {
         public final int overlayId;
-        public final int nodeId;
-        public final byte[] peer;
+        public final byte[] fileMetadata;
         
-        public Request(UUID id, int overlayId, int nodeId, byte[] peer) {
+        public Request(UUID id, int overlayId, byte[] fileMetadata) {
             super(id);
             this.overlayId = overlayId;
-            this.nodeId = nodeId;
-            this.peer = peer;
+            this.fileMetadata = fileMetadata;
         }
         
         public Response success() {
@@ -49,7 +48,7 @@ public class JoinOverlay {
         
         @Override
         public String toString() {
-            return "JoinOverlayRequest " + id;
+            return "AddFileMetadataRequest " + id;
         }
     }
     
@@ -63,7 +62,7 @@ public class JoinOverlay {
         
         @Override
         public String toString() {
-            return "JoinOverlayResponse<" + status + "> " + id;
+            return "AddFileMetadataResponse<" + status + "> " + id;
         }
     }
 }

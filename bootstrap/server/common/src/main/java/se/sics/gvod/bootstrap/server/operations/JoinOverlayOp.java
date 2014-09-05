@@ -16,21 +16,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.bootstrap.server.operations;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import se.sics.gvod.bootstrap.server.PeerOpManager;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
+import se.sics.gvod.bootstrap.server.peermanager.msg.GetFileMetadata;
 import se.sics.gvod.bootstrap.server.peermanager.msg.GetOverlaySample;
 import se.sics.gvod.bootstrap.server.peermanager.msg.JoinOverlay;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.common.util.BuilderException;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.Util;
 
@@ -38,52 +42,59 @@ import se.sics.gvod.network.Util;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class JoinOverlayOp implements Operation {
-    
-    public final UUID id;
+
     private final PeerOpManager opMngr;
     private final JoinOverlayMsg.Request req;
     private final VodAddress src;
-    private final Set<Integer> pendingOverlays;
-    private final Map<Integer, Set<VodAddress>> overlaySamples;
-    
-    public JoinOverlayOp(UUID id, PeerOpManager opMngr, JoinOverlayMsg.Request req, VodAddress src) {
-        this.id = id;
+    private JoinOverlayMsg.ResponseBuilder resp;
+
+    public JoinOverlayOp(PeerOpManager opMngr, JoinOverlayMsg.Request req, VodAddress src) {
         this.opMngr = opMngr;
         this.req = req;
         this.src = src;
-        this.pendingOverlays = new HashSet<Integer>();
-        this.overlaySamples = new HashMap<Integer, Set<VodAddress>>();
+        this.resp = req.getResponseBuilder();
     }
-    
+
     @Override
     public UUID getId() {
-        return id;
+        return req.reqId;
     }
 
     @Override
     public void start() {
-        for(Integer overlayId : req.overlayIds) {
-            pendingOverlays.add(overlayId);
-            opMngr.sendPeerManagerReq(id, new GetOverlaySample.Request(UUID.randomUUID(), overlayId));
-        }
+        opMngr.sendPeerManagerReq(req.reqId, new GetOverlaySample.Request(UUID.randomUUID(), req.overlayId));
     }
 
     @Override
     public void handle(PeerManagerMsg.Response peerResp) {
         if (peerResp instanceof GetOverlaySample.Response) {
-            GetOverlaySample.Response phase1Resp = (GetOverlaySample.Response) peerResp;
-            if (phase1Resp.status == ReqStatus.SUCCESS) {
-                overlaySamples.put(phase1Resp.overlayId, processOverlaySample(phase1Resp.overlaySample));
-                opMngr.sendPeerManagerReq(req.reqId, new JoinOverlay.Request(UUID.randomUUID(), phase1Resp.overlayId, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
+            GetOverlaySample.Response sampleResp = (GetOverlaySample.Response) peerResp;
+            if (sampleResp.status == ReqStatus.SUCCESS) {
+                resp.setOverlaySample(processOverlaySample(sampleResp.overlaySample));
+                opMngr.sendPeerManagerReq(req.reqId, new GetFileMetadata.Request(UUID.randomUUID(), req.overlayId));
+                opMngr.sendPeerManagerReq(req.reqId, new JoinOverlay.Request(UUID.randomUUID(), sampleResp.overlayId, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
             } else {
                 opMngr.finish(src, req.fail());
             }
         } else if (peerResp instanceof JoinOverlay.Response) {
-            JoinOverlay.Response phase2Resp = (JoinOverlay.Response) peerResp;
-            if (phase2Resp.status == ReqStatus.SUCCESS) {
-                pendingOverlays.remove(phase2Resp.overlayId);
-                if(pendingOverlays.isEmpty()) {
-                    opMngr.finish(src, req.success(overlaySamples));
+            JoinOverlay.Response joinResp = (JoinOverlay.Response) peerResp;
+            if (joinResp.status == ReqStatus.SUCCESS) {
+                try {
+                    opMngr.finish(src, resp.finalise(joinResp.status));
+                } catch (BuilderException.Missing ex) {
+
+                }
+            } else {
+                opMngr.finish(src, req.fail());
+            }
+        } else if (peerResp instanceof GetFileMetadata.Response) {
+            GetFileMetadata.Response fileResp = (GetFileMetadata.Response) peerResp;
+            if (fileResp.status == ReqStatus.SUCCESS) {
+                resp.setFileMetadata(Util.decodeFileMeta(Unpooled.wrappedBuffer(fileResp.fileMetadata)));
+                try {
+                    opMngr.finish(src, resp.finalise(fileResp.status));
+                } catch (BuilderException.Missing ex) {
+
                 }
             } else {
                 opMngr.finish(src, req.fail());
@@ -92,7 +103,7 @@ public class JoinOverlayOp implements Operation {
             throw new RuntimeException("wrong phase");
         }
     }
-    
+
     private Set<VodAddress> processOverlaySample(Set<byte[]> boverlaySample) {
         Set<VodAddress> overlaySample = new HashSet<VodAddress>();
         for (byte[] peer : boverlaySample) {

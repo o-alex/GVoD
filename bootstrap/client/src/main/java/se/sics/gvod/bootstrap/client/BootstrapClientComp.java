@@ -19,21 +19,26 @@
 package se.sics.gvod.bootstrap.client;
 
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.bootstrap.client.utility.UtilityUpdate;
+import se.sics.gvod.bootstrap.client.utility.UtilityUpdatePort;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.network.nettymsg.GvodNetMsg;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.AddOverlayMsg;
 import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
 import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.common.util.MsgProcessor;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
+import se.sics.gvod.network.nettymsg.GvodNetMsg;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
@@ -49,14 +54,16 @@ public class BootstrapClientComp extends ComponentDefinition {
 
     private Positive<VodNetwork> network = requires(VodNetwork.class);
     private Negative<BootstrapClientPort> myPort = provides(BootstrapClientPort.class);
+    private Negative<UtilityUpdatePort> utilityPort = provides(UtilityUpdatePort.class);
 
     private BootstrapClientConfig config;
 
     private final MsgProcessor msgProc;
     private final Random rand;
 
-    private final Set<Integer> overlayIds;
+    private final Map<Integer, Integer> overlayIds;
     private final Set<VodAddress> bootstrapNodes;
+    private final Map<Integer, FileMetadata> pendingAddOverlay;
 
     public BootstrapClientComp(BootstrapClientInit init) {
         this.config = init.config;
@@ -64,8 +71,9 @@ public class BootstrapClientComp extends ComponentDefinition {
 
         this.msgProc = new MsgProcessor();
         this.rand = new SecureRandom(config.seed);
-        this.overlayIds = new HashSet<Integer>();
+        this.overlayIds = new HashMap<Integer, Integer>();
         this.bootstrapNodes = new HashSet<VodAddress>();
+        this.pendingAddOverlay = new HashMap<Integer, FileMetadata>();
 
         subscribe(handleStart, control);
         subscribe(handleNetResponse, network);
@@ -74,6 +82,7 @@ public class BootstrapClientComp extends ComponentDefinition {
         msgProc.subscribe(handleBootstrapResponse);
         msgProc.subscribe(handleAddOverlayResponse);
         msgProc.subscribe(handleJoinOverlayResponse);
+        subscribe(handleUtilityUpdate, utilityPort);
     }
 
     public Handler<Start> handleStart = new Handler<Start>() {
@@ -117,7 +126,7 @@ public class BootstrapClientComp extends ComponentDefinition {
         @Override
         public void handle(AddOverlayMsg.Request req) {
             log.trace("{} {} - overlay:{}", new Object[]{config.self, req, req.overlayId});
-            overlayIds.add(req.overlayId);
+            pendingAddOverlay.put(req.overlayId, req.fileMeta);
             
             GvodNetMsg.Request<AddOverlayMsg.Request> netReq = new GvodNetMsg.Request(config.self, config.server, req);
             log.trace("{} sending {}", new Object[]{config.self, netReq});
@@ -145,6 +154,12 @@ public class BootstrapClientComp extends ComponentDefinition {
                 public void handle(VodAddress src, AddOverlayMsg.Response resp) {
                     log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
                     trigger(resp, myPort);
+                    FileMetadata fileMeta = pendingAddOverlay.remove(resp.overlayId);
+                    if(fileMeta == null) {
+                        throw new RuntimeException("missing");
+                    }
+                    int downloadPos = fileMeta.size / fileMeta.pieceSize + 1;
+                    overlayIds.put(resp.overlayId, downloadPos);
                 }
             };
     public MsgProcessor.Handler<JoinOverlayMsg.Response> handleJoinOverlayResponse
@@ -155,6 +170,18 @@ public class BootstrapClientComp extends ComponentDefinition {
                 public void handle(VodAddress src, JoinOverlayMsg.Response resp) {
                     log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
                     trigger(resp, myPort);
+                    
+                    int downloadPos = 0;
+                    overlayIds.put(resp.overlayId, downloadPos);
                 }
             };
+    
+    public Handler<UtilityUpdate> handleUtilityUpdate = new Handler<UtilityUpdate>() {
+
+        @Override
+        public void handle(UtilityUpdate update) {
+            log.debug("{} {}", new Object[]{config.self, update});
+            overlayIds.put(update.overlayId, update.downloadPos);
+        }
+    };
 }

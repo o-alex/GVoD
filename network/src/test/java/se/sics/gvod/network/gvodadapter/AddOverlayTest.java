@@ -53,7 +53,7 @@ public class AddOverlayTest {
     @Test
     public void tesResponsetSuccess() {
         GVoDAdapter<AddOverlayMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
-        AddOverlayMsg.Response expected = new AddOverlayMsg.Response(UUID.randomUUID(), ReqStatus.SUCCESS);
+        AddOverlayMsg.Response expected = new AddOverlayMsg.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
@@ -68,7 +68,7 @@ public class AddOverlayTest {
     @Test
     public void tesResponsetFail() {
         GVoDAdapter<AddOverlayMsg.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
-        AddOverlayMsg.Response expected = new AddOverlayMsg.Response(UUID.randomUUID(), ReqStatus.FAIL);
+        AddOverlayMsg.Response expected = new AddOverlayMsg.Response(UUID.randomUUID(), ReqStatus.FAIL, 1);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);

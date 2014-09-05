@@ -16,32 +16,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.bootstrap.client.msg;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import se.sics.gvod.common.msg.GvodMsg;
+package se.sics.gvod.bootstrap.client.utility;
+
+import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public final class Heartbeat extends GvodMsg.OneWay {
-
-    public final Map<Integer, Integer> overlays;
-
-    public Heartbeat(UUID reqId, Map<Integer, Integer> overlays) {
-        super(reqId);
-        this.overlays = overlays;
-    }
-
-    @Override
-    public Heartbeat copy() {
-        return new Heartbeat(reqId, new HashMap<Integer, Integer>(overlays));
+public class UtilityUpdate implements KompicsEvent {
+    public final int overlayId;
+    public final int downloadPos;
+    
+    public UtilityUpdate(int overlayId, int downloadPos) {
+        this.overlayId = overlayId;
+        this.downloadPos = downloadPos;
     }
     
     @Override
     public String toString() {
-        return "Heartbeat " + reqId.toString();
+        return "UtilityUpdate " + overlayId + " utility:" + downloadPos;
     }
 }

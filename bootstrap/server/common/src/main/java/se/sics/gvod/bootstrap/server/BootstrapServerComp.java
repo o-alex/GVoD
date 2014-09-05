@@ -76,13 +76,13 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
             Operation op = null;
             if(netReq.payload instanceof BootstrapGlobalMsg.Request) {
                 BootstrapGlobalMsg.Request gvodReq = (BootstrapGlobalMsg.Request)netReq.payload;
-                op = new BootstrapGlobalOp(gvodReq.reqId, BootstrapServerComp.this, gvodReq, netReq.getVodSource());
+                op = new BootstrapGlobalOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
             } else if(netReq.payload instanceof AddOverlayMsg.Request) {
                 AddOverlayMsg.Request gvodReq = (AddOverlayMsg.Request)netReq.payload;
-                op = new AddOverlayOp(gvodReq.reqId, BootstrapServerComp.this, gvodReq, netReq.getVodSource());
+                op = new AddOverlayOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
             } else if(netReq.payload instanceof JoinOverlayMsg.Request) {
                 JoinOverlayMsg.Request gvodReq = (JoinOverlayMsg.Request)netReq.payload;
-                op = new JoinOverlayOp(gvodReq.reqId, BootstrapServerComp.this, gvodReq, netReq.getVodSource());
+                op = new JoinOverlayOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
             } else {
                 throw new RuntimeException("wrong message");
             }

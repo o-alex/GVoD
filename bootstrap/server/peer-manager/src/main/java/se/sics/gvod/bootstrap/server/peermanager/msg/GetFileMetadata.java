@@ -16,6 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 package se.sics.gvod.bootstrap.server.peermanager.msg;
 
 import java.util.UUID;
@@ -25,45 +26,42 @@ import se.sics.gvod.common.msg.ReqStatus;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class JoinOverlay {
-
-    public static class Request extends PeerManagerMsg.Request {
+public class GetFileMetadata {
+     public static class Request extends PeerManagerMsg.Request {
         public final int overlayId;
-        public final int nodeId;
-        public final byte[] peer;
         
-        public Request(UUID id, int overlayId, int nodeId, byte[] peer) {
+        public Request(UUID id, int overlayId) {
             super(id);
             this.overlayId = overlayId;
-            this.nodeId = nodeId;
-            this.peer = peer;
         }
         
-        public Response success() {
-            return new Response(id, ReqStatus.SUCCESS, overlayId);
+        public Response success(byte[] fileMetadata) {
+            return new Response(id, ReqStatus.SUCCESS, overlayId, fileMetadata);
         }
         
         public Response fail() {
-            return new Response(id, ReqStatus.FAIL, overlayId);
+            return new Response(id, ReqStatus.FAIL, overlayId, null);
         }
         
         @Override
         public String toString() {
-            return "JoinOverlayRequest " + id;
+            return "GetFileMetadataRequest " + id;
         }
     }
     
     public static class Response extends PeerManagerMsg.Response {
         public final int overlayId;
+        public final byte[] fileMetadata;
         
-        public Response(UUID id, ReqStatus status, int overlayId) {
+        public Response(UUID id, ReqStatus status, int overlayId, byte[] fileMetadata) {
             super(id, status);
             this.overlayId = overlayId;
+            this.fileMetadata = fileMetadata;
         }
         
         @Override
         public String toString() {
-            return "JoinOverlayResponse<" + status + "> " + id;
+            return "GetFileMetadataResponse<" + status + "> " + id;
         }
     }
 }

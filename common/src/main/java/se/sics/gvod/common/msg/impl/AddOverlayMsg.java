@@ -41,11 +41,11 @@ public class AddOverlayMsg {
         }
         
         public Response fail() {
-            return new Response(reqId, ReqStatus.FAIL);
+            return new Response(reqId, ReqStatus.FAIL, overlayId);
         }
         
         public Response success() {
-            return new Response(reqId, ReqStatus.SUCCESS);
+            return new Response(reqId, ReqStatus.SUCCESS, overlayId);
         }
         
         @Override
@@ -90,14 +90,16 @@ public class AddOverlayMsg {
     }
     
     public static class Response extends GvodMsg.Response {
-
-        public Response(UUID reqId, ReqStatus status) {
+        public final int overlayId;
+        
+        public Response(UUID reqId, ReqStatus status, int overlayId) {
             super(reqId, status);
+            this.overlayId = overlayId;
         }
         
         @Override
         public Response copy() {
-            return new Response(reqId, status);
+            return new Response(reqId, status, overlayId);
         }
      
         @Override
@@ -110,6 +112,7 @@ public class AddOverlayMsg {
             int hash = 7;
             hash = 23 * hash + Objects.hashCode(this.reqId);
             hash = 23 * hash + Objects.hashCode(this.status);
+            hash = 23 * hash + this.overlayId;
             return hash;
         }
 
@@ -126,6 +129,9 @@ public class AddOverlayMsg {
                 return false;
             }
             if (this.status != other.status) {
+                return false;
+            }
+            if (this.overlayId != other.overlayId) {
                 return false;
             }
             return true;

@@ -16,7 +16,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.bootstrap.server.simulation;
 
 import com.typesafe.config.Config;
@@ -28,24 +27,27 @@ import se.sics.gvod.common.util.GVoDConfigException;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class SimPMConfig {
+
     private final Config config;
     public final Address selfAddress;
     public final byte[] seed;
+    public final int intSeed;
     public final int sampleSize;
-    
-    private SimPMConfig(Config config, byte[] seed, Address selfAddress, int sampleSize) {
+
+    private SimPMConfig(Config config, byte[] seed, int intSeed, Address selfAddress, int sampleSize) {
         this.config = config;
         this.seed = seed;
+        this.intSeed = intSeed;
         this.selfAddress = selfAddress;
         this.sampleSize = sampleSize;
     }
-    
+
     public static class Builder {
+
         private final Config config;
         private final byte[] seed;
         private final Address selfAddress;
-        private int sampleSize;
-        
+
         public Builder(Config config, byte[] seed, Address selfAddress) {
             this.config = config;
             this.seed = seed;
@@ -53,12 +55,15 @@ public class SimPMConfig {
         }
         
         public SimPMConfig finalise() throws GVoDConfigException.Missing {
+            int sampleSize;
+            int intSeed;
             try {
+                intSeed = config.getInt("intSeed");
                 sampleSize = config.getInt("bootstrap.server.sampleSize");
             } catch (ConfigException.Missing ex) {
                 throw new GVoDConfigException.Missing(ex);
             }
-            return new SimPMConfig(config, seed, selfAddress, sampleSize);
+            return new SimPMConfig(config, seed, intSeed, selfAddress, sampleSize);
         }
     }
 }
