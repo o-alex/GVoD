@@ -167,7 +167,7 @@ public class BootstrapClientComp extends ComponentDefinition {
                     if (fileMeta == null) {
                         throw new RuntimeException("missing");
                     }
-                    int downloadPos = fileMeta.size / fileMeta.pieceSize + 1;
+                    int downloadPos = fileMeta.fileSize / fileMeta.pieceSize + 1;
                     overlaysUtility.put(resp.overlayId, downloadPos);
                 }
             };

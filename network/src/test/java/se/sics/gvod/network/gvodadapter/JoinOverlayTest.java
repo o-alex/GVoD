@@ -62,7 +62,7 @@ public class JoinOverlayTest {
         GVoDAdapter<JoinOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
         Map<VodAddress, Integer> overlaySample = new HashMap<VodAddress, Integer>();
         overlaySample.put(new VodAddress(new Address(InetAddress.getLocalHost(), 12345, 1), -1), 1);
-        JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1, overlaySample, new FileMetadata(10000, 1024));
+        JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1, overlaySample, new FileMetadata(10000, 1024, "SHA", 100));
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);

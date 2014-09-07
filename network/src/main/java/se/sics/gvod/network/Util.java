@@ -25,6 +25,7 @@ import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msgs.MessageDecodingException;
 import se.sics.gvod.common.msgs.MessageEncodingException;
 import se.sics.gvod.common.util.FileMetadata;
+import se.sics.gvod.common.util.HashUtil;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.util.UserTypesDecoderFactory;
 import se.sics.gvod.net.util.UserTypesEncoderFactory;
@@ -108,21 +109,27 @@ public class Util {
     }
 
     public static ByteBuf encodeFileMeta(ByteBuf buffer, FileMetadata fileMeta) {
-        buffer.writeInt(fileMeta.size);
+        buffer.writeInt(fileMeta.fileSize);
         buffer.writeInt(fileMeta.pieceSize);
+        buffer.writeByte(HashUtil.getAlgId(fileMeta.hashAlg));
+        buffer.writeInt(fileMeta.hashFileSize);
         return buffer;
     }
 
     public static FileMetadata decodeFileMeta(ByteBuf buffer) {
         int fileSize = buffer.readInt();
         int pieceSize = buffer.readInt();
-        return new FileMetadata(fileSize, pieceSize);
+        String hashAlg = HashUtil.getAlgName(buffer.readByte());
+        int hashFileSize = buffer.readInt();
+        return new FileMetadata(fileSize, pieceSize, hashAlg, hashFileSize);
     }
 
     public static int getFileMetaEncodedSize() {
         int size = 0;
         size += 4; //fileSize
         size += 4; //pieceSize
+        size += 1; //hashAlgId
+        size += 4; //hashFileSize
         return size;
     }
     

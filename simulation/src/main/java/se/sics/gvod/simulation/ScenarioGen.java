@@ -27,8 +27,6 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import se.sics.gvod.manager.DownloadFileInfo;
 import se.sics.gvod.manager.UploadFileInfo;
 import se.sics.gvod.simulation.cmd.operations.DownloadVideoCmd;
@@ -54,9 +52,10 @@ public class ScenarioGen {
     static String experimentDir;
 
     static {
-        fileNames.put(1, "video1");
+        fileNames.put(1, "video1.mp4");
         try {
             File f = File.createTempFile("vodExperiment", "");
+            f.delete();
             f.mkdir();
             experimentDir = f.getPath();
         } catch (IOException ex) {
@@ -85,8 +84,10 @@ public class ScenarioGen {
             = new Operation1<StartVodPeerCmd, Integer>() {
 
                 @Override
-                public StartVodPeerCmd generate(Integer id) {
-                    return new StartVodPeerCmd(id);
+                public StartVodPeerCmd generate(Integer nodeId) {
+                    File nodeLibDir = new File(experimentDir + File.separator + "node" + nodeId);
+                    nodeLibDir.mkdirs();
+                    return new StartVodPeerCmd(nodeId, nodeLibDir.getPath());
                 }
             };
 
@@ -104,13 +105,12 @@ public class ScenarioGen {
 
                 @Override
                 public UploadVideoCmd generate(Integer nodeId, Integer overlayId) {
-                    String libDir;
                     try {
-                        File nodeLibDir = new File(experimentDir + File.pathSeparator + "node" + nodeId);
-                        nodeLibDir.mkdir();
-                        libDir = nodeLibDir.getPath();
-                        File file = new File(libDir + File.pathSeparator + fileNames.get(overlayId));
-                        Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file.getPath())));
+                        File nodeLibDir = new File(experimentDir + File.separator + "node" + nodeId);
+                        String libDir = nodeLibDir.getPath();
+                        File file = new File(libDir + File.separator + fileNames.get(overlayId));
+                        file.createNewFile();
+                        Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
                         for (int i = 0; i < 10000; i++) {
                             writer.write("abc" + i + "\n");
                         }
@@ -119,7 +119,7 @@ public class ScenarioGen {
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
-                    return new UploadVideoCmd(nodeId, new UploadFileInfo(overlayId, libDir, fileNames.get(overlayId)));
+                    return new UploadVideoCmd(nodeId, new UploadFileInfo(overlayId, fileNames.get(overlayId)));
                 }
             };
 
@@ -129,7 +129,7 @@ public class ScenarioGen {
                 @Override
                 public DownloadVideoCmd generate(Integer nodeId, Integer overlayId) {
                     String libDir;
-                    File nodeLibDir = new File(experimentDir + File.pathSeparator + "node" + nodeId);
+                    File nodeLibDir = new File(experimentDir + File.separator + "node" + nodeId);
                     nodeLibDir.mkdir();
                     libDir = nodeLibDir.getPath();
                     return new DownloadVideoCmd(nodeId, new DownloadFileInfo(overlayId, libDir, fileNames.get(overlayId)));

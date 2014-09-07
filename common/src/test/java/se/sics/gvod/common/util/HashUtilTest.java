@@ -18,78 +18,94 @@
  */
 package se.sics.gvod.common.util;
 
+import com.google.common.base.Objects;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.Map;
-import org.javatuples.Pair;
+import java.util.Arrays;
+import org.junit.Assert;
+import org.junit.Test;
+import se.sics.gvod.common.util.HashUtil.HashBuilderException;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class HashUtil {
+public class HashUtilTest {
 
-    public static final byte SHA = 0x01;
+    private String filePath;
+    private String hashPath;
+    private int fileLength;
 
-    private static final Map<String, Byte> nameMap = new HashMap<String, Byte>();
-    private static final Map<Byte, Pair<String, Integer>> algMap = new HashMap<Byte, Pair<String, Integer>>();
+    @Test
+    public void testMakeHash() throws HashUtil.HashBuilderException, IOException {
+        prepareFiles();
+        System.out.println(filePath);
+        System.out.println(hashPath);
 
-    static {
-        nameMap.put("SHA", SHA);
-        algMap.put(SHA, Pair.with("SHA", 20));
+        HashUtil.makeHashes(filePath, hashPath, "SHA", 1024);
+        testHashes("SHA", 1024);
     }
 
-    public static int getHashSize(String hashAlg) throws GVoDConfigException.Missing {
-        if (!nameMap.containsKey(hashAlg)) {
-            throw new GVoDConfigException.Missing("hash algorithm: " + hashAlg + " not defined");
+    private void prepareFiles() throws IOException {
+        File file = File.createTempFile("memMapTest", "file");
+        filePath = file.getPath();
+        File hashFile = File.createTempFile("memMapTest", "hash");
+        hashPath = hashFile.getPath();
+        hashFile.delete();
+
+        Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file.getPath())));
+        for (int i = 0; i < 10000; i++) {
+            writer.write("abc" + i + "\n");
         }
-        return algMap.get(nameMap.get(hashAlg)).getValue1();
+        writer.flush();
+        writer.close();
+        fileLength = (int) file.length();
     }
 
-    public static byte getAlgId(String hashAlg) {
-        return nameMap.get(hashAlg);
-    }
-
-    public static String getAlgName(byte algId) {
-        return algMap.get(algId).getValue0();
-    }
-
-    public static void makeHashes(String filePath, String hashFilePath, String hashAlg, int pieceSize) throws HashBuilderException {
-        OutputStream hashWriter = null;
+    private void testHashes(String hashAlg, int pieceSize) throws HashBuilderException {
+        InputStream hashReader = null;
         InputStream fileReader = null;
         try {
-            hashWriter = new FileOutputStream(hashFilePath);
+            hashReader = new FileInputStream(hashPath);
             fileReader = new FileInputStream(filePath);
             MessageDigest md = MessageDigest.getInstance(hashAlg);
             while (fileReader.available() >= pieceSize) {
                 byte[] piece = new byte[pieceSize];
                 fileReader.read(piece);
-                hashWriter.write(md.digest(piece));
+                byte[] hash = new byte[HashUtil.getHashSize(hashAlg)];
+                hashReader.read(hash);
+                byte[] expectedHash = md.digest(piece);
+                Assert.assertTrue(Arrays.equals(expectedHash, hash));
             }
             int rest = fileReader.available();
-            if(rest != 0) {
+            if (rest != 0) {
                 byte[] piece = new byte[rest];
                 fileReader.read(piece);
-                hashWriter.write(md.digest(piece));
+                byte[] hash = new byte[HashUtil.getHashSize(hashAlg)];
+                hashReader.read(hash);
+                byte[] expectedHash = md.digest(piece);
+                Assert.assertTrue(Arrays.equals(expectedHash, hash));
             }
-            hashWriter.flush();
-            fileReader.close();
         } catch (FileNotFoundException ex) {
             throw new HashBuilderException(ex);
         } catch (NoSuchAlgorithmException ex) {
             throw new HashBuilderException(ex);
         } catch (IOException ex) {
             throw new HashBuilderException(ex);
+        } catch (GVoDConfigException.Missing ex) {
+            throw new HashBuilderException(ex);
         } finally {
             try {
-                if (hashWriter != null) {
-                    hashWriter.close();
+                if (hashReader != null) {
+                    hashReader.close();
                 }
                 if (fileReader != null) {
                     fileReader.close();
@@ -97,13 +113,6 @@ public class HashUtil {
             } catch (IOException ex) {
                 throw new HashBuilderException(ex);
             }
-        }
-    }
-
-    public static class HashBuilderException extends Exception {
-
-        public HashBuilderException(Throwable cause) {
-            super(cause);
         }
     }
 }

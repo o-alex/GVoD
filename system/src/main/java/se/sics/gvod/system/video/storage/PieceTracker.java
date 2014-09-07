@@ -16,26 +16,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system.video.hashMngr;
+
+package se.sics.gvod.system.video.storage;
 
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class SimpleHashMngr implements HashMngr {
+public interface PieceTracker {
 
-    private final HashMngrConfig config;
-
-    private boolean complete;
-    private Set<Integer> hashPieces;
-    
-    public SimpleHashMngr(HashMngrConfig config) {
-        this.config = config;
-        this.complete = false;
-        this.hashPieces = new TreeSet<Integer>();
-    }
-
-    public 
+    public boolean isComplete();
+    public Set<Integer> nextPiecesNeeded(int n, int startPos);
+    public boolean hasPiece(int piecePos);
+    public void addPiece(int piecePos);
+    public int contiguousStart();
 }

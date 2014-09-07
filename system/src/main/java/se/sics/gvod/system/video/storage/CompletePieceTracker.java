@@ -16,41 +16,45 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.system.video.storage;
 
 import java.util.Set;
-import org.javatuples.Triplet;
+import java.util.TreeSet;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface FilePieceTracker {
-    public void setReadPos(int pieceId) throws OutOfBoundsException;
-    public Triplet<Integer, Integer, Boolean> getReadRange();
-    public void addPiece(int pieceId) throws OutOfBoundsException;
-    public Set<Integer> nextPieces(int n, int startPos);
-    public boolean isComplete();
-    public boolean containsPiece(int pieceId);
-    
-    public static class FPTrackerException extends Exception {
-        public FPTrackerException(String message) {
-            super(message);
-        }
-        public FPTrackerException() {
-            super();
-        }
+public class CompletePieceTracker implements PieceTracker {
+
+    private final int nrPieces;
+
+    public CompletePieceTracker(int nrPieces) {
+        this.nrPieces = nrPieces;
+    }
+
+    @Override
+    public boolean isComplete() {
+        return true;
     }
     
-    public static class PieceNotReadyException extends FPTrackerException {
-        public PieceNotReadyException() {
-            super();
-        }
+    @Override
+    public boolean hasPiece(int piecePos) {
+        return true;
     }
-    
-    public static class OutOfBoundsException extends FPTrackerException {
-        public OutOfBoundsException() {
-            super();
-        }
+
+    @Override
+    public Set<Integer> nextPiecesNeeded(int n, int startPos) {
+        return new TreeSet<Integer>();
     }
+
+    @Override
+    public void addPiece(int piecePos) {
+        //already have, do nothing
+    }
+
+    @Override
+    public int contiguousStart() {
+        return nrPieces - 1;
+    }
+
 }

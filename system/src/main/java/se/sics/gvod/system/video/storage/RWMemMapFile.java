@@ -23,73 +23,43 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Set;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class RWMemMapFile implements Storage {
 
+    private final String fileName;
     private final int fileLength;
     private final int pieceSize;
-    
+
     private final MappedByteBuffer mbb;
-    private final FilePieceTracker fpt;
 
     RWMemMapFile(File file, int length, int pieceSize) throws IOException {
+        this.fileName = file.getName();
         this.fileLength = length;
         this.pieceSize = pieceSize;
-        
+
         RandomAccessFile raf = new RandomAccessFile(file, "rw");
         mbb = raf.getChannel().map(FileChannel.MapMode.READ_WRITE, 0, fileLength);
         raf.close();
-
-        this.fpt = new SimpleFPTracker(0, length / pieceSize);
-    }
-
-    @Override
-    public int nrPieces() {
-        return fileLength/pieceSize + 1;
     }
     
     @Override
-    public synchronized void setReadPosition(int pieceId) throws FilePieceTracker.OutOfBoundsException {
-        fpt.setReadPos(pieceId);
+    public int size() {
+        return fileLength;
     }
 
     @Override
-    public synchronized int getReadPosition() {
-        return fpt.getReadRange().getValue0();
-    }
-
-    @Override
-    public synchronized Set<Integer> nextPieces(int n, int startPos) throws FilePieceTracker.OutOfBoundsException {
-        return fpt.nextPieces(n, startPos);
-    }
-
-    @Override
-    public synchronized void writePiece(int pieceId, byte[] piece) throws FilePieceTracker.OutOfBoundsException {
-        fpt.addPiece(pieceId);
-        int writeStart = pieceId * pieceSize;
-        mbb.position(writeStart);
-        int writeBytes = (piece.length < pieceSize ? piece.length : pieceSize);
-        mbb.put(piece, 0, writeBytes);
-        mbb.force();
-    }
-
-    @Override
-    public synchronized byte[] readPiece(int pieceId) throws FilePieceTracker.OutOfBoundsException, FilePieceTracker.PieceNotReadyException {
-        if(!fpt.containsPiece(pieceId)) {
-            throw new FilePieceTracker.PieceNotReadyException();
-        }
+    public byte[] readPiece(int piecePos) {
         byte[] result;
         int lastPiece = fileLength / pieceSize;
-        if (lastPiece == pieceId) {
+        if (lastPiece == piecePos) {
             result = new byte[fileLength % pieceSize];
         } else {
             result = new byte[pieceSize];
         }
-        int readStart = pieceId * pieceSize;
+        int readStart = piecePos * pieceSize;
         mbb.position(readStart);
         mbb.get(result, 0, result.length);
 
@@ -97,7 +67,16 @@ public class RWMemMapFile implements Storage {
     }
 
     @Override
-    public boolean isComplete() {
-        return fpt.isComplete();
+    public void writePiece(int piecePos, byte[] piece) {
+        int writeStart = piecePos * pieceSize;
+        mbb.position(writeStart);
+        int writeBytes = (piece.length < pieceSize ? piece.length : pieceSize);
+        mbb.put(piece, 0, writeBytes);
+        mbb.force();
+    }
+    
+    @Override
+    public String toString() {
+        return fileName;
     }
 }

@@ -44,7 +44,7 @@ import se.sics.gvod.network.nettymsg.GvodNetMsg;
 public class NettyAdapterTest {
     @Test
     public void testRequest() throws UnknownHostException, MessageEncodingException, Exception {
-        AddOverlay.Request req = new AddOverlay.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024));
+        AddOverlay.Request req = new AddOverlay.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024, "SHA", 100));
         VodAddress src = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 1), -1);
         VodAddress dest = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 2), -1);
         GvodNetMsg.Request<AddOverlay.Request> expected = new GvodNetMsg.Request<AddOverlay.Request>(src, dest, req);

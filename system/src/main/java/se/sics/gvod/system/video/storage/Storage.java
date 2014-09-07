@@ -16,40 +16,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system.video.storage;
 
-import java.util.Set;
+package se.sics.gvod.system.video.storage;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public interface Storage {
-
-    public int nrPieces();
-    
-    public void setReadPosition(int pieceId) throws FilePieceTracker.OutOfBoundsException;
-
-    public int getReadPosition();
-
-    /**
-     * @throws OutOfBoundsException if startPos is not between [readPos,
-     * lastPiece]
-     */
-    public Set<Integer> nextPieces(int n, int startPos) throws FilePieceTracker.OutOfBoundsException;
-
-    public void writePiece(int pieceId, byte[] piece) throws FilePieceTracker.OutOfBoundsException;
-
-    /**
-     * randomAccess read, will not move the readPosition
-     *
-     * @throws OutOfBoundsException if pieceId is not between [readPos,
-     * lastPiece]
-     */
-    public byte[] readPiece(int pieceId) throws FilePieceTracker.PieceNotReadyException, FilePieceTracker.OutOfBoundsException;
-
-    /**
-     * @return true if [readPosition,lastPiece] form a contiguous interval,
-     * false otherwise
-     */
-    public boolean isComplete();
+    public int size();
+    public byte[] readPiece(int piecePos);
+    public void writePiece(int piecePos, byte[] piece);
 }

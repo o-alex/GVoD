@@ -19,8 +19,10 @@
 
 package se.sics.gvod.system.storage;
 
+import java.io.File;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.BitSet;
 import junit.framework.Assert;
 import org.junit.Test;
 
@@ -31,7 +33,7 @@ public class UtilTest {
 
     @Test
     public void test1() throws NoSuchAlgorithmException {
-         MessageDigest md = MessageDigest.getInstance("SHA");
-         Assert.assertEquals(20, md.digest(new byte[]{1,2}).length);
+         System.out.println(File.pathSeparator);
+         System.out.println(File.separator);
     }
 }

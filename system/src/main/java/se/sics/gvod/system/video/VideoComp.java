@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.system.video.connMngr.ConnMngr;
-import se.sics.gvod.system.video.storage.Storage;
+import se.sics.gvod.system.video.downloadMngr.DownloadMngr;
 import se.sics.gvod.timer.Timer;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Init;
@@ -42,27 +42,28 @@ public class VideoComp extends ComponentDefinition {
 
     private final VideoConfig config;
     private final ConnMngr connMngr;
-    private final Storage videoFile;
+    private final DownloadMngr videoMngr;
     
     public VideoComp(VideoInit init) {
         this.config = init.config;
         this.connMngr = init.connMngr;
-        this.videoFile = init.videoFile;
+        this.videoMngr = init.videoMngr;
         
         log.info("{} video component init", config.selfAddress);
+        log.debug("{} starting {}", config.selfAddress, videoMngr);
         log.debug("{} starting with sample {}", new Object[]{config.selfAddress, init.overlaySample});
     }
 
     public static class VideoInit extends Init<VideoComp> {
         public final VideoConfig config;
         public final ConnMngr connMngr;
-        public final Storage videoFile;
+        public final DownloadMngr videoMngr;
         public final Map<VodAddress, Integer> overlaySample;
         
-        public VideoInit(VideoConfig config, ConnMngr connMngr, Storage videoFile, Map<VodAddress, Integer> overlaySample) {
+        public VideoInit(VideoConfig config, ConnMngr connMngr, DownloadMngr videoMngr, Map<VodAddress, Integer> overlaySample) {
             this.config = config;
             this.connMngr = connMngr;
-            this.videoFile = videoFile;
+            this.videoMngr = videoMngr;
             this.overlaySample = overlaySample;
         }
     }

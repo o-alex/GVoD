@@ -38,7 +38,7 @@ public class AddOverlayTest {
     @Test
     public void testRequest() {
         GVoDAdapter<AddOverlay.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_REQUEST);
-        AddOverlay.Request expected = new AddOverlay.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024));
+        AddOverlay.Request expected = new AddOverlay.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024, "SHA", 100));
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);

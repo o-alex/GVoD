@@ -23,19 +23,25 @@ package se.sics.gvod.common.util;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class FileMetadata {
-    public final int size;
-    public final int pieceSize;
+    public final int fileSize; 
+    public final int pieceSize; 
+    public final String hashAlg;
+    public final int hashFileSize;
     
-    public FileMetadata(int size, int pieceSize) {
-        this.size = size;
+    public FileMetadata(int fileSize, int pieceSize, String hashAlg, int hashFileSize) {
+        this.fileSize = fileSize;
         this.pieceSize = pieceSize;
+        this.hashAlg = hashAlg;
+        this.hashFileSize = hashFileSize;
     }
 
     @Override
     public int hashCode() {
-        int hash = 7;
-        hash = 53 * hash + this.size;
-        hash = 53 * hash + this.pieceSize;
+        int hash = 5;
+        hash = 41 * hash + this.fileSize;
+        hash = 41 * hash + this.pieceSize;
+        hash = 41 * hash + (this.hashAlg != null ? this.hashAlg.hashCode() : 0);
+        hash = 41 * hash + this.hashFileSize;
         return hash;
     }
 
@@ -48,12 +54,19 @@ public class FileMetadata {
             return false;
         }
         final FileMetadata other = (FileMetadata) obj;
-        if (this.size != other.size) {
+        if (this.fileSize != other.fileSize) {
             return false;
         }
         if (this.pieceSize != other.pieceSize) {
             return false;
         }
+        if ((this.hashAlg == null) ? (other.hashAlg != null) : !this.hashAlg.equals(other.hashAlg)) {
+            return false;
+        }
+        if (this.hashFileSize != other.hashFileSize) {
+            return false;
+        }
         return true;
     }
+
 }

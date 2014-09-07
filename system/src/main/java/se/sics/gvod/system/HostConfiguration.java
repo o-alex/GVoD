@@ -40,12 +40,14 @@ public class HostConfiguration {
     public final VodAddress self;
     public final VodAddress server;
     public final byte[] seed;
+    public final String libDir;
 
-    private HostConfiguration(Config config, VodAddress self, VodAddress server, byte[] seed) {
+    private HostConfiguration(Config config, VodAddress self, VodAddress server, byte[] seed, String libDir) {
         this.config = config;
         this.self = self;
         this.server = server;
         this.seed = seed;
+        this.libDir = libDir;
     }
 
     public BootstrapClientConfig.Builder getBootstrapClientConfig() {
@@ -53,7 +55,7 @@ public class HostConfiguration {
     }
 
     public VoDConfig.Builder getVoDConfiguration() {
-        return new VoDConfig.Builder(config, self);
+        return new VoDConfig.Builder(config, self, libDir);
     }
     
     public BootstrapServerConfig getBootstrapServerConfig() {
@@ -67,8 +69,9 @@ public class HostConfiguration {
     public static class SimulationBuilder {
 
         private final Config config;
-        private Integer id;
-        private byte[] seed;
+        private Integer id = null;
+        private byte[] seed = null;
+        private String libDir = null;
 
         public SimulationBuilder() {
             this.config = ConfigFactory.load();
@@ -85,6 +88,11 @@ public class HostConfiguration {
 
         public SimulationBuilder setSeed(byte[] seed) {
             this.seed = seed;
+            return this;
+        }
+        
+        public SimulationBuilder setLibDir(String libDir) {
+            this.libDir = libDir;
             return this;
         }
 
@@ -107,7 +115,8 @@ public class HostConfiguration {
                 if (seed == null) {
                     throw new GVoDConfigException.Missing("seed");
                 }
-                return new HostConfiguration(config, new VodAddress(self, -1), new VodAddress(server, -1), seed);
+                libDir = (libDir == null ? config.getString("vod.libDir") : libDir);
+                return new HostConfiguration(config, new VodAddress(self, -1), new VodAddress(server, -1), seed, libDir);
             } catch (UnknownHostException e) {
                 throw new GVoDConfigException.Missing("bad host - " + e.getMessage());
             } catch (com.typesafe.config.ConfigException e) {
@@ -167,7 +176,9 @@ public class HostConfiguration {
                 if (seed == null) {
                     throw new GVoDConfigException.Missing("missing seed");
                 }
-                return new HostConfiguration(config, new VodAddress(selfAddress, -1), new VodAddress(serverAddress, -1), seed);
+                
+                String libDir = config.getString("vod.libDir");
+                return new HostConfiguration(config, new VodAddress(selfAddress, -1), new VodAddress(serverAddress, -1), seed, libDir);
             } catch (UnknownHostException e) {
                 throw new GVoDConfigException.Missing("bad host - " + e.getMessage());
             } catch (com.typesafe.config.ConfigException e) {

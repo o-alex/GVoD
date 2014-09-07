@@ -139,7 +139,7 @@ public class SimManagerComp extends ComponentDefinition {
             try {
                 VodAddress bootstrapServer = new VodAddress(new Address(InetAddress.getLocalHost(), port, 0), -1);
                 VodAddress selfAddress = new VodAddress(new Address(InetAddress.getLocalHost(), port, start.id), -1);
-                HostConfiguration hostConfig = new HostConfiguration.SimulationBuilder().setSeed(seed).setId(start.id).finalise();
+                HostConfiguration hostConfig = new HostConfiguration.SimulationBuilder().setSeed(seed).setId(start.id).setLibDir(start.libDir).finalise();
                 Component peerManager = create(SimPMComp.class, new SimPMComp.SimPMInit(new SimPMConfig.Builder(ConfigFactory.load(), seed, selfAddress.getPeerAddress()).finalise()));
                 Component vodPeerHost = create(HostManagerComp.class, new HostManagerInit(hostConfig, peerManager));
                 systemComp.put(start.id, vodPeerHost);

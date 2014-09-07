@@ -17,11 +17,14 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.video.hashMngr;
+package se.sics.gvod.system.video.downloadMngr;
+
+import java.util.Set;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class HashPieceTracker {
-    
+public interface DownloadMngr {
+    public boolean hashComplete();
+    public Set<Integer> nextHashesNeeded(int n);
 }

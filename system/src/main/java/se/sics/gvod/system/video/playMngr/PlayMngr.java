@@ -17,19 +17,33 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.util;
+package se.sics.gvod.system.video.playMngr;
 
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import se.sics.gvod.common.util.FileMetadata;
+import se.sics.gvod.system.video.storage.Storage;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface PieceTracker {
-    public int size();
-    public Set<Integer> nextPiecesNeeded(int n, int startPos);
-    public void addPiece(int piecePos);
-    public void addPieces(int startPos, int endPos);
-    public void removePieces(int startPos, int endPos);
-    public int contiguousForward(int startPos);
-    public int contiguousBackward(int startPos);
+public class PlayMngr {
+    private final FileMetadata fileMeta;
+    private final Storage fileStorage;
+    private AtomicInteger playPos;
+    private AtomicInteger readyPos;
+    
+    public PlayMngr(FileMetadata fileMeta, Storage fileStorage) {
+        this.fileMeta = fileMeta;
+        this.fileStorage = fileStorage;
+        this.playPos = new AtomicInteger(0);
+        this.readyPos = new AtomicInteger(0);
+    }
+    
+    public int getPlayPos() {
+        return playPos.get();
+    }
+    
+    public void setReadyPos(int newReadyPos) {
+        this.readyPos.set(newReadyPos);
+    }
 }

@@ -16,6 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 package se.sics.gvod.system.video.storage;
 
 import java.io.File;
@@ -23,20 +24,20 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class RMemMapFile implements Storage {
 
+    private final String fileName;
     private final int fileLength;
     private final int pieceSize;
 
     private final MappedByteBuffer mbb;
 
     RMemMapFile(File file, int pieceSize) throws IOException {
+        this.fileName = file.getName();
         this.fileLength = (int)file.length();
         this.pieceSize = pieceSize;
         
@@ -46,40 +47,20 @@ public class RMemMapFile implements Storage {
     }
     
     @Override
-    public int nrPieces() {
-        return fileLength/pieceSize + 1;
+    public int size() {
+        return fileLength;
     }
-
+    
     @Override
-    public void setReadPosition(int pieceId) throws FilePieceTracker.OutOfBoundsException {
-        throw new UnsupportedOperationException("Read MemMapFile does not support read jump");
-    }
-
-    @Override
-    public int getReadPosition() {
-        return 0;
-    }
-
-    @Override
-    public Set<Integer> nextPieces(int n, int startPos) throws FilePieceTracker.OutOfBoundsException {
-        return new HashSet<Integer>();
-    }
-
-    @Override
-    public void writePiece(int pieceId, byte[] piece) throws FilePieceTracker.OutOfBoundsException {
-        throw new UnsupportedOperationException("Read MemMapFile does not support write");
-    }
-
-    @Override
-    public byte[] readPiece(int pieceId) throws FilePieceTracker.PieceNotReadyException, FilePieceTracker.OutOfBoundsException {
+    public byte[] readPiece(int piecePos) {
         byte[] result;
         int lastPiece = fileLength / pieceSize;
-        if (lastPiece == pieceId) {
+        if (lastPiece == piecePos) {
             result = new byte[fileLength % pieceSize];
         } else {
             result = new byte[pieceSize];
         }
-        int readStart = pieceId * pieceSize;
+        int readStart = piecePos * pieceSize;
         mbb.position(readStart);
         mbb.get(result, 0, result.length);
 
@@ -87,7 +68,12 @@ public class RMemMapFile implements Storage {
     }
 
     @Override
-    public boolean isComplete() {
-        return true;
+    public void writePiece(int piecePos, byte[] piece) {
+        //already have all, don't do anything
+    }
+    
+    @Override
+    public String toString() {
+        return fileName;
     }
 }
