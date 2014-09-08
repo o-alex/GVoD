@@ -33,8 +33,8 @@ import se.sics.gvod.common.msgs.MessageEncodingException;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
-import se.sics.gvod.network.GVoDNetFrameDecoder;
-import se.sics.gvod.network.gvodadapter.GVoDAdapter;
+import se.sics.gvod.network.SystemNetFrameDecoder;
+import se.sics.gvod.common.network.LocalNettyAdapter;
 import se.sics.gvod.network.nettymsg.GvodNetMsg;
 
 /**
@@ -52,10 +52,10 @@ public class NettyAdapterTest {
         int expectedSize = expected.getSize();
         ByteBuf buf = expected.toByteArray();
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
-        GVoDNetFrameDecoder decoder = new GVoDNetFrameDecoder();
+        SystemNetFrameDecoder decoder = new SystemNetFrameDecoder();
         GvodNetMsg.Request<AddOverlay.Request> decoded = (GvodNetMsg.Request<AddOverlay.Request>)decoder.parse(newBuf);
         Assert.assertEquals(expected, decoded);
-        GVoDAdapter<AddOverlay.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_REQUEST);
+        LocalNettyAdapter<AddOverlay.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_REQUEST);
         Assert.assertEquals(adapter.getEncodedSize(expected.payload), adapter.getEncodedSize(decoded.payload));
 //        Assert.assertEquals(expectedSize, buf.readableBytes());
     }
@@ -70,10 +70,10 @@ public class NettyAdapterTest {
         int expectedSize = expected.getSize();
         ByteBuf buf = expected.toByteArray();
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
-        GVoDNetFrameDecoder decoder = new GVoDNetFrameDecoder();
+        SystemNetFrameDecoder decoder = new SystemNetFrameDecoder();
         GvodNetMsg.Request<BootstrapGlobal.Request> decoded = (GvodNetMsg.Request<BootstrapGlobal.Request>)decoder.parse(newBuf);
         Assert.assertEquals(expected, decoded);
-        GVoDAdapter<BootstrapGlobal.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_REQUEST);
+        LocalNettyAdapter<BootstrapGlobal.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_REQUEST);
         Assert.assertEquals(adapter.getEncodedSize(expected.payload), adapter.getEncodedSize(decoded.payload));
 //        Assert.assertEquals(expectedSize, buf.readableBytes());
     }

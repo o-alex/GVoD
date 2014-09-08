@@ -19,6 +19,7 @@
 
 package se.sics.gvod.network;
 
+import se.sics.gvod.common.network.NetUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.net.InetAddress;
@@ -37,11 +38,11 @@ public class UtilTests {
     @Test
     public void testUUID() {
         UUID expected = UUID.randomUUID();
-        int expectedSize = Util.getUUIDEncodedSize();
+        int expectedSize = NetUtil.getUUIDEncodedSize();
         ByteBuf buf = Unpooled.buffer();
-        Util.encodeUUID(buf, expected);
+        NetUtil.encodeUUID(buf, expected);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
-        UUID decoded = Util.decodeUUID(newBuf);
+        UUID decoded = NetUtil.decodeUUID(newBuf);
         Assert.assertEquals(expected, decoded);
         Assert.assertEquals(expectedSize, buf.readableBytes());
     }
@@ -49,11 +50,11 @@ public class UtilTests {
     @Test 
     public void testVodAddress() throws UnknownHostException {
         VodAddress expected = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 1), -1);
-        int expectedSize = Util.getVodAddressEncodedSize(expected);
+        int expectedSize = NetUtil.getVodAddressEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
-        Util.encodeVodAddress(buf, expected);
+        NetUtil.encodeVodAddress(buf, expected);
         ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
-        VodAddress decoded = Util.decodeVodAddress(newBuf);
+        VodAddress decoded = NetUtil.decodeVodAddress(newBuf);
         Assert.assertEquals(expected, decoded);
         Assert.assertEquals(expectedSize, buf.readableBytes());
     }

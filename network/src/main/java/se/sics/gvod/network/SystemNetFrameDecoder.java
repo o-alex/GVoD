@@ -26,12 +26,12 @@ import se.sics.gvod.common.msgs.MessageDecodingException;
 import se.sics.gvod.net.BaseMsgFrameDecoder;
 import se.sics.gvod.net.msgs.RewriteableMsg;
 import se.sics.gvod.network.nettyadapter.GvodNettyAdapter;
-import se.sics.gvod.network.nettyadapter.NettyAdapter;
+import se.sics.gvod.common.network.NetworkNettyAdapter;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
+public class SystemNetFrameDecoder extends BaseMsgFrameDecoder {
 
     private static final byte MAX = (byte) 0x255;
     
@@ -39,17 +39,20 @@ public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
     public static final byte GVOD_NET_REQUEST = 0x60;
     public static final byte GVOD_NET_RESPONSE = 0x61;
     public static final byte GVOD_NET_ONEWAY = 0x62;
+    public static final byte CROUPIER_NET_REQUEST = 0x63;
+    public static final byte CROUPIER_NET_RESPONSE = 0x64; 
 
-    private static final Map<Byte, NettyAdapter> nettyAdapters = new HashMap<Byte, NettyAdapter>();
+    private static final Map<Byte, NetworkNettyAdapter> nettyAdapters = new HashMap<Byte, NetworkNettyAdapter>();
     static {
-        GvodNettyAdapter.Request.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
-        GvodNettyAdapter.Response.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
+        GvodNettyAdapter.Request.setMsgFrameDecoder(SystemNetFrameDecoder.class);
+        GvodNettyAdapter.Response.setMsgFrameDecoder(SystemNetFrameDecoder.class);
         
         nettyAdapters.put(GVOD_NET_REQUEST, new GvodNettyAdapter.Request());
         nettyAdapters.put(GVOD_NET_RESPONSE, new GvodNettyAdapter.Response());
+        
     }
     
-    public GVoDNetFrameDecoder() {
+    public SystemNetFrameDecoder() {
         super();
     }
 
@@ -65,13 +68,13 @@ public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
                 return msg;
             }
             
-            NettyAdapter currentAdapter = nettyAdapters.get(opKod);
+            NetworkNettyAdapter currentAdapter = nettyAdapters.get(opKod);
             if(currentAdapter == null) {
                 throw new RuntimeException("no adapter registered for opcode:" + opKod);
             }
             
             return currentAdapter.decodeMsg(buffer);
-        } catch (NettyAdapter.DecodingException ex) {
+        } catch (NetworkNettyAdapter.DecodingException ex) {
             throw new MessageDecodingException(ex);
         }
     }

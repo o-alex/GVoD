@@ -29,7 +29,7 @@ import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.Heartbeat;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.common.network.NetUtil;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -57,7 +57,7 @@ public class HeartbeatOp implements Operation {
     @Override
     public void start() {
         for (Map.Entry<Integer, Integer> e : oneWay.overlaysUtility.entrySet()) {
-            byte[] heartbeatEntry = Util.encodeHeartbeatEntry(Unpooled.buffer(), src, e.getValue()).array();
+            byte[] heartbeatEntry = NetUtil.encodeHeartbeatEntry(Unpooled.buffer(), src, e.getValue()).array();
             PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getPeerAddress().getId(), heartbeatEntry);
             opMngr.sendPeerManagerReq(oneWay.id, joinOverlay);
             pendingJoins.add(joinOverlay.id);

@@ -19,6 +19,7 @@
 
 package se.sics.gvod.network.gvodadapter;
 
+import se.sics.gvod.common.network.LocalNettyAdapter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.net.InetAddress;
@@ -44,7 +45,7 @@ import se.sics.gvod.network.GVoDAdapterFactory;
 public class JoinOverlayTest {
     @Test
     public void testRequest() {
-        GVoDAdapter<JoinOverlay.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_REQUEST);
+        LocalNettyAdapter<JoinOverlay.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_REQUEST);
         JoinOverlay.Request expected = new JoinOverlay.Request(UUID.randomUUID(), 1, 0);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
@@ -59,7 +60,7 @@ public class JoinOverlayTest {
     
      @Test
     public void testResponseSuccess() throws UnknownHostException {
-        GVoDAdapter<JoinOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
+        LocalNettyAdapter<JoinOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
         Map<VodAddress, Integer> overlaySample = new HashMap<VodAddress, Integer>();
         overlaySample.put(new VodAddress(new Address(InetAddress.getLocalHost(), 12345, 1), -1), 1);
         JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1, overlaySample, new FileMetadata(10000, 1024, "SHA", 100));
@@ -76,7 +77,7 @@ public class JoinOverlayTest {
     
     @Test
     public void tesResponsetFail() {
-        GVoDAdapter<JoinOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
+        LocalNettyAdapter<JoinOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
         JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.FAIL, 1, null, null);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();

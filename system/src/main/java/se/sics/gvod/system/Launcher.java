@@ -31,7 +31,7 @@ import se.sics.gvod.net.Transport;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.net.events.PortBindRequest;
 import se.sics.gvod.net.events.PortBindResponse;
-import se.sics.gvod.network.GVoDNetFrameDecoder;
+import se.sics.gvod.network.SystemNetFrameDecoder;
 import se.sics.gvod.timer.Timer;
 import se.sics.gvod.timer.java.JavaTimer;
 import se.sics.kompics.Component;
@@ -88,7 +88,7 @@ public class Launcher extends ComponentDefinition {
         log.info("phase 2 - ip:{} - binding port:{}", selfIp, port);
         selfAddress = new Address(selfIp, port, id);
 
-        network = create(NettyNetwork.class, new NettyInit(seed, true, GVoDNetFrameDecoder.class));
+        network = create(NettyNetwork.class, new NettyInit(seed, true, SystemNetFrameDecoder.class));
         connect(network.getNegative(Timer.class), timer.getPositive(Timer.class));
 
         subscribe(handlePsPortBindResponse, network.getPositive(NatNetworkControl.class));

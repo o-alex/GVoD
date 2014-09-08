@@ -16,34 +16,35 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.network.nettyadapter;
 
-import se.sics.gvod.common.network.NetworkNettyAdapter;
+package se.sics.gvod.croupier.network;
+
 import io.netty.buffer.ByteBuf;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.network.nettymsg.GvodNetMsg;
 import se.sics.gvod.common.msgs.DirectMsgNettyFactory;
 import se.sics.gvod.common.msgs.MessageDecodingException;
+import se.sics.gvod.common.network.LocalNettyAdapter;
 import se.sics.gvod.net.msgs.DirectMsg;
 import se.sics.gvod.net.msgs.RewriteableMsg;
 import se.sics.gvod.network.GVoDAdapterFactory;
-import se.sics.gvod.common.network.LocalNettyAdapter;
+import se.sics.gvod.common.network.NetworkNettyAdapter;
+import se.sics.gvod.network.nettymsg.GvodNetMsg;
 import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class GvodNettyAdapter {
+public class CroupierNettyAdapter {
 
     public static class Request extends DirectMsgNettyFactory.Request implements NetworkNettyAdapter {
 
         //**********NettyAdapter
         @Override
-        public RewriteableMsg decodeMsg(ByteBuf buffer) throws DecodingException {
+        public RewriteableMsg decodeMsg(ByteBuf buffer) throws NetworkNettyAdapter.DecodingException {
             try {
                 return decode(buffer);
             } catch (MessageDecodingException ex) {
-                throw new DecodingException(ex);
+                throw new NetworkNettyAdapter.DecodingException(ex);
             }
         }
 
@@ -66,11 +67,11 @@ public class GvodNettyAdapter {
 
         //**********NettyAdapter
         @Override
-        public RewriteableMsg decodeMsg(ByteBuf buffer) throws DecodingException {
+        public RewriteableMsg decodeMsg(ByteBuf buffer) throws NetworkNettyAdapter.DecodingException {
             try {
                 return decode(buffer);
             } catch (MessageDecodingException ex) {
-                throw new DecodingException(ex);
+                throw new NetworkNettyAdapter.DecodingException(ex);
             }
         }
 

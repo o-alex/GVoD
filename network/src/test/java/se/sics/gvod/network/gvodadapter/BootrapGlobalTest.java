@@ -19,6 +19,7 @@
 
 package se.sics.gvod.network.gvodadapter;
 
+import se.sics.gvod.common.network.LocalNettyAdapter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.net.InetAddress;
@@ -42,7 +43,7 @@ public class BootrapGlobalTest {
     
     @Test
     public void testRequest() {
-        GVoDAdapter<BootstrapGlobal.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_REQUEST);
+        LocalNettyAdapter<BootstrapGlobal.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_REQUEST);
         BootstrapGlobal.Request expected = new BootstrapGlobal.Request(UUID.randomUUID());
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
@@ -56,7 +57,7 @@ public class BootrapGlobalTest {
     
     @Test
     public void testSuccessResponse0() {
-        GVoDAdapter<BootstrapGlobal.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE);
+        LocalNettyAdapter<BootstrapGlobal.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE);
         BootstrapGlobal.Response expected = new BootstrapGlobal.Response(UUID.randomUUID(), ReqStatus.SUCCESS, new HashSet<VodAddress>());
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
@@ -71,7 +72,7 @@ public class BootrapGlobalTest {
     
     @Test
     public void testSuccessResponse() throws UnknownHostException {
-        GVoDAdapter<BootstrapGlobal.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE);
+        LocalNettyAdapter<BootstrapGlobal.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE);
         Set<VodAddress> systemSample = new HashSet<VodAddress>();
         InetAddress ip = InetAddress.getByName("localhost");
         Address adr = new Address(ip, 12345, 0);
@@ -93,7 +94,7 @@ public class BootrapGlobalTest {
     
     @Test
     public void testFail() {
-        GVoDAdapter<BootstrapGlobal.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE);
+        LocalNettyAdapter<BootstrapGlobal.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE);
         BootstrapGlobal.Response expected = new BootstrapGlobal.Response(UUID.randomUUID(), ReqStatus.FAIL, null);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();

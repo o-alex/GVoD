@@ -16,24 +16,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.network.nettymsg;
 
-import io.netty.buffer.ByteBuf;
+package se.sics.gvod.croupier.msg.intern;
+
+import se.sics.gvod.croupier.CroupierMsg;
 import com.google.common.base.Objects;
-import se.sics.gvod.common.msg.GvodMsg;
+import io.netty.buffer.ByteBuf;
 import se.sics.gvod.common.msgs.DirectMsgNetty;
 import se.sics.gvod.common.msgs.MessageEncodingException;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.GVoDAdapterFactory;
-import se.sics.gvod.network.SystemNetFrameDecoder;
 import se.sics.gvod.common.network.LocalNettyAdapter;
+import se.sics.gvod.croupier.network.CroupierRegistryImpl;
+import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.network.SystemNetFrameDecoder;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class GvodNetMsg {
-
-    public static class Request<E extends GvodMsg.Request> extends DirectMsgNetty.Request {
+public class CroupierNettyMsg {
+    public static class Request<E extends CroupierMsg.Request> extends DirectMsgNetty.Request {
 
         public E payload;
 
@@ -45,7 +45,7 @@ public class GvodNetMsg {
             this.payload = payload;
         }
         
-        public <E extends GvodMsg.Response> Response getResponse(E payload) {
+        public <E extends CroupierMsg.Response> Response getResponse(E payload) {
             return new Response(vodDest, vodSrc, payload);
         }
         
@@ -56,7 +56,7 @@ public class GvodNetMsg {
 
         @Override
         public int getSize() {
-            LocalNettyAdapter adapter = GVoDAdapterFactory.getAdapter(payload);
+            LocalNettyAdapter adapter = CroupierRegistryImpl.getAdapter(payload);
             return getHeaderSize() + adapter.getEncodedSize(payload);
         }
 
@@ -68,14 +68,15 @@ public class GvodNetMsg {
         @Override
         public ByteBuf toByteArray() throws MessageEncodingException {
             ByteBuf buffer = createChannelBufferWithHeader();
-            LocalNettyAdapter<GvodMsg.Request> adapter = GVoDAdapterFactory.getAdapter(payload);
+            LocalNettyAdapter<CroupierMsg.Request> adapter = CroupierRegistryImpl.getAdapter(payload);
             adapter.encode(payload, buffer);
             return buffer;
         }
 
+        //TODO Alex should fix - we don't want this dependency - my parent should know about frame decoder
         @Override
         public byte getOpcode() {
-            return SystemNetFrameDecoder.GVOD_NET_REQUEST;
+            return SystemNetFrameDecoder.CROUPIER_NET_REQUEST;
         }
         
         @Override
@@ -101,7 +102,7 @@ public class GvodNetMsg {
         }
     }
 
-    public static class Response<E extends GvodMsg.Response> extends DirectMsgNetty.Response {
+    public static class Response<E extends CroupierMsg.Response> extends DirectMsgNetty.Response {
 
         public final E payload;
 
@@ -120,7 +121,7 @@ public class GvodNetMsg {
 
         @Override
         public int getSize() {
-            LocalNettyAdapter adapter = GVoDAdapterFactory.getAdapter(payload);
+            LocalNettyAdapter adapter = CroupierRegistryImpl.getAdapter(payload);
             return getHeaderSize() + adapter.getEncodedSize(payload);
         }
 
@@ -132,7 +133,7 @@ public class GvodNetMsg {
         @Override
         public ByteBuf toByteArray() throws MessageEncodingException {
             ByteBuf buffer = createChannelBufferWithHeader();
-            LocalNettyAdapter<GvodMsg.Response> adapter = GVoDAdapterFactory.getAdapter(payload);
+            LocalNettyAdapter<CroupierMsg.Response> adapter = CroupierRegistryImpl.getAdapter(payload);
             adapter.encode(payload, buffer);
             return buffer;
         }
@@ -158,67 +159,6 @@ public class GvodNetMsg {
                 return false;
             }
             final Response<E> other = (Response<E>) obj;
-            if (!Objects.equal(this.payload, other.payload)) {
-                return false;
-            }
-            return true;
-        }
-    }
-
-    public static class OneWay<E extends GvodMsg.OneWay> extends DirectMsgNetty.Oneway {
-
-        public final E payload;
-
-        public OneWay(VodAddress vodSrc, VodAddress vodDest, E payload) {
-            super(vodSrc, vodDest);
-            this.payload = payload;
-        }
-        
-        @Override
-        public String toString() {
-            return payload.toString() + " src " + vodSrc.getPeerAddress().toString() + " dest " + vodDest.getPeerAddress().toString();
-        }
-
-        @Override
-        public int getSize() {
-            LocalNettyAdapter adapter = GVoDAdapterFactory.getAdapter(payload);
-            return getHeaderSize() + adapter.getEncodedSize(payload);
-        }
-
-        @Override
-        public OneWay<E> copy() {
-            return new OneWay<E>(vodSrc, vodDest, (E) payload.copy());
-        }
-
-        @Override
-        public ByteBuf toByteArray() throws MessageEncodingException {
-            ByteBuf buffer = createChannelBufferWithHeader();
-            LocalNettyAdapter<GvodMsg.OneWay> adapter = GVoDAdapterFactory.getAdapter(payload);
-            adapter.encode(payload, buffer);
-            return buffer;
-        }
-
-        @Override
-        public byte getOpcode() {
-            return SystemNetFrameDecoder.GVOD_NET_ONEWAY;
-        }
-        
-        @Override
-        public int hashCode() {
-            int hash = 7;
-            hash = 53 * hash + Objects.hashCode(this.payload);
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final OneWay<E> other = (OneWay<E>) obj;
             if (!Objects.equal(this.payload, other.payload)) {
                 return false;
             }

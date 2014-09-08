@@ -19,6 +19,7 @@
 
 package se.sics.gvod.network.gvodadapter;
 
+import se.sics.gvod.common.network.LocalNettyAdapter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.UUID;
@@ -37,7 +38,7 @@ public class AddOverlayTest {
     
     @Test
     public void testRequest() {
-        GVoDAdapter<AddOverlay.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_REQUEST);
+        LocalNettyAdapter<AddOverlay.Request> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_REQUEST);
         AddOverlay.Request expected = new AddOverlay.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024, "SHA", 100));
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
@@ -52,7 +53,7 @@ public class AddOverlayTest {
     
     @Test
     public void tesResponsetSuccess() {
-        GVoDAdapter<AddOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
+        LocalNettyAdapter<AddOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
         AddOverlay.Response expected = new AddOverlay.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
@@ -67,7 +68,7 @@ public class AddOverlayTest {
     
     @Test
     public void tesResponsetFail() {
-        GVoDAdapter<AddOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
+        LocalNettyAdapter<AddOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.ADD_OVERLAY_RESPONSE);
         AddOverlay.Response expected = new AddOverlay.Response(UUID.randomUUID(), ReqStatus.FAIL, 1);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();

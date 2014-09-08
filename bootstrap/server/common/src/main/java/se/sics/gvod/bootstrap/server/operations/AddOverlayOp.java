@@ -28,7 +28,7 @@ import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.AddOverlay;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.common.network.NetUtil;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -68,7 +68,7 @@ public class AddOverlayOp implements Operation {
             PMGetOverlaySample.Response phase1Resp = (PMGetOverlaySample.Response) peerResp;
             if (phase1Resp.status == ReqStatus.SUCCESS) {
                 phase = Phase.JOIN_OVERLAY;
-                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), req.overlayId, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
+                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), req.overlayId, src.getPeerAddress().getId(), NetUtil.encodeVodAddress(Unpooled.buffer(), src).array()));
             } else {
                 opMngr.finish(getId(), src, req.fail());
             }
@@ -76,7 +76,7 @@ public class AddOverlayOp implements Operation {
             PMJoinOverlay.Response phase2Resp = (PMJoinOverlay.Response) peerResp;
             if (phase2Resp.status == ReqStatus.SUCCESS) {
                 phase = Phase.ADD_FILE_METADATA;
-                opMngr.sendPeerManagerReq(getId(), new PMAddFileMetadata.Request(UUID.randomUUID(), req.overlayId, Util.encodeFileMeta(Unpooled.buffer(), req.fileMeta).array()));
+                opMngr.sendPeerManagerReq(getId(), new PMAddFileMetadata.Request(UUID.randomUUID(), req.overlayId, NetUtil.encodeFileMeta(Unpooled.buffer(), req.fileMeta).array()));
             } else {
                 opMngr.finish(getId(), src, req.fail());
             }

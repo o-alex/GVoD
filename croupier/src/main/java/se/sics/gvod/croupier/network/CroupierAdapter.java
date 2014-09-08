@@ -16,19 +16,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.network.gvodadapter;
 
-import io.netty.buffer.ByteBuf;
-import se.sics.kompics.KompicsEvent;
+package se.sics.gvod.croupier.network;
+
+import se.sics.gvod.croupier.CroupierMsg;
+import se.sics.gvod.croupier.pub.common.MyAdapter;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface GVoDAdapter<E extends KompicsEvent> {
-
-    public E decode(ByteBuf buffer);
-
-    public ByteBuf encode(E object, ByteBuf buffer);
+public class CroupierAdapter {
+    public static interface Request<E extends CroupierMsg.Request> extends MyAdapter<E, CroupierRegistry> {
+        
+    }
     
-    public int getEncodedSize(E object); 
+    public static interface Response<E extends CroupierMsg.Response> extends MyAdapter<E, CroupierRegistry> {
+        
+    }
 }

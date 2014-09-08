@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>se.sics.gvod</groupId>
+        <artifactId>GVoD</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <groupId>se.sics.gvod</groupId>
+    <artifactId>croupier</artifactId>
+    <name>Croupier</name>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <dependencies>
+        <dependency>
+            <groupId>se.sics.gvod</groupId>
+            <artifactId>system</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+
+        <dependency>
+            <groupId>se.sics.kompics</groupId>
+            <artifactId>kompics-core</artifactId>
+            <version>${kompics.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>se.sics.net</groupId>
+            <artifactId>nat-network</artifactId>
+            <version>${nattraverser.version}</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>se.sics.net</groupId>
+            <artifactId>netty</artifactId>
+            <version>${nattraverser.version}</version>
+            <type>jar</type>
+        </dependency>
+    </dependencies>
+</project>

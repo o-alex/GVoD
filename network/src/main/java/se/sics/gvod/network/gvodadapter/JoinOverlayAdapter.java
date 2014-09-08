@@ -18,6 +18,7 @@
  */
 package se.sics.gvod.network.gvodadapter;
 
+import se.sics.gvod.common.network.LocalNettyAdapter;
 import io.netty.buffer.ByteBuf;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,18 +28,18 @@ import se.sics.gvod.common.msg.impl.JoinOverlay;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.common.network.NetUtil;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class JoinOverlayAdapter {
 
-    public static class Request implements GVoDAdapter<JoinOverlay.Request> {
+    public static class Request implements LocalNettyAdapter<JoinOverlay.Request> {
 
         @Override
         public JoinOverlay.Request decode(ByteBuf buffer) {
-            UUID reqId = Util.decodeUUID(buffer);
+            UUID reqId = NetUtil.decodeUUID(buffer);
 
             int overlayId = buffer.readInt();
             int utility = buffer.readInt();
@@ -50,7 +51,7 @@ public class JoinOverlayAdapter {
         public ByteBuf encode(JoinOverlay.Request req, ByteBuf buffer) {
             buffer.writeByte(GVoDAdapterFactory.JOIN_OVERLAY_REQUEST);
 
-            Util.encodeUUID(buffer, req.id);
+            NetUtil.encodeUUID(buffer, req.id);
             buffer.writeInt(req.overlayId);
             buffer.writeInt(req.utility);
 
@@ -61,19 +62,19 @@ public class JoinOverlayAdapter {
         public int getEncodedSize(JoinOverlay.Request req) {
             int size = 0;
             size += 1; //type
-            size += Util.getUUIDEncodedSize();
+            size += NetUtil.getUUIDEncodedSize();
             size += 4; //overlayId
             size += 4; //utility
             return size;
         }
     }
 
-    public static class Response implements GVoDAdapter<JoinOverlay.Response> {
+    public static class Response implements LocalNettyAdapter<JoinOverlay.Response> {
 
         @Override
         public JoinOverlay.Response decode(ByteBuf buffer) {
-            UUID respId = Util.decodeUUID(buffer);
-            ReqStatus status = Util.decodeReqStatus(buffer);
+            UUID respId = NetUtil.decodeUUID(buffer);
+            ReqStatus status = NetUtil.decodeReqStatus(buffer);
             int overlayId = buffer.readInt();
 
             Map<VodAddress, Integer> overlaySample = null;
@@ -82,11 +83,11 @@ public class JoinOverlayAdapter {
                 int sampleSize = buffer.readInt();
                 overlaySample = new HashMap<VodAddress, Integer>();
                 for (int j = 0; j < sampleSize; j++) {
-                    VodAddress peer = Util.decodeVodAddress(buffer);
+                    VodAddress peer = NetUtil.decodeVodAddress(buffer);
                     int utility = buffer.readInt();
                     overlaySample.put(peer, utility);
                 }
-                fileMeta = Util.decodeFileMeta(buffer);
+                fileMeta = NetUtil.decodeFileMeta(buffer);
             }
 
             return new JoinOverlay.Response(respId, status, overlayId, overlaySample, fileMeta);
@@ -97,17 +98,17 @@ public class JoinOverlayAdapter {
         ) {
             buffer.writeByte(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
 
-            Util.encodeUUID(buffer, resp.id);
-            Util.encodeReqStatus(buffer, resp.status);
+            NetUtil.encodeUUID(buffer, resp.id);
+            NetUtil.encodeReqStatus(buffer, resp.status);
             buffer.writeInt(resp.overlayId);
 
             if (resp.status == ReqStatus.SUCCESS) {
                 buffer.writeInt(resp.overlaySample.size());
                 for (Map.Entry<VodAddress, Integer> e : resp.overlaySample.entrySet()) {
-                    Util.encodeVodAddress(buffer, e.getKey());
+                    NetUtil.encodeVodAddress(buffer, e.getKey());
                     buffer.writeInt(e.getValue());
                 }
-                Util.encodeFileMeta(buffer, resp.fileMeta);
+                NetUtil.encodeFileMeta(buffer, resp.fileMeta);
             }
             return buffer;
         }
@@ -116,16 +117,16 @@ public class JoinOverlayAdapter {
         public int getEncodedSize(JoinOverlay.Response resp) {
             int size = 0;
             size += 1; //type
-            size += Util.getUUIDEncodedSize();
-            size += Util.getReqStatusEncodedSize();
+            size += NetUtil.getUUIDEncodedSize();
+            size += NetUtil.getReqStatusEncodedSize();
             size += 4; //overlayId
             if (resp.status == ReqStatus.SUCCESS) {
                 size += 4; //overlaySampleSize;
                 for (Map.Entry<VodAddress, Integer> e : resp.overlaySample.entrySet()) {
-                    size += Util.getVodAddressEncodedSize(e.getKey());
+                    size += NetUtil.getVodAddressEncodedSize(e.getKey());
                     size += 4; //utility
                 }
-                size += Util.getFileMetaEncodedSize();
+                size += NetUtil.getFileMetaEncodedSize();
             }
             return size;
         }

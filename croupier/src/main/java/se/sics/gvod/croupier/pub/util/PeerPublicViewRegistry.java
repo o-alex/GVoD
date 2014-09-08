@@ -16,23 +16,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
-package se.sics.gvod.network.nettyadapter;
-
-import io.netty.buffer.ByteBuf;
-import se.sics.gvod.net.msgs.RewriteableMsg;
+package se.sics.gvod.croupier.pub.util;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface NettyAdapter {
-    public RewriteableMsg decodeMsg(ByteBuf buffer) throws DecodingException ;
-    public ByteBuf encodeMsg(ByteBuf buffer);
-    
-    public static class DecodingException extends Exception {
-        public DecodingException(Throwable cause) {
-            super(cause);
-        }
-    }
+public interface PeerPublicViewRegistry {
+
+    public PeerPublicView.Adapter getAdapter(byte regCode);
+
+    public <E extends PeerPublicView> byte getReqCode(E msg);
+
+    public <E extends PeerPublicView> PeerPublicView.Adapter getAdapter(E msg);
 }

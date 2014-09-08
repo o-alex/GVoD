@@ -26,7 +26,7 @@ import se.sics.gvod.common.msg.impl.Heartbeat;
 import se.sics.gvod.common.msg.impl.JoinOverlay;
 import se.sics.gvod.network.gvodadapter.AddOverlayAdapter;
 import se.sics.gvod.network.gvodadapter.BootstrapGlobalAdapter;
-import se.sics.gvod.network.gvodadapter.GVoDAdapter;
+import se.sics.gvod.common.network.LocalNettyAdapter;
 import se.sics.gvod.network.gvodadapter.HeartbeatAdapter;
 import se.sics.gvod.network.gvodadapter.JoinOverlayAdapter;
 import se.sics.kompics.KompicsEvent;
@@ -47,7 +47,7 @@ public class GVoDAdapterFactory {
     public static final byte JOIN_OVERLAY_RESPONSE = 0x08;
     public static final byte OVERLAY_HEARTBEAT = 0x09;
 
-    private static final Map<Byte, GVoDAdapter<? extends KompicsEvent>> gvodAdapters = new HashMap<Byte, GVoDAdapter<? extends KompicsEvent>>();
+    private static final Map<Byte, LocalNettyAdapter<? extends KompicsEvent>> gvodAdapters = new HashMap<Byte, LocalNettyAdapter<? extends KompicsEvent>>();
 
     static {
         gvodAdapters.put(BOOTSTRAP_GLOBAL_REQUEST, new BootstrapGlobalAdapter.Request());
@@ -59,7 +59,7 @@ public class GVoDAdapterFactory {
         gvodAdapters.put(OVERLAY_HEARTBEAT, new HeartbeatAdapter.OneWay());
     }
 
-    public static GVoDAdapter getAdapter(byte opCode) {
+    public static LocalNettyAdapter getAdapter(byte opCode) {
         return gvodAdapters.get(opCode);
     }
 
@@ -82,7 +82,7 @@ public class GVoDAdapterFactory {
         throw new RuntimeException("no opcode translation");
     }
     
-    public static <M extends KompicsEvent> GVoDAdapter getAdapter(M msg) {
+    public static <M extends KompicsEvent> LocalNettyAdapter getAdapter(M msg) {
         return getAdapter(getOpcode(msg));
     }
 }

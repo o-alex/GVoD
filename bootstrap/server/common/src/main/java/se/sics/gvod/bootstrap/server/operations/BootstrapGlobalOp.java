@@ -29,7 +29,7 @@ import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.BootstrapGlobal;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.common.network.NetUtil;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -70,7 +70,7 @@ public class BootstrapGlobalOp implements Operation {
             PMGetOverlaySample.Response phase1Resp = (PMGetOverlaySample.Response) peerResp;
             if (phase1Resp.status == ReqStatus.SUCCESS) {
                 phase = Phase.JOIN_SYSTEM;
-                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
+                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), NetUtil.encodeVodAddress(Unpooled.buffer(), src).array()));
                 resp = req.success(processOverlaySample(phase1Resp.overlaySample));
             } else {
                 opMngr.finish(getId(), src, req.fail());
@@ -90,7 +90,7 @@ public class BootstrapGlobalOp implements Operation {
     private Set<VodAddress> processOverlaySample(Set<byte[]> boverlaySample) {
         Set<VodAddress> overlaySample = new HashSet<VodAddress>();
         for (byte[] peer : boverlaySample) {
-            overlaySample.add(Util.decodeVodAddress(Unpooled.wrappedBuffer(peer)));
+            overlaySample.add(NetUtil.decodeVodAddress(Unpooled.wrappedBuffer(peer)));
         }
         return overlaySample;
     }

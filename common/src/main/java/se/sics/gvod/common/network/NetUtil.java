@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.network;
+package se.sics.gvod.common.network;
 
 import io.netty.buffer.ByteBuf;
 import java.util.UUID;
@@ -34,7 +34,7 @@ import se.sics.gvod.net.util.UserTypesEncoderFactory;
  *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class Util {
+public class NetUtil {
 
     public static ByteBuf encodeUUID(ByteBuf buffer, UUID id) {
         buffer.writeLong(id.getMostSignificantBits());

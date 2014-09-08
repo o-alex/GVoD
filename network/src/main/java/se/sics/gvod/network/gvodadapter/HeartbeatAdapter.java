@@ -18,24 +18,25 @@
  */
 package se.sics.gvod.network.gvodadapter;
 
+import se.sics.gvod.common.network.LocalNettyAdapter;
 import io.netty.buffer.ByteBuf;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import se.sics.gvod.common.msg.impl.Heartbeat;
 import se.sics.gvod.network.GVoDAdapterFactory;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.common.network.NetUtil;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class HeartbeatAdapter {
 
-    public static class OneWay implements GVoDAdapter<Heartbeat.OneWay> {
+    public static class OneWay implements LocalNettyAdapter<Heartbeat.OneWay> {
 
         @Override
         public Heartbeat.OneWay decode(ByteBuf buffer) {
-            UUID id = Util.decodeUUID(buffer);
+            UUID id = NetUtil.decodeUUID(buffer);
             int overlays = buffer.readInt();
             Map<Integer, Integer> overlayUtility = new HashMap<Integer, Integer>();
             for (int i = 0; i < overlays; i++) {
@@ -51,7 +52,7 @@ public class HeartbeatAdapter {
         public ByteBuf encode(Heartbeat.OneWay oneWay, ByteBuf buffer) {
             buffer.writeByte(GVoDAdapterFactory.OVERLAY_HEARTBEAT);
             
-            Util.encodeUUID(buffer, oneWay.id);
+            NetUtil.encodeUUID(buffer, oneWay.id);
             buffer.writeInt(oneWay.overlaysUtility.size());
             for (Map.Entry<Integer, Integer> e : oneWay.overlaysUtility.entrySet()) {
                 buffer.writeInt(e.getKey());
@@ -65,7 +66,7 @@ public class HeartbeatAdapter {
         public int getEncodedSize(Heartbeat.OneWay req) {
             int size = 0;
             size += 1; //type
-            size += Util.getUUIDEncodedSize();
+            size += NetUtil.getUUIDEncodedSize();
             size += 4; //overlays size;
             size += req.overlaysUtility.size()*(4 + 4); //overlayId + utility
             return size;

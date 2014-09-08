@@ -33,7 +33,7 @@ import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.JoinOverlay;
 import se.sics.gvod.common.util.BuilderException;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.common.network.NetUtil;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -69,7 +69,7 @@ public class JoinOverlayOp implements Operation {
             if (sampleResp.status == ReqStatus.SUCCESS) {
                 resp.setOverlaySample(processOverlaySample(sampleResp.overlaySample));
                 opMngr.sendPeerManagerReq(getId(), new PMGetFileMetadata.Request(UUID.randomUUID(), req.overlayId));
-                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), sampleResp.overlayId, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
+                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), sampleResp.overlayId, src.getPeerAddress().getId(), NetUtil.encodeVodAddress(Unpooled.buffer(), src).array()));
             } else {
                 opMngr.finish(getId(), src, req.fail());
             }
@@ -87,7 +87,7 @@ public class JoinOverlayOp implements Operation {
         } else if (peerResp instanceof PMGetFileMetadata.Response) {
             PMGetFileMetadata.Response fileResp = (PMGetFileMetadata.Response) peerResp;
             if (fileResp.status == ReqStatus.SUCCESS) {
-                resp.setFileMetadata(Util.decodeFileMeta(Unpooled.wrappedBuffer(fileResp.fileMetadata)));
+                resp.setFileMetadata(NetUtil.decodeFileMeta(Unpooled.wrappedBuffer(fileResp.fileMetadata)));
                 try {
                     opMngr.finish(getId(), src, resp.finalise(fileResp.status));
                 } catch (BuilderException.Missing ex) {
@@ -104,7 +104,7 @@ public class JoinOverlayOp implements Operation {
     private Map<VodAddress, Integer> processOverlaySample(Set<byte[]> boverlaySample) {
         Map<VodAddress, Integer> overlaySample = new HashMap<VodAddress, Integer>();
         for (byte[] data : boverlaySample) {
-            Pair<VodAddress, Integer> heartbeatEntry = Util.decodeHeartbeatEntry(Unpooled.wrappedBuffer(data));
+            Pair<VodAddress, Integer> heartbeatEntry = NetUtil.decodeHeartbeatEntry(Unpooled.wrappedBuffer(data));
             overlaySample.put(heartbeatEntry.getValue0(), heartbeatEntry.getValue1());
         }
         return overlaySample;

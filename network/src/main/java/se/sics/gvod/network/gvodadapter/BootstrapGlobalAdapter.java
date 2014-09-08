@@ -18,6 +18,7 @@
  */
 package se.sics.gvod.network.gvodadapter;
 
+import se.sics.gvod.common.network.LocalNettyAdapter;
 import io.netty.buffer.ByteBuf;
 import java.util.HashSet;
 import java.util.Set;
@@ -26,7 +27,7 @@ import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.impl.BootstrapGlobal;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.common.network.NetUtil;
 
 /**
  *
@@ -34,18 +35,18 @@ import se.sics.gvod.network.Util;
  */
 public class BootstrapGlobalAdapter {
 
-    public static class Request implements GVoDAdapter<BootstrapGlobal.Request> {
+    public static class Request implements LocalNettyAdapter<BootstrapGlobal.Request> {
 
         @Override
         public BootstrapGlobal.Request decode(ByteBuf buffer) {
-            UUID reqId = Util.decodeUUID(buffer);
+            UUID reqId = NetUtil.decodeUUID(buffer);
             return new BootstrapGlobal.Request(reqId);
         }
 
         @Override
         public ByteBuf encode(BootstrapGlobal.Request req, ByteBuf buffer) {
             buffer.writeByte(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_REQUEST);
-            Util.encodeUUID(buffer, req.id);
+            NetUtil.encodeUUID(buffer, req.id);
             return buffer;
         }
 
@@ -53,18 +54,18 @@ public class BootstrapGlobalAdapter {
         public int getEncodedSize(BootstrapGlobal.Request req) {
             int size = 0;
             size += 1; //type
-            size += Util.getUUIDEncodedSize();
+            size += NetUtil.getUUIDEncodedSize();
             return size;
         }
     }
 
-    public static class Response implements GVoDAdapter<BootstrapGlobal.Response> {
+    public static class Response implements LocalNettyAdapter<BootstrapGlobal.Response> {
 
         @Override
         public BootstrapGlobal.Response decode(ByteBuf buffer) {
 
-            UUID reqId = Util.decodeUUID(buffer);
-            ReqStatus status = Util.decodeReqStatus(buffer);
+            UUID reqId = NetUtil.decodeUUID(buffer);
+            ReqStatus status = NetUtil.decodeReqStatus(buffer);
 
             Set<VodAddress> systemSample = null;
             
@@ -72,7 +73,7 @@ public class BootstrapGlobalAdapter {
                 systemSample = new HashSet<VodAddress>();
                 int sampleSize = buffer.readInt();
                 for (int i = 0; i < sampleSize; i++) {
-                    VodAddress address = Util.decodeVodAddress(buffer);
+                    VodAddress address = NetUtil.decodeVodAddress(buffer);
                     systemSample.add(address);
                 }
             }
@@ -83,13 +84,13 @@ public class BootstrapGlobalAdapter {
         public ByteBuf encode(BootstrapGlobal.Response resp, ByteBuf buffer) {
             buffer.writeByte(GVoDAdapterFactory.BOOTSTRAP_GLOBAL_RESPONSE);
 
-            Util.encodeUUID(buffer, resp.id);
-            Util.encodeReqStatus(buffer, resp.status);
+            NetUtil.encodeUUID(buffer, resp.id);
+            NetUtil.encodeReqStatus(buffer, resp.status);
 
             if (resp.status == ReqStatus.SUCCESS) {
                 buffer.writeInt(resp.systemSample.size());
                 for (VodAddress peer : resp.systemSample) {
-                    Util.encodeVodAddress(buffer, peer);
+                    NetUtil.encodeVodAddress(buffer, peer);
                 }
             }
             return buffer;
@@ -99,12 +100,12 @@ public class BootstrapGlobalAdapter {
         public int getEncodedSize(BootstrapGlobal.Response resp) {
             int size = 0;
             size += 1; //type
-            size += Util.getUUIDEncodedSize();
-            size += Util.getReqStatusEncodedSize();
+            size += NetUtil.getUUIDEncodedSize();
+            size += NetUtil.getReqStatusEncodedSize();
             if (resp.status == ReqStatus.SUCCESS) {
                 size += 4; //sampleSize
                 for (VodAddress peer : resp.systemSample) {
-                    size += Util.getVodAddressEncodedSize(peer);
+                    size += NetUtil.getVodAddressEncodedSize(peer);
                 }
             }
             return size;

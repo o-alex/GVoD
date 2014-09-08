@@ -19,6 +19,7 @@
 
 package se.sics.gvod.network.gvodadapter;
 
+import se.sics.gvod.common.network.LocalNettyAdapter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.HashMap;
@@ -36,7 +37,7 @@ public class HeartbeatTest {
     
     @Test
     public void test() {
-        GVoDAdapter<Heartbeat.OneWay> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.OVERLAY_HEARTBEAT);
+        LocalNettyAdapter<Heartbeat.OneWay> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.OVERLAY_HEARTBEAT);
         Map<Integer, Integer> overlaysUtility = new HashMap<Integer, Integer>();
         overlaysUtility.put(1, 1);
         overlaysUtility.put(3, 2);
