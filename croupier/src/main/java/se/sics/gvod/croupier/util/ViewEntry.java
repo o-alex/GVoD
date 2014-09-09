@@ -18,7 +18,7 @@
  */
 package se.sics.gvod.croupier.util;
 
-import se.sics.gvod.croupier.pub.util.PeerPublicView;
+import se.sics.gvod.croupier.pub.util.PeerView;
 import java.util.HashSet;
 import java.util.Set;
 import se.sics.gvod.net.VodAddress;
@@ -28,13 +28,13 @@ import se.sics.gvod.net.VodAddress;
  */
 public class ViewEntry {
 
-    public final PeerPublicView peerView;
+    public final PeerView peerView;
     private int age;
     //TODO Alex do we really need this
     private final Set<VodAddress> sentTo; 
     private long sentAt;
     private final long addedAt;
-    public ViewEntry(PeerPublicView peerView) {
+    public ViewEntry(PeerView peerView) {
         this.peerView = peerView;
         this.age = 0;
         this.sentTo = new HashSet<VodAddress>();

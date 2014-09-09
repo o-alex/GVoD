@@ -16,21 +16,27 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.croupier.network;
 
+import io.netty.buffer.ByteBuf;
 import se.sics.gvod.croupier.CroupierMsg;
-import se.sics.gvod.croupier.pub.common.MyAdapter;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class CroupierAdapter {
-    public static interface Request<E extends CroupierMsg.Request> extends MyAdapter<E, CroupierRegistry> {
-        
+public interface CroupierAdapter<E extends CroupierMsg.CroupierBase> {
+
+    public E decode(CroupierContext context, ByteBuf buffer);
+
+    public ByteBuf encode(CroupierContext context, E object, ByteBuf buffer);
+
+    public int getEncodedSize(CroupierContext context, E object);
+
+    public static interface Request<E extends CroupierMsg.Request> extends CroupierAdapter<E> {
+
     }
-    
-    public static interface Response<E extends CroupierMsg.Response> extends MyAdapter<E, CroupierRegistry> {
-        
+
+    public static interface Response<E extends CroupierMsg.Response> extends CroupierAdapter<E> {
+
     }
 }

@@ -19,16 +19,19 @@
 
 package se.sics.gvod.croupier.pub.msg;
 
-import se.sics.gvod.croupier.pub.util.PeerView;
-import se.sics.kompics.KompicsEvent;
+import java.util.UUID;
+import se.sics.gvod.croupier.CroupierMsg;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class CroupierUpdateSelf implements KompicsEvent {
-    public final PeerView selfView;
-    
-    public CroupierUpdateSelf(PeerView selfView) {
-        this.selfView = selfView.copy();
+public class CroupierDisconnected extends CroupierMsg.OneWay {
+    public CroupierDisconnected(UUID id, int croupierId) {
+        super(id, croupierId);
+    }
+
+    @Override
+    public <E extends CroupierMsg.CroupierBase> E copy() {
+        return new CroupierDisconnected(id, croupierId);
     }
 }

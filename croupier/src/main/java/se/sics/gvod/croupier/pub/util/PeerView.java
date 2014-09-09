@@ -16,19 +16,30 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+package se.sics.gvod.croupier.pub.util;
 
-package se.sics.gvod.croupier.pub.msg;
-
-import se.sics.gvod.croupier.pub.util.PeerView;
-import se.sics.kompics.KompicsEvent;
+import io.netty.buffer.ByteBuf;
+import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class CroupierUpdateSelf implements KompicsEvent {
-    public final PeerView selfView;
-    
-    public CroupierUpdateSelf(PeerView selfView) {
-        this.selfView = selfView.copy();
+public interface PeerView {
+
+    public int getOverlayId();
+
+    public PeerView copy();
+
+    public int getAge();
+
+    public VodAddress getAddress();
+
+    public static interface Adapter<E extends PeerView> {
+
+        public E decode(ByteBuf buffer);
+
+        public ByteBuf encode(E object, ByteBuf buffer);
+
+        public int getEncodedSize(E object);
     }
 }

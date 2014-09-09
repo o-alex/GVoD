@@ -18,10 +18,10 @@
  */
 package se.sics.gvod.croupier.msg.intern;
 
-import se.sics.gvod.croupier.CroupierMsg;
 import java.util.List;
 import java.util.UUID;
-import se.sics.gvod.croupier.pub.util.PeerPublicView;
+import se.sics.gvod.croupier.CroupierMsg;
+import se.sics.gvod.croupier.pub.util.PeerView;
 
 /**
  * immutable
@@ -31,11 +31,11 @@ public class Shuffle {
 
     public static class Request extends CroupierMsg.Request {
 
-        public final List<PeerPublicView> publicNodes;
-        public final List<PeerPublicView> privateNodes;
-        public final PeerPublicView self;
+        public final List<PeerView> publicNodes;
+        public final List<PeerView> privateNodes;
+        public final PeerView self;
 
-        public Request(UUID id, int overlayId, List<PeerPublicView> publicNodes, List<PeerPublicView> privateNodes, PeerPublicView self) {
+        public Request(UUID id, int overlayId, List<PeerView> publicNodes, List<PeerView> privateNodes, PeerView self) {
             super(id, overlayId);
             this.publicNodes = publicNodes;
             this.privateNodes = privateNodes;
@@ -44,22 +44,22 @@ public class Shuffle {
 
         @Override
         public Request copy() {
-            return new Request(id, overlayId, publicNodes, privateNodes, self);
+            return new Request(id, croupierId, publicNodes, privateNodes, self);
         }
 
         @Override
         public String toString() {
-            return "ShuffleRequest<" + overlayId + "> " + id;
+            return "ShuffleRequest<" + croupierId + "> " + id;
         }
     }
 
     public static class Response extends CroupierMsg.Response {
 
-        public final List<PeerPublicView> publicNodes;
-        public final List<PeerPublicView> privateNodes;
-        public final PeerPublicView self;
+        public final List<PeerView> publicNodes;
+        public final List<PeerView> privateNodes;
+        public final PeerView self;
 
-        public Response(UUID id, int overlayId, List<PeerPublicView> publicNodes, List<PeerPublicView> privateNodes, PeerPublicView self) {
+        public Response(UUID id, int overlayId, List<PeerView> publicNodes, List<PeerView> privateNodes, PeerView self) {
             super(id, overlayId);
             this.publicNodes = publicNodes;
             this.privateNodes = privateNodes;
@@ -68,12 +68,12 @@ public class Shuffle {
 
         @Override
         public Response copy() {
-            return new Response(id, overlayId, publicNodes, privateNodes, self);
+            return new Response(id, croupierId, publicNodes, privateNodes, self);
         }
 
         @Override
         public String toString() {
-            return "ShuffleResponse<" + overlayId + ">" + id;
+            return "ShuffleResponse<" + croupierId + ">" + id;
         }
     }
 }

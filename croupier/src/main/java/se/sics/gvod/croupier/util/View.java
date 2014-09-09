@@ -18,7 +18,7 @@
  */
 package se.sics.gvod.croupier.util;
 
-import se.sics.gvod.croupier.pub.util.PeerPublicView;
+import se.sics.gvod.croupier.pub.util.PeerView;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,7 +36,7 @@ import se.sics.gvod.net.VodAddress;
  */
 public class View {
 
-    private PeerPublicView selfView;
+    private PeerView selfView;
     private final Random rand;
     private final int viewSize;
     private final List<ViewEntry> entries;
@@ -55,7 +55,7 @@ public class View {
         }
     };
 
-    public View(PeerPublicView selfView, Random rand, int viewSize) {
+    public View(PeerView selfView, Random rand, int viewSize) {
         this.selfView = selfView;
         this.rand = rand;
         this.viewSize = viewSize;
@@ -136,9 +136,9 @@ public class View {
         return selectedEntry.peerView.getAddress();
     }
     
-    public List<PeerPublicView> selectToSendAtInitiator(int count, VodAddress destinationPeer) {
+    public List<PeerView> selectToSendAtInitiator(int count, VodAddress destinationPeer) {
         List<ViewEntry> randomEntries = generateRandomSample(count);
-        List<PeerPublicView> descriptors = new ArrayList<PeerPublicView>();
+        List<PeerView> descriptors = new ArrayList<PeerView>();
         for (ViewEntry cacheEntry : randomEntries) {
             cacheEntry.sentTo(destinationPeer);
             descriptors.add(cacheEntry.peerView);
@@ -146,9 +146,9 @@ public class View {
         return descriptors;
     }
     
-    public List<PeerPublicView> selectToSendAtReceiver(int count, VodAddress destinationPeer) {
+    public List<PeerView> selectToSendAtReceiver(int count, VodAddress destinationPeer) {
         List<ViewEntry> randomEntries = generateRandomSample(count);
-        List<PeerPublicView> descriptors = new ArrayList<PeerPublicView>();
+        List<PeerView> descriptors = new ArrayList<PeerView>();
         for (ViewEntry cacheEntry : randomEntries) {
             cacheEntry.sentTo(destinationPeer);
             descriptors.add(cacheEntry.peerView);
@@ -156,7 +156,7 @@ public class View {
         return descriptors;
     }
     
-    public void selectToKeep(VodAddress from, List<PeerPublicView> descriptors) {
+    public void selectToKeep(VodAddress from, List<PeerView> descriptors) {
         if (from.equals(selfView.getAddress())) {
             return;
         }
@@ -172,7 +172,7 @@ public class View {
             }
         }
 
-        for (PeerPublicView descriptor : descriptors) {
+        for (PeerView descriptor : descriptors) {
             VodAddress id = descriptor.getAddress();
             if (selfView.getAddress().equals(id)) {
                 // do not keep descriptor of self
@@ -202,8 +202,8 @@ public class View {
         }
     }
     
-    public final List<PeerPublicView> getAll() {
-        List<PeerPublicView> descriptors = new ArrayList<PeerPublicView>();
+    public final List<PeerView> getAll() {
+        List<PeerView> descriptors = new ArrayList<PeerView>();
         for (ViewEntry cacheEntry : entries) {
             descriptors.add(cacheEntry.peerView);
         }
@@ -310,8 +310,8 @@ public class View {
         }
     }
 
-    public void initialize(Set<PeerPublicView> insiders) {
-        for (PeerPublicView peer : insiders) {
+    public void initialize(Set<PeerView> insiders) {
+        for (PeerView peer : insiders) {
             if (!peer.getAddress().equals(selfView.getAddress())) {
                 addEntry(new ViewEntry(peer));
             }
@@ -326,7 +326,7 @@ public class View {
         return this.entries.size();
     }
 
-    public void updateSelf(PeerPublicView selfView) {
+    public void updateSelf(PeerView selfView) {
         this.selfView = selfView;
     }
 }

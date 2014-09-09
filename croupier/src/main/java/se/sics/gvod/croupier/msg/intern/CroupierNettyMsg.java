@@ -19,15 +19,14 @@
 
 package se.sics.gvod.croupier.msg.intern;
 
-import se.sics.gvod.croupier.CroupierMsg;
 import com.google.common.base.Objects;
 import io.netty.buffer.ByteBuf;
 import se.sics.gvod.common.msgs.DirectMsgNetty;
 import se.sics.gvod.common.msgs.MessageEncodingException;
-import se.sics.gvod.common.network.LocalNettyAdapter;
-import se.sics.gvod.croupier.network.CroupierRegistryImpl;
+import se.sics.gvod.croupier.CroupierMsg;
+import se.sics.gvod.croupier.network.CroupierAdapter;
+import se.sics.gvod.croupier.network.CroupierRegistry;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.SystemNetFrameDecoder;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -56,8 +55,8 @@ public class CroupierNettyMsg {
 
         @Override
         public int getSize() {
-            LocalNettyAdapter adapter = CroupierRegistryImpl.getAdapter(payload);
-            return getHeaderSize() + adapter.getEncodedSize(payload);
+            CroupierAdapter<E> adapter = CroupierRegistry.getAdapter(payload);
+            return getHeaderSize() + adapter.getEncodedSize(CroupierRegistry.getContext(payload.croupierId), payload);
         }
 
         @Override
@@ -68,15 +67,14 @@ public class CroupierNettyMsg {
         @Override
         public ByteBuf toByteArray() throws MessageEncodingException {
             ByteBuf buffer = createChannelBufferWithHeader();
-            LocalNettyAdapter<CroupierMsg.Request> adapter = CroupierRegistryImpl.getAdapter(payload);
-            adapter.encode(payload, buffer);
+            CroupierAdapter<E> adapter = CroupierRegistry.getAdapter(payload);
+            adapter.encode(CroupierRegistry.getContext(payload.croupierId), payload, buffer);
             return buffer;
         }
 
-        //TODO Alex should fix - we don't want this dependency - my parent should know about frame decoder
         @Override
         public byte getOpcode() {
-            return SystemNetFrameDecoder.CROUPIER_NET_REQUEST;
+            return CroupierRegistry.CROUPIER_NET_REQUEST;
         }
         
         @Override
@@ -121,8 +119,8 @@ public class CroupierNettyMsg {
 
         @Override
         public int getSize() {
-            LocalNettyAdapter adapter = CroupierRegistryImpl.getAdapter(payload);
-            return getHeaderSize() + adapter.getEncodedSize(payload);
+            CroupierAdapter<E> adapter = CroupierRegistry.getAdapter(payload);
+            return getHeaderSize() + adapter.getEncodedSize(CroupierRegistry.getContext(payload.croupierId), payload);
         }
 
         @Override
@@ -133,14 +131,14 @@ public class CroupierNettyMsg {
         @Override
         public ByteBuf toByteArray() throws MessageEncodingException {
             ByteBuf buffer = createChannelBufferWithHeader();
-            LocalNettyAdapter<CroupierMsg.Response> adapter = CroupierRegistryImpl.getAdapter(payload);
-            adapter.encode(payload, buffer);
+            CroupierAdapter<E> adapter = CroupierRegistry.getAdapter(payload);
+            adapter.encode(CroupierRegistry.getContext(payload.croupierId), payload, buffer);
             return buffer;
         }
 
         @Override
         public byte getOpcode() {
-            return SystemNetFrameDecoder.GVOD_NET_RESPONSE;
+            return CroupierRegistry.CROUPIER_NET_RESPONSE;
         }
         
         @Override

@@ -21,16 +21,16 @@ package se.sics.gvod.croupier.pub.msg;
 
 import java.util.HashSet;
 import java.util.Set;
-import se.sics.gvod.croupier.pub.util.PeerPublicView;
+import se.sics.gvod.croupier.pub.util.PeerView;
 import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class CroupierSample implements KompicsEvent {
-    public final Set<PeerPublicView> samples;
+    public final Set<PeerView> samples;
     
-    public CroupierSample(Set<PeerPublicView> samples) {
-        this.samples = new HashSet<PeerPublicView>(samples);
+    public CroupierSample(Set<PeerView> samples) {
+        this.samples = new HashSet<PeerView>(samples);
     }
 }

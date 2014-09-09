@@ -16,30 +16,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.croupier.pub.util;
 
-import io.netty.buffer.ByteBuf;
-import se.sics.gvod.net.VodAddress;
+package se.sics.gvod.croupier.network;
+
+import se.sics.gvod.croupier.pub.util.PeerView;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface PeerPublicView {
-
-    public int getOverlayId();
-
-    public PeerPublicView copy();
-
-    public int getAge();
-
-    public VodAddress getAddress();
-
-    public static interface Adapter<E extends PeerPublicView> {
-
-        public E decode(ByteBuf buffer);
-
-        public ByteBuf encode(E object, ByteBuf buffer);
-
-        public int getEncodedSize(E object);
-    }
+public interface CroupierContext {
+    public PeerView.Adapter getPPViewAdapter(byte regCode);
+    public <E extends PeerView> byte getPPViewReqCode(E msg);
+    public <E extends PeerView> PeerView.Adapter<E> getPPViewAdapter(E msg);
 }

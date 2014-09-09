@@ -21,11 +21,15 @@ package se.sics.gvod.croupier.pub.util;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface PeerPublicViewRegistry {
-
-    public PeerPublicView.Adapter getAdapter(byte regCode);
-
-    public <E extends PeerPublicView> byte getReqCode(E msg);
-
-    public <E extends PeerPublicView> PeerPublicView.Adapter getAdapter(E msg);
+public class PublicViewFilter {
+    public static interface Base<E extends PeerView> {
+    }
+    
+    public static interface Simple<E extends PeerView> extends Base<E> {
+        public boolean apply(E peer);
+    }
+    
+    public static interface CompareToSelf<E extends PeerView> extends Base<E> {
+        public boolean apply(E self, E peer);
+    }
 }
