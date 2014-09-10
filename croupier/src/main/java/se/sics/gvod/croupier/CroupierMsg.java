@@ -26,38 +26,42 @@ import se.sics.kompics.KompicsEvent;
  */
 public class CroupierMsg {
 
-    public static abstract class CroupierBase implements KompicsEvent {
+    public static abstract class Base implements KompicsEvent {
 
-        public final UUID id;
         public final int croupierId;
 
-        public CroupierBase(UUID id, int croupierId) {
-            this.id = id;
+        public Base(int croupierId) {
             this.croupierId = croupierId;
         }
 
-        public abstract <E extends CroupierBase> E copy();
+        public abstract <E extends Base> E copy();
     }
 
     //***************************************************************************************************
-    public static abstract class Request extends CroupierBase {
+    public static abstract class Request extends Base {
+
+        public final UUID id;
 
         public Request(UUID id, int croupierId) {
-            super(id, croupierId);
+            super(croupierId);
+            this.id = id;
         }
     }
 
-    public static abstract class Response extends CroupierBase {
+    public static abstract class Response extends Base {
+
+        public final UUID id;
 
         public Response(UUID id, int croupierId) {
-            super(id, croupierId);
+            super(croupierId);
+            this.id = id;
         }
     }
 
-    public static abstract class OneWay extends CroupierBase {
+    public static abstract class OneWay extends Base {
 
-        public OneWay(UUID id, int croupierId) {
-            super(id, croupierId);
+        public OneWay(int croupierId) {
+            super(croupierId);
         }
     }
 }

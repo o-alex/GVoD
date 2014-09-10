@@ -32,12 +32,14 @@ public class CroupierConfig {
     public final Random rand;
     public final int viewSize;
     public final long shufflePeriod;
+    public final int shuffleLength;
     public final CroupierSelectionPolicy policy;
     
-    public CroupierConfig(Random rand, int viewSize, long shufflePeriod, CroupierSelectionPolicy policy) {
+    public CroupierConfig(Random rand, int viewSize, long shufflePeriod, int shuffleLength, CroupierSelectionPolicy policy) {
         this.rand = rand;
         this.viewSize = viewSize;
         this.shufflePeriod = shufflePeriod;
+        this.shuffleLength = shuffleLength;
         this.policy = policy;
     }
 }

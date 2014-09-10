@@ -19,8 +19,8 @@
 
 package se.sics.gvod.croupier;
 
-import se.sics.gvod.croupier.pub.msg.CroupierJoin;
-import se.sics.gvod.croupier.pub.msg.CroupierJoinCompleted;
+import se.sics.gvod.croupier.pub.msg.CroupierSample;
+import se.sics.gvod.croupier.pub.msg.CroupierUpdate;
 import se.sics.kompics.PortType;
 
 /**
@@ -28,7 +28,7 @@ import se.sics.kompics.PortType;
  */
 public class CroupierPort extends PortType {
     {
-        request(CroupierJoin.class);
-        indication(CroupierJoinCompleted.class);
+        request(CroupierUpdate.class);
+        indication(CroupierSample.class);
     }
 }
