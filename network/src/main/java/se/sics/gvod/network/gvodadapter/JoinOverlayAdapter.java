@@ -20,12 +20,11 @@ package se.sics.gvod.network.gvodadapter;
 
 import io.netty.buffer.ByteBuf;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.common.msg.impl.JoinOverlay;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
 import se.sics.gvod.network.Util;
@@ -35,108 +34,98 @@ import se.sics.gvod.network.Util;
  */
 public class JoinOverlayAdapter {
 
-    public static class Request implements GVoDAdapter<JoinOverlayMsg.Request> {
+    public static class Request implements GVoDAdapter<JoinOverlay.Request> {
 
         @Override
-        public JoinOverlayMsg.Request decode(ByteBuf buffer) {
+        public JoinOverlay.Request decode(ByteBuf buffer) {
             UUID reqId = Util.decodeUUID(buffer);
 
-            Set<Integer> overlayIds = new HashSet<Integer>();
-            int overlayIdSize = buffer.readInt();
-            for (int i = 0; i < overlayIdSize; i++) {
-                int overlayId = buffer.readInt();
-                overlayIds.add(overlayId);
-            }
-
-            return new JoinOverlayMsg.Request(reqId, overlayIds);
+            int overlayId = buffer.readInt();
+            int utility = buffer.readInt();
+            
+            return new JoinOverlay.Request(reqId, overlayId, utility);
         }
 
         @Override
-        public ByteBuf encode(JoinOverlayMsg.Request req, ByteBuf buffer) {
+        public ByteBuf encode(JoinOverlay.Request req, ByteBuf buffer) {
             buffer.writeByte(GVoDAdapterFactory.JOIN_OVERLAY_REQUEST);
 
-            Util.encodeUUID(buffer, req.reqId);
-            buffer.writeInt(req.overlayIds.size());
-
-            for (int overlayId : req.overlayIds) {
-                buffer.writeInt(overlayId);
-            }
+            Util.encodeUUID(buffer, req.id);
+            buffer.writeInt(req.overlayId);
+            buffer.writeInt(req.utility);
 
             return buffer;
         }
 
         @Override
-        public int getEncodedSize(JoinOverlayMsg.Request req) {
+        public int getEncodedSize(JoinOverlay.Request req) {
             int size = 0;
             size += 1; //type
             size += Util.getUUIDEncodedSize();
-            size += 4; //overlayId size
-            size += req.overlayIds.size() * 4; //overlayIds
+            size += 4; //overlayId
+            size += 4; //utility
             return size;
         }
     }
 
-    public static class Response implements GVoDAdapter<JoinOverlayMsg.Response> {
+    public static class Response implements GVoDAdapter<JoinOverlay.Response> {
 
         @Override
-        public JoinOverlayMsg.Response decode(ByteBuf buffer) {
+        public JoinOverlay.Response decode(ByteBuf buffer) {
             UUID respId = Util.decodeUUID(buffer);
             ReqStatus status = Util.decodeReqStatus(buffer);
-            Map<Integer, Set<VodAddress>> overlaySamples = null;
+            int overlayId = buffer.readInt();
+
+            Map<VodAddress, Integer> overlaySample = null;
+            FileMetadata fileMeta = null;
             if (status == ReqStatus.SUCCESS) {
-                int sampleMapSize = buffer.readInt();
-                overlaySamples = new HashMap<>();
-                for (int i = 0; i < sampleMapSize; i++) {
-                    int overlayId = buffer.readInt();
-                    int sampleSize = buffer.readInt();
-                    Set<VodAddress> overlaySample = new HashSet<>();
-                    overlaySamples.put(overlayId, overlaySample);
-                    for(int j = 0; j < sampleSize; j++) {
-                        VodAddress peer = Util.decodeVodAddress(buffer);
-                        overlaySample.add(peer);
-                    }
+                int sampleSize = buffer.readInt();
+                overlaySample = new HashMap<VodAddress, Integer>();
+                for (int j = 0; j < sampleSize; j++) {
+                    VodAddress peer = Util.decodeVodAddress(buffer);
+                    int utility = buffer.readInt();
+                    overlaySample.put(peer, utility);
                 }
+                fileMeta = Util.decodeFileMeta(buffer);
             }
-            return new JoinOverlayMsg.Response(respId, status, overlaySamples);
+
+            return new JoinOverlay.Response(respId, status, overlayId, overlaySample, fileMeta);
         }
 
         @Override
-        public ByteBuf encode(JoinOverlayMsg.Response resp, ByteBuf buffer
+        public ByteBuf encode(JoinOverlay.Response resp, ByteBuf buffer
         ) {
             buffer.writeByte(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
 
-            Util.encodeUUID(buffer, resp.reqId);
+            Util.encodeUUID(buffer, resp.id);
             Util.encodeReqStatus(buffer, resp.status);
+            buffer.writeInt(resp.overlayId);
 
             if (resp.status == ReqStatus.SUCCESS) {
-                buffer.writeInt(resp.overlaySamples.size());
-
-                for (Map.Entry<Integer, Set<VodAddress>> e : resp.overlaySamples.entrySet()) {
-                    buffer.writeInt(e.getKey());
-                    buffer.writeInt(e.getValue().size());
-                    for (VodAddress peer : e.getValue()) {
-                        Util.encodeVodAddress(buffer, peer);
-                    }
+                buffer.writeInt(resp.overlaySample.size());
+                for (Map.Entry<VodAddress, Integer> e : resp.overlaySample.entrySet()) {
+                    Util.encodeVodAddress(buffer, e.getKey());
+                    buffer.writeInt(e.getValue());
                 }
+                Util.encodeFileMeta(buffer, resp.fileMeta);
             }
             return buffer;
         }
 
         @Override
-        public int getEncodedSize(JoinOverlayMsg.Response resp) {
+        public int getEncodedSize(JoinOverlay.Response resp) {
             int size = 0;
             size += 1; //type
             size += Util.getUUIDEncodedSize();
             size += Util.getReqStatusEncodedSize();
-            if(resp.status == ReqStatus.SUCCESS) {
-                size += 4; //overlaySample map size
-                for (Map.Entry<Integer, Set<VodAddress>> e : resp.overlaySamples.entrySet()) {
-                    size += 4; //overlayId
-                    size += 4; //overlaySample size
-                    for (VodAddress peer : e.getValue()) {
-                        size += Util.getVodAddressEncodedSize(peer);
-                    }
+            size += 4; //overlayId
+            if (resp.status == ReqStatus.SUCCESS) {
+                size += 4; //overlaySampleSize;
+                for (Map.Entry<VodAddress, Integer> e : resp.overlaySample.entrySet()) {
+                    size += Util.getVodAddressEncodedSize(e.getKey());
+                    size += 4; //utility
                 }
+                size += Util.getFileMetaEncodedSize();
             }
             return size;
         }

@@ -19,7 +19,7 @@
 package se.sics.gvod.bootstrap.client;
 
 import com.typesafe.config.Config;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
 
 /**
@@ -32,13 +32,16 @@ public class BootstrapClientConfig {
     public final byte[] seed;
     public final int openViewSize;
     public final int storageViewSize;
+    public final int heartbeatPeriod;
 
-    private BootstrapClientConfig(VodAddress self, VodAddress server, byte[] seed, int openViewSize, int storageViewSize) {
+    private BootstrapClientConfig(VodAddress self, VodAddress server, byte[] seed, 
+            int openViewSize, int storageViewSize, int heartbeatPeriod) {
         this.self = self;
         this.server = server;
         this.seed = seed;
         this.openViewSize = openViewSize;
         this.storageViewSize = storageViewSize;
+        this.heartbeatPeriod = heartbeatPeriod;
     }
 
     public static class Builder {
@@ -47,8 +50,6 @@ public class BootstrapClientConfig {
         private final VodAddress self;
         private final VodAddress server;
         private final byte[] seed;
-        private Integer openViewSize;
-        private Integer storageViewSize;
 
         public Builder(Config config, VodAddress self, VodAddress server, byte[] seed) {
             this.config = config;
@@ -57,14 +58,15 @@ public class BootstrapClientConfig {
             this.seed = seed;
         }
 
-        public BootstrapClientConfig finalise() throws ConfigException.Missing {
+        public BootstrapClientConfig finalise() throws GVoDConfigException.Missing {
             try {
-                openViewSize = (openViewSize == null ? config.getInt("bootstrap.client.globalViewSize") : openViewSize);
-                storageViewSize = config.getInt("bootstrap.client.storageViewSize");
+                int openViewSize = config.getInt("bootstrap.client.globalViewSize");
+                int storageViewSize = config.getInt("bootstrap.client.storageViewSize");
+                int heartbeatPeriod = config.getInt("bootstrap.client.heartbeatPeriod");
                 
-                return new BootstrapClientConfig(self, server, seed, openViewSize, storageViewSize);
+                return new BootstrapClientConfig(self, server, seed, openViewSize, storageViewSize, heartbeatPeriod);
             } catch (com.typesafe.config.ConfigException.Missing e) {
-                throw new ConfigException.Missing(e.getMessage());
+                throw new GVoDConfigException.Missing(e.getMessage());
             }
         }
     }

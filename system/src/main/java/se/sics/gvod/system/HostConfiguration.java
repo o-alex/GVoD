@@ -18,15 +18,18 @@
  */
 package se.sics.gvod.system;
 
-import se.sics.gvod.system.vod.VoDConfiguration;
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
+import se.sics.gvod.bootstrap.cclient.BCCManagerConfig;
 import se.sics.gvod.bootstrap.client.BootstrapClientConfig;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.bootstrap.server.BootstrapServerConfig;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.system.vod.VoDConfig;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -37,27 +40,38 @@ public class HostConfiguration {
     public final VodAddress self;
     public final VodAddress server;
     public final byte[] seed;
+    public final String libDir;
 
-    private HostConfiguration(Config config, VodAddress self, VodAddress server, byte[] seed) {
+    private HostConfiguration(Config config, VodAddress self, VodAddress server, byte[] seed, String libDir) {
         this.config = config;
         this.self = self;
         this.server = server;
         this.seed = seed;
+        this.libDir = libDir;
     }
 
     public BootstrapClientConfig.Builder getBootstrapClientConfig() {
         return new BootstrapClientConfig.Builder(config, self, server, seed);
     }
 
-    public VoDConfiguration.Builder getVoDConfiguration() {
-        return new VoDConfiguration.Builder(config, self);
+    public VoDConfig.Builder getVoDConfiguration() {
+        return new VoDConfig.Builder(config, self, libDir);
+    }
+    
+    public BootstrapServerConfig getBootstrapServerConfig() {
+        return new BootstrapServerConfig(config, self, seed);
+    }
+    
+    public BCCManagerConfig getBCCManagerConfig() {
+        return new BCCManagerConfig.Builder(config, seed).setSelfAddress(self.getIp(), self.getPort(), self.getId()).finalise();
     }
 
     public static class SimulationBuilder {
 
         private final Config config;
-        private Integer id;
-        private byte[] seed;
+        private Integer id = null;
+        private byte[] seed = null;
+        private String libDir = null;
 
         public SimulationBuilder() {
             this.config = ConfigFactory.load();
@@ -76,29 +90,37 @@ public class HostConfiguration {
             this.seed = seed;
             return this;
         }
+        
+        public SimulationBuilder setLibDir(String libDir) {
+            this.libDir = libDir;
+            return this;
+        }
 
-        public HostConfiguration finalise() throws ConfigException.Missing {
+        public HostConfiguration finalise() throws GVoDConfigException.Missing {
             try {
+                if (id == null) {
+                    throw new GVoDConfigException.Missing("id");
+                }
                 Address self = new Address(
-                        InetAddress.getByName(config.getString("vod.address.ip")),
+                        InetAddress.getLocalHost(),
                         config.getInt("vod.address.port"),
-                        id == null ? config.getInt("vod.address.id") : id
-                );
+                        id);
 
                 Address server = new Address(
-                        InetAddress.getByName(config.getString("bootstrap.address.ip")),
-                        config.getInt("bootstrap.address.port"),
-                        config.getInt("bootstrap.address.id")
+                        InetAddress.getLocalHost(),
+                        config.getInt("bootstrap.server.address.port"),
+                        config.getInt("bootstrap.server.address.id")
                 );
 
                 if (seed == null) {
-                    throw new ConfigException.Missing("missing seed");
+                    throw new GVoDConfigException.Missing("seed");
                 }
-                return new HostConfiguration(config, new VodAddress(self, -1), new VodAddress(server, -1), seed);
+                libDir = (libDir == null ? config.getString("vod.libDir") : libDir);
+                return new HostConfiguration(config, new VodAddress(self, -1), new VodAddress(server, -1), seed, libDir);
             } catch (UnknownHostException e) {
-                throw new ConfigException.Missing("bad host - " + e.getMessage());
+                throw new GVoDConfigException.Missing("bad host - " + e.getMessage());
             } catch (com.typesafe.config.ConfigException e) {
-                throw new ConfigException.Missing(e.getMessage());
+                throw new GVoDConfigException.Missing(e.getMessage());
             }
         }
     }
@@ -113,10 +135,22 @@ public class HostConfiguration {
             this.config = ConfigFactory.load();
         }
 
-        public ExecBuilder(String configFile) {
-            this.config = ConfigFactory.load(configFile);
+        public int getPort() throws GVoDConfigException.Missing {
+            try {
+             return config.getInt("vod.address.port");
+            } catch(ConfigException.Missing ex) {
+                throw new GVoDConfigException.Missing(ex);
+            }
         }
-
+        
+        public int getId() throws GVoDConfigException.Missing {
+            try {
+             return config.getInt("vod.address.id");
+            } catch(ConfigException.Missing ex) {
+                throw new GVoDConfigException.Missing(ex);
+            }
+        }
+        
         public ExecBuilder setSelfAddress(Address selfAddress) {
             this.selfAddress = selfAddress;
             return this;
@@ -127,10 +161,10 @@ public class HostConfiguration {
             return this;
         }
 
-        public HostConfiguration finalise() throws ConfigException.Missing {
+        public HostConfiguration finalise() throws GVoDConfigException.Missing {
             try {
                 if(selfAddress == null) {
-                    throw new ConfigException.Missing("self Address");
+                    throw new GVoDConfigException.Missing("self Address");
                 }
 
                 Address serverAddress = new Address(
@@ -140,13 +174,15 @@ public class HostConfiguration {
                 );
 
                 if (seed == null) {
-                    throw new ConfigException.Missing("missing seed");
+                    throw new GVoDConfigException.Missing("missing seed");
                 }
-                return new HostConfiguration(config, new VodAddress(selfAddress, -1), new VodAddress(serverAddress, -1), seed);
+                
+                String libDir = config.getString("vod.libDir");
+                return new HostConfiguration(config, new VodAddress(selfAddress, -1), new VodAddress(serverAddress, -1), seed, libDir);
             } catch (UnknownHostException e) {
-                throw new ConfigException.Missing("bad host - " + e.getMessage());
+                throw new GVoDConfigException.Missing("bad host - " + e.getMessage());
             } catch (com.typesafe.config.ConfigException e) {
-                throw new ConfigException.Missing(e.getMessage());
+                throw new GVoDConfigException.Missing(e.getMessage());
             }
         }
     }

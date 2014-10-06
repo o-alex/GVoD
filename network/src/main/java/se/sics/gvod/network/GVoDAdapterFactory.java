@@ -20,12 +20,14 @@ package se.sics.gvod.network;
 
 import java.util.HashMap;
 import java.util.Map;
-import se.sics.gvod.common.msg.impl.AddOverlayMsg;
-import se.sics.gvod.common.msg.impl.BootstrapGlobalMsg;
-import se.sics.gvod.common.msg.impl.JoinOverlayMsg;
+import se.sics.gvod.common.msg.impl.AddOverlay;
+import se.sics.gvod.common.msg.impl.BootstrapGlobal;
+import se.sics.gvod.common.msg.impl.Heartbeat;
+import se.sics.gvod.common.msg.impl.JoinOverlay;
 import se.sics.gvod.network.gvodadapter.AddOverlayAdapter;
 import se.sics.gvod.network.gvodadapter.BootstrapGlobalAdapter;
 import se.sics.gvod.network.gvodadapter.GVoDAdapter;
+import se.sics.gvod.network.gvodadapter.HeartbeatAdapter;
 import se.sics.gvod.network.gvodadapter.JoinOverlayAdapter;
 import se.sics.kompics.KompicsEvent;
 
@@ -43,8 +45,9 @@ public class GVoDAdapterFactory {
     public static final byte ADD_OVERLAY_RESPONSE = 0x06;
     public static final byte JOIN_OVERLAY_REQUEST = 0x07;
     public static final byte JOIN_OVERLAY_RESPONSE = 0x08;
+    public static final byte OVERLAY_HEARTBEAT = 0x09;
 
-    private static final Map<Byte, GVoDAdapter<? extends KompicsEvent>> gvodAdapters = new HashMap<>();
+    private static final Map<Byte, GVoDAdapter<? extends KompicsEvent>> gvodAdapters = new HashMap<Byte, GVoDAdapter<? extends KompicsEvent>>();
 
     static {
         gvodAdapters.put(BOOTSTRAP_GLOBAL_REQUEST, new BootstrapGlobalAdapter.Request());
@@ -53,6 +56,7 @@ public class GVoDAdapterFactory {
         gvodAdapters.put(ADD_OVERLAY_RESPONSE, new AddOverlayAdapter.Response());
         gvodAdapters.put(JOIN_OVERLAY_REQUEST, new JoinOverlayAdapter.Request());
         gvodAdapters.put(JOIN_OVERLAY_RESPONSE, new JoinOverlayAdapter.Response());
+        gvodAdapters.put(OVERLAY_HEARTBEAT, new HeartbeatAdapter.OneWay());
     }
 
     public static GVoDAdapter getAdapter(byte opCode) {
@@ -60,18 +64,20 @@ public class GVoDAdapterFactory {
     }
 
     public static <E extends KompicsEvent> byte getOpcode(E msg) {
-        if (msg instanceof BootstrapGlobalMsg.Request) {
+        if (msg instanceof BootstrapGlobal.Request) {
             return BOOTSTRAP_GLOBAL_REQUEST;
-        } else if (msg instanceof BootstrapGlobalMsg.Response) {
+        } else if (msg instanceof BootstrapGlobal.Response) {
             return BOOTSTRAP_GLOBAL_RESPONSE;
-        } else if (msg instanceof AddOverlayMsg.Request) {
+        } else if (msg instanceof AddOverlay.Request) {
             return ADD_OVERLAY_REQUEST;
-        } else if (msg instanceof AddOverlayMsg.Response) {
+        } else if (msg instanceof AddOverlay.Response) {
             return ADD_OVERLAY_RESPONSE;
-        } else if (msg instanceof JoinOverlayMsg.Request) {
+        } else if (msg instanceof JoinOverlay.Request) {
             return JOIN_OVERLAY_REQUEST;
-        } else if (msg instanceof JoinOverlayMsg.Response) {
+        } else if (msg instanceof JoinOverlay.Response) {
             return JOIN_OVERLAY_RESPONSE;
+        } else if (msg instanceof Heartbeat.OneWay) {
+            return OVERLAY_HEARTBEAT;
         }
         throw new RuntimeException("no opcode translation");
     }

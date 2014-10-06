@@ -40,7 +40,7 @@ public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
     public static final byte GVOD_NET_RESPONSE = 0x61;
     public static final byte GVOD_NET_ONEWAY = 0x62;
 
-    private static final Map<Byte, NettyAdapter> nettyAdapters = new HashMap<>();
+    private static final Map<Byte, NettyAdapter> nettyAdapters = new HashMap<Byte, NettyAdapter>();
     static {
         GvodNettyAdapter.Request.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
         GvodNettyAdapter.Response.setMsgFrameDecoder(GVoDNetFrameDecoder.class);

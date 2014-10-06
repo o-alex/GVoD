@@ -16,12 +16,12 @@
     </modules>
     
     <properties>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.6</maven.compiler.source>
+        <maven.compiler.target>1.6</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kompics.version>0.6.0-SNAPSHOT</kompics.version>
         <nattraverser.version>1.1-SNAPSHOT</nattraverser.version>
-        <java.compiler.version>1.7</java.compiler.version>
+        <java.compiler.version>1.6</java.compiler.version>
     </properties>
     
     <dependencies>
@@ -29,7 +29,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.5.6</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.typesafe</groupId>
@@ -42,25 +41,7 @@
             <version>17.0</version>
             <type>jar</type>
         </dependency>
-        <dependency>
-            <groupId>se.sics.kompics</groupId>
-            <artifactId>kompics-core</artifactId>
-            <version>${kompics.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>se.sics.kompics.basic</groupId>
-            <artifactId>kompics-component-netty-network</artifactId>
-            <version>${kompics.version}</version>
-            <type>jar</type>
-        </dependency>
         
-        <dependency>
-            <groupId>se.sics.net</groupId>
-            <artifactId>netty</artifactId>
-            <version>${nattraverser.version}</version>
-            <type>jar</type>
-        </dependency>
     </dependencies>
     
     <repositories>

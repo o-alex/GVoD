@@ -18,11 +18,17 @@
  */
 package se.sics.gvod.system.video;
 
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.net.VodNetwork;
+import se.sics.gvod.system.video.connMngr.ConnMngr;
+import se.sics.gvod.system.video.downloadMngr.DownloadMngr;
+import se.sics.gvod.timer.Timer;
 import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.Init;
 import se.sics.kompics.Positive;
-import se.sics.kompics.network.Network;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -31,9 +37,34 @@ public class VideoComp extends ComponentDefinition {
 
     private static final Logger log = LoggerFactory.getLogger(VideoComp.class);
 
-    private Positive<Network> network = requires(Network.class);
+    private Positive<VodNetwork> network = requires(VodNetwork.class);
+    private Positive<Timer> timer = requires(Timer.class);
 
+    private final VideoConfig config;
+    private final ConnMngr connMngr;
+    private final DownloadMngr videoMngr;
+    
     public VideoComp(VideoInit init) {
+        this.config = init.config;
+        this.connMngr = init.connMngr;
+        this.videoMngr = init.videoMngr;
+        
+        log.info("{} video component init", config.selfAddress);
+        log.debug("{} starting {}", config.selfAddress, videoMngr);
+        log.debug("{} starting with sample {}", new Object[]{config.selfAddress, init.overlaySample});
+    }
 
+    public static class VideoInit extends Init<VideoComp> {
+        public final VideoConfig config;
+        public final ConnMngr connMngr;
+        public final DownloadMngr videoMngr;
+        public final Map<VodAddress, Integer> overlaySample;
+        
+        public VideoInit(VideoConfig config, ConnMngr connMngr, DownloadMngr videoMngr, Map<VodAddress, Integer> overlaySample) {
+            this.config = config;
+            this.connMngr = connMngr;
+            this.videoMngr = videoMngr;
+            this.overlaySample = overlaySample;
+        }
     }
 }

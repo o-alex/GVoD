@@ -19,6 +19,7 @@
 
 package se.sics.gvod.system;
 
+import se.sics.kompics.Component;
 import se.sics.kompics.Init;
 
 /**
@@ -26,8 +27,10 @@ import se.sics.kompics.Init;
  */
 public class HostManagerInit extends Init<HostManagerComp> {
     public final HostConfiguration config;
+    public final Component peerManager;
     
-    public HostManagerInit(HostConfiguration config) {
+    public HostManagerInit(HostConfiguration config, Component peerManager) {
         this.config = config;
+        this.peerManager = peerManager;
     }
 }

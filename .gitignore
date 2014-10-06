@@ -6,3 +6,14 @@
 /common/target/
 /manager/target/
 /network/target/
+/bootstrap/caracal-client/target/
+/bootstrap/gserver/target/
+/bootstrap/cserver/target/
+/bootstrap/server/cserver/target/
+/bootstrap/server/gserver/target/
+/bootstrap/server/sim-server/target/
+/bootstrap/server/caracal-server/target/
+/bootstrap/server/caracal-client/target/
+/bootstrap/server/common/target/
+/bootstrap/server/peer-manager/target/
+/bootstrap/server/simulation-peermanager/target/

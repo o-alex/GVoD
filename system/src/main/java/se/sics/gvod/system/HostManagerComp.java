@@ -18,16 +18,19 @@
  */
 package se.sics.gvod.system;
 
-import se.sics.gvod.system.vod.VoDComp;
-import se.sics.gvod.system.vod.VoDInit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientComp;
 import se.sics.gvod.bootstrap.client.BootstrapClientInit;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
-import se.sics.gvod.common.util.ConfigException;
+import se.sics.gvod.bootstrap.server.BootstrapServerComp;
+import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
+import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.manager.VoDManager;
+import se.sics.gvod.net.VodAddress.NatType;
 import se.sics.gvod.net.VodNetwork;
+import se.sics.gvod.system.vod.VoDComp;
+import se.sics.gvod.system.vod.VoDInit;
 import se.sics.gvod.system.vod.VoDPort;
 import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
@@ -48,6 +51,8 @@ public class HostManagerComp extends ComponentDefinition {
     private Component vodMngr;
     private Component vod;
     private Component bootstrapClient;
+    private Component bootstrapServer;
+    private Component peerManager;
     private Component globalCroupier;
 
     private final HostConfiguration config;
@@ -61,14 +66,25 @@ public class HostManagerComp extends ComponentDefinition {
             this.vodMngr = create(VoDManagerImpl.class, Init.NONE);
             this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration().finalise()));
             this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig().finalise()));
-        } catch (ConfigException.Missing ex) {
+
+            if (config.self.getNatType().equals(NatType.OPEN)) {
+                bootstrapServer = create(BootstrapServerComp.class, new BootstrapServerComp.BootstrapServerInit(config.getBootstrapServerConfig()));
+                peerManager = init.peerManager;
+                
+                connect(bootstrapServer.getNegative(VodNetwork.class), network);
+                connect(bootstrapServer.getNegative(PeerManagerPort.class), peerManager.getPositive(PeerManagerPort.class));
+            }
+
+            connect(vodMngr.getNegative(VoDPort.class), vod.getPositive(VoDPort.class));
+            connect(vod.getNegative(VodNetwork.class), network);
+            connect(vod.getNegative(BootstrapClientPort.class), bootstrapClient.getPositive(BootstrapClientPort.class));
+            connect(vod.getNegative(Timer.class), timer);
+            connect(bootstrapClient.getNegative(VodNetwork.class), network);
+            connect(bootstrapClient.getNegative(Timer.class), timer);
+
+        } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
-
-        connect(vodMngr.getNegative(VoDPort.class), vod.getPositive(VoDPort.class));
-        connect(vod.getNegative(VodNetwork.class), network);
-        connect(vod.getNegative(BootstrapClientPort.class), bootstrapClient.getPositive(BootstrapClientPort.class));
-        connect(bootstrapClient.getNegative(VodNetwork.class), network);
     }
 
     public VoDManager getVoDManager() {

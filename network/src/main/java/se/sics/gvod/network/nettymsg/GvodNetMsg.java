@@ -19,7 +19,7 @@
 package se.sics.gvod.network.nettymsg;
 
 import io.netty.buffer.ByteBuf;
-import java.util.Objects;
+import com.google.common.base.Objects;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msgs.DirectMsgNetty;
 import se.sics.gvod.common.msgs.MessageEncodingException;
@@ -62,7 +62,7 @@ public class GvodNetMsg {
 
         @Override
         public Request<E> copy() {
-            return new Request<>(vodSrc, vodDest, (E) payload.copy());
+            return new Request<E>(vodSrc, vodDest, (E) payload.copy());
         }
 
         @Override
@@ -94,7 +94,7 @@ public class GvodNetMsg {
                 return false;
             }
             final Request<E> other = (Request<E>) obj;
-            if (!Objects.equals(this.payload, other.payload)) {
+            if (!Objects.equal(this.payload, other.payload)) {
                 return false;
             }
             return true;
@@ -126,7 +126,7 @@ public class GvodNetMsg {
 
         @Override
         public Response<E> copy() {
-            return new Response<>(vodSrc, vodDest, (E) payload.copy());
+            return new Response<E>(vodSrc, vodDest, (E) payload.copy());
         }
 
         @Override
@@ -158,7 +158,7 @@ public class GvodNetMsg {
                 return false;
             }
             final Response<E> other = (Response<E>) obj;
-            if (!Objects.equals(this.payload, other.payload)) {
+            if (!Objects.equal(this.payload, other.payload)) {
                 return false;
             }
             return true;
@@ -171,9 +171,6 @@ public class GvodNetMsg {
 
         public OneWay(VodAddress vodSrc, VodAddress vodDest, E payload) {
             super(vodSrc, vodDest);
-            //TODO ALEX fix later
-            setTimeoutId(se.sics.gvod.timer.UUID.nextUUID());
-            //fix
             this.payload = payload;
         }
         
@@ -222,7 +219,7 @@ public class GvodNetMsg {
                 return false;
             }
             final OneWay<E> other = (OneWay<E>) obj;
-            if (!Objects.equals(this.payload, other.payload)) {
+            if (!Objects.equal(this.payload, other.payload)) {
                 return false;
             }
             return true;

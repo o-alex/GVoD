@@ -26,8 +26,10 @@ import se.sics.gvod.simulation.cmd.SystemCmd;
  */
 public class StartVodPeerCmd implements SystemCmd {
     public final int id;
+    public final String libDir;
     
-    public StartVodPeerCmd(int id) {
+    public StartVodPeerCmd(int id, String libDir) {
         this.id = id;
+        this.libDir = libDir;
     }
 }

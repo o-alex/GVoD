@@ -13,24 +13,37 @@
     
     <dependencies>
         <dependency>
-            <groupId>se.sics.gvod.bootstrap</groupId>
-            <artifactId>server</artifactId>
+            <groupId>se.sics.gvod.bootstrap.server</groupId>
+            <artifactId>common-server</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>se.sics.gvod.bootstrap.server</groupId>
+            <artifactId>simulation-peermanager</artifactId>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>se.sics.gvod</groupId>
             <artifactId>manager</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>se.sics.gvod</groupId>
             <artifactId>system</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
         </dependency>
         
+        <dependency>
+            <groupId>se.sics.kompics</groupId>
+            <artifactId>kompics-core</artifactId>
+            <version>${kompics.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>se.sics.kompics.basic</groupId>
+            <artifactId>kompics-component-netty-network</artifactId>
+            <version>${kompics.version}</version>
+            <type>jar</type>
+        </dependency>
         <dependency>
             <groupId>se.sics.kompics.simulation</groupId>
             <artifactId>kompics-simulation</artifactId>

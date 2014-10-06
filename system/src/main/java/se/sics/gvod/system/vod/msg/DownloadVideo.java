@@ -20,6 +20,7 @@ package se.sics.gvod.system.vod.msg;
 
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
+import se.sics.gvod.manager.DownloadFileInfo;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -28,21 +29,21 @@ public class DownloadVideo {
 
     public static class Request extends GvodMsg.Request {
 
-        public final int overlayId;
+        public final DownloadFileInfo fileInfo;
 
-        public Request(int overlayId) {
+        public Request(DownloadFileInfo fileInfo) {
             super(UUID.randomUUID());
-            this.overlayId = overlayId;
+            this.fileInfo = fileInfo;
         }
         
         @Override
         public Request copy() {
-            return new Request(overlayId);
+            return new Request(fileInfo);
         }
 
         @Override
         public String toString() {
-            return "DownloadVideo.Request " + reqId.toString();
+            return "DownloadVideo.Request " + id.toString();
         }
     }
 }

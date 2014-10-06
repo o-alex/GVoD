@@ -17,14 +17,18 @@
             <groupId>se.sics.gvod</groupId>
             <artifactId>common</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
         </dependency>
         
         <dependency>
             <groupId>se.sics.net</groupId>
             <artifactId>netty</artifactId>
             <version>1.1-SNAPSHOT</version>
-            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.javatuples</groupId>
+            <artifactId>javatuples</artifactId>
+            <version>1.2</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 </project>
