@@ -21,11 +21,10 @@ package se.sics.gvod.system.vod;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
-import java.util.logging.Level;
 import org.javatuples.Pair;
+import org.javatuples.Triplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
@@ -36,18 +35,17 @@ import se.sics.gvod.common.msg.impl.JoinOverlay;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.common.util.HashUtil;
+import se.sics.gvod.croupierfake.CroupierComp;
+import se.sics.gvod.croupierfake.CroupierPort;
 import se.sics.gvod.manager.DownloadFileInfo;
-import se.sics.gvod.manager.UploadFileInfo;
-import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
-import se.sics.gvod.system.video.VideoComp;
-import se.sics.gvod.system.video.VideoConfig;
-import se.sics.gvod.system.video.connMngr.ConnMngr;
-import se.sics.gvod.system.video.connMngr.ConnMngrConfig;
-import se.sics.gvod.system.video.connMngr.SimpleConnMngr;
-import se.sics.gvod.system.video.downloadMngr.DownloadMngr;
-import se.sics.gvod.system.video.downloadMngr.SimpleDownloadMngr;
-import se.sics.gvod.system.video.playMngr.PlayMngr;
+import se.sics.gvod.common.filters.TagFilter;
+import se.sics.gvod.common.tags.OverlayTag;
+import se.sics.gvod.system.connMngr.ConnMngrComp;
+import se.sics.gvod.system.downloadMngr.DownloadMngrComp;
+import se.sics.gvod.system.downloadMngr.DownloadMngrConfig;
+import se.sics.gvod.system.connMngr.ConnMngrConfig;
+import se.sics.gvod.system.connMngr.ConnMngrPort;
 import se.sics.gvod.system.video.storage.CompletePieceTracker;
 import se.sics.gvod.system.video.storage.FileMngr;
 import se.sics.gvod.system.video.storage.PieceTracker;
@@ -82,8 +80,8 @@ public class VoDComp extends ComponentDefinition {
 
     private final VoDConfig config;
 
-    private final Map<Integer, Component> videoComps;
-    private final Map<Integer, PlayMngr> videoPlayMngrs;
+    private final Map<Integer, Triplet<Component, Component, Component>> videoComps;
+    private final Map<Integer, FileMngr> videoStoreMngrs;
 
     private final Map<UUID, Pair<String, FileMetadata>> pendingUploads;
     private final Map<UUID, DownloadFileInfo> pendingDownloads;
@@ -91,8 +89,8 @@ public class VoDComp extends ComponentDefinition {
     public VoDComp(VoDInit init) {
         log.debug("init");
         this.config = init.config;
-        this.videoComps = new HashMap<Integer, Component>();
-        this.videoPlayMngrs = new HashMap<Integer, PlayMngr>();
+        this.videoComps = new HashMap<Integer, Triplet<Component, Component, Component>>();
+        this.videoStoreMngrs = new HashMap<Integer, FileMngr>();
         this.pendingDownloads = new HashMap<UUID, DownloadFileInfo>();
         this.pendingUploads = new HashMap<UUID, Pair<String, FileMetadata>>();
 
@@ -159,9 +157,9 @@ public class VoDComp extends ComponentDefinition {
             if (resp.status == ReqStatus.SUCCESS) {
                 try {
                     Pair<String, FileMetadata> fileInfo = pendingUploads.remove(resp.id);
-                    Pair<DownloadMngr, PlayMngr> videoMngrs = getUploadVideoMngrs(fileInfo.getValue0(), fileInfo.getValue1());
-                    videoPlayMngrs.put(resp.overlayId, videoMngrs.getValue1());
-                    startVideoComp(resp.overlayId, videoMngrs.getValue0(), new HashMap<VodAddress, Integer>());
+                    Pair<FileMngr, FileMngr> videoMngrs = getUploadVideoMngrs(fileInfo.getValue0(), fileInfo.getValue1());
+                    videoStoreMngrs.put(resp.overlayId, videoMngrs.getValue0());
+                    startVideoComp(resp.overlayId, videoMngrs, false);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 } catch (HashUtil.HashBuilderException ex) {
@@ -182,9 +180,9 @@ public class VoDComp extends ComponentDefinition {
             if (resp.status == ReqStatus.SUCCESS) {
                 try {
                     DownloadFileInfo fileInfo = pendingDownloads.remove(resp.id);
-                    Pair<DownloadMngr, PlayMngr> videoMngrs = getDownloadVideoMngrs(fileInfo.fileName, resp.fileMeta);
-                    videoPlayMngrs.put(resp.overlayId, videoMngrs.getValue1());
-                    startVideoComp(resp.overlayId, videoMngrs.getValue0(), resp.overlaySample);
+                    Pair<FileMngr, FileMngr> videoMngrs = getDownloadVideoMngrs(fileInfo.fileName, resp.fileMeta);
+                    videoStoreMngrs.put(resp.overlayId, videoMngrs.getValue0());
+                    startVideoComp(resp.overlayId, videoMngrs, true);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 } catch (HashUtil.HashBuilderException ex) {
@@ -196,28 +194,38 @@ public class VoDComp extends ComponentDefinition {
         }
     };
 
-    private void startVideoComp(int overlayId, DownloadMngr videoMngr, Map<VodAddress, Integer> overlaySample) {
-        VideoConfig videoConfig;
+    private void startVideoComp(int overlayId, Pair<FileMngr, FileMngr> hashedFileMngr, boolean download) {
+        DownloadMngrConfig downloadMngrConfig;
         ConnMngrConfig connMngrConfig;
 
         try {
-            videoConfig = config.getVideoConfig().setDownloader(false).finalise();
-            connMngrConfig = config.getConnMngrConfig().finalise();
+            downloadMngrConfig = config.getDownloadMngrConfig(overlayId).finalise();
+            connMngrConfig = config.getConnMngrConfig(overlayId).finalise();
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
 
-        ConnMngr connMngr = new SimpleConnMngr(connMngrConfig);
-        Component video = create(VideoComp.class, new VideoComp.VideoInit(videoConfig, connMngr, videoMngr, overlaySample));
-        videoComps.put(overlayId, video);
+        Component connMngr = create(ConnMngrComp.class, new ConnMngrComp.ConnMngrInit(connMngrConfig));
+        Component downloadMngr = create(DownloadMngrComp.class, new DownloadMngrComp.DownloadMngrInit(downloadMngrConfig, hashedFileMngr.getValue0(), hashedFileMngr.getValue1(), download));
+        Component croupier = create(CroupierComp.class, new CroupierComp.CroupierInit(overlayId));
+        videoComps.put(overlayId, Triplet.with(connMngr, downloadMngr, croupier));
 
-        connect(video.getNegative(Timer.class), timer);
-        connect(video.getNegative(VodNetwork.class), network);
+        connect(downloadMngr.getNegative(Timer.class), timer);
+        connect(downloadMngr.getNegative(ConnMngrPort.class), connMngr.getPositive(ConnMngrPort.class));
+        
+        connect(connMngr.getNegative(VodNetwork.class), network, new TagFilter(new OverlayTag(overlayId)));
+        connect(connMngr.getNegative(Timer.class), timer);
+        connect(connMngr.getNegative(CroupierPort.class), croupier.getPositive(CroupierPort.class));
 
-        trigger(Start.event, video.control());
+        connect(croupier.getNegative(Timer.class), timer);
+        connect(croupier.getNegative(BootstrapClientPort.class), bootstrap, new TagFilter(new OverlayTag(overlayId)));
+        
+        trigger(Start.event, downloadMngr.control());
+        trigger(Start.event, connMngr.control());
+        trigger(Start.event, croupier.control());
     }
 
-    private Pair<DownloadMngr, PlayMngr> getUploadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
+    private Pair<FileMngr, FileMngr> getUploadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
 
         String videoName = video.substring(0, video.indexOf("."));
         String videoExt = video.substring(video.indexOf("."));
@@ -233,14 +241,11 @@ public class VoDComp extends ComponentDefinition {
         int filePieces = fileMeta.fileSize / fileMeta.pieceSize + 1;
         PieceTracker videoPieceTracker = new SimplePieceTracker(filePieces);
         FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
-        DownloadMngr videoDownMngr = new SimpleDownloadMngr(fileMeta, hashMngr, fileMngr);
 
-        PlayMngr videoPlayMngr = new PlayMngr(fileMeta, videoStorage);
-
-        return Pair.with(videoDownMngr, videoPlayMngr);
+        return Pair.with(fileMngr, hashMngr);
     }
 
-    private Pair<DownloadMngr, PlayMngr> getDownloadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
+    private Pair<FileMngr, FileMngr> getDownloadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
         String videoName = video.substring(0, video.indexOf("."));
         String videoExt = video.substring(video.indexOf("."));
         String videoFilePath = config.libDir + File.separator + video;
@@ -257,9 +262,7 @@ public class VoDComp extends ComponentDefinition {
         Storage videoStorage = StorageFactory.getEmptyFile(videoFilePath, fileMeta.fileSize, fileMeta.pieceSize);
         PieceTracker videoPieceTracker = new SimplePieceTracker(fileMeta.fileSize);
         FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
-        DownloadMngr videoDownMngr = new SimpleDownloadMngr(fileMeta, hashMngr, fileMngr);
 
-        PlayMngr videoPlayMngr = new PlayMngr(fileMeta, videoStorage);
-        return Pair.with(videoDownMngr, videoPlayMngr);
+        return Pair.with(fileMngr, hashMngr);
     }
 }

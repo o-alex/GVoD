@@ -16,18 +16,36 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+package se.sics.gvod.system.downloadMngr.msg;
 
-package se.sics.gvod.system.video;
+import java.util.UUID;
+import se.sics.gvod.common.msg.GvodMsg;
+import se.sics.gvod.timer.ScheduleTimeout;
+import se.sics.gvod.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VideoFileMeta {
-    public final String filePath;
-    public final int size;
+public class DownloadControl {
+
+    public static class ScheduledSpeedUp extends Timeout {
+
+        public ScheduledSpeedUp(ScheduleTimeout schedule) {
+            super(schedule);
+        }
+    }
     
-    public VideoFileMeta(String filePath, int size) {
-        this.filePath = filePath;
-        this.size = size;
+    public static class SlowDown extends GvodMsg.OneWay {
+        public final int canceledPiece;
+        
+        public SlowDown(UUID id, int canceledPiece) {
+            super(id);
+            this.canceledPiece = canceledPiece;
+        }
+        
+        @Override
+        public SlowDown copy() {
+            return new SlowDown(id, canceledPiece);
+        }
     }
 }

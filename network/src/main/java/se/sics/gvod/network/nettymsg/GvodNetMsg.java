@@ -23,6 +23,9 @@ import com.google.common.base.Objects;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msgs.DirectMsgNetty;
 import se.sics.gvod.common.msgs.MessageEncodingException;
+import se.sics.gvod.common.tags.BaseTags;
+import se.sics.gvod.common.tags.MsgTag;
+import se.sics.gvod.common.tags.Tagged;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
 import se.sics.gvod.network.GVoDNetFrameDecoder;
@@ -33,7 +36,7 @@ import se.sics.gvod.network.gvodadapter.GVoDAdapter;
  */
 public class GvodNetMsg {
 
-    public static class Request<E extends GvodMsg.Request> extends DirectMsgNetty.Request {
+    public static class Request<E extends GvodMsg.Request> extends DirectMsgNetty.Request implements Tagged<MsgTag> {
 
         public E payload;
 
@@ -79,6 +82,14 @@ public class GvodNetMsg {
         }
         
         @Override
+        public MsgTag getTag() {
+            if(payload instanceof Tagged) {
+                return ((Tagged)payload).getTag();
+            }
+            return BaseTags.NoTag;
+        }
+        
+        @Override
         public int hashCode() {
             int hash = 7;
             hash = 53 * hash + Objects.hashCode(this.payload);
@@ -101,7 +112,7 @@ public class GvodNetMsg {
         }
     }
 
-    public static class Response<E extends GvodMsg.Response> extends DirectMsgNetty.Response {
+    public static class Response<E extends GvodMsg.Response> extends DirectMsgNetty.Response implements Tagged<MsgTag> {
 
         public final E payload;
 
@@ -143,6 +154,14 @@ public class GvodNetMsg {
         }
         
         @Override
+        public MsgTag getTag() {
+            if(payload instanceof Tagged) {
+                return ((Tagged)payload).getTag();
+            }
+            return BaseTags.NoTag;
+        }
+        
+        @Override
         public int hashCode() {
             int hash = 7;
             hash = 53 * hash + Objects.hashCode(this.payload);
@@ -165,7 +184,7 @@ public class GvodNetMsg {
         }
     }
 
-    public static class OneWay<E extends GvodMsg.OneWay> extends DirectMsgNetty.Oneway {
+    public static class OneWay<E extends GvodMsg.OneWay> extends DirectMsgNetty.Oneway implements Tagged<MsgTag> {
 
         public final E payload;
 
@@ -201,6 +220,14 @@ public class GvodNetMsg {
         @Override
         public byte getOpcode() {
             return GVoDNetFrameDecoder.GVOD_NET_ONEWAY;
+        }
+        
+        @Override
+        public MsgTag getTag() {
+            if(payload instanceof Tagged) {
+                return ((Tagged)payload).getTag();
+            }
+            return BaseTags.NoTag;
         }
         
         @Override

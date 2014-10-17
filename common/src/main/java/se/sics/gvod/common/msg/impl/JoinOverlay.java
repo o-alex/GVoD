@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
+import se.sics.gvod.common.tags.OverlayTag;
+import se.sics.gvod.common.tags.Tagged;
 import se.sics.gvod.common.util.BuilderException;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
@@ -42,7 +44,7 @@ public class JoinOverlay {
             this.overlayId = overlayId;
             this.utility = utility;
         }
-        
+
         public ResponseBuilder getResponseBuilder() {
             return new ResponseBuilder(id, overlayId);
         }
@@ -85,14 +87,14 @@ public class JoinOverlay {
             if (this.overlayId != other.overlayId) {
                 return false;
             }
-            if(this.utility != other.utility) {
+            if (this.utility != other.utility) {
                 return false;
             }
             return true;
         }
     }
 
-    public static class Response extends GvodMsg.Response {
+    public static class Response extends GvodMsg.Response implements Tagged<OverlayTag> {
 
         public final int overlayId;
         public final Map<VodAddress, Integer> overlaySample; //<peer, utility>
@@ -108,6 +110,11 @@ public class JoinOverlay {
         @Override
         public Response copy() {
             return new Response(id, status, overlayId, new HashMap<VodAddress, Integer>(overlaySample), fileMeta);
+        }
+
+        @Override
+        public OverlayTag getTag() {
+            return new OverlayTag(overlayId);
         }
 
         @Override
@@ -147,28 +154,30 @@ public class JoinOverlay {
     }
 
     public static class ResponseBuilder {
+
         public final UUID reqId;
         public final int overlayId;
         private Map<VodAddress, Integer> overlaySample = null;
         private FileMetadata fileMetadata = null;
-        
+
         public ResponseBuilder(UUID reqId, int overlayId) {
             this.reqId = reqId;
             this.overlayId = overlayId;
         }
+
         public void setOverlaySample(Map<VodAddress, Integer> overlaySample) {
             this.overlaySample = overlaySample;
         }
-        
+
         public void setFileMetadata(FileMetadata fileMetadata) {
             this.fileMetadata = fileMetadata;
         }
-        
+
         public Response finalise(ReqStatus status) throws BuilderException.Missing {
-            if(status == ReqStatus.FAIL) {
+            if (status == ReqStatus.FAIL) {
                 return new Response(reqId, status, overlayId, null, null);
             }
-            if(overlaySample == null || fileMetadata == null) {
+            if (overlaySample == null || fileMetadata == null) {
                 throw new BuilderException.Missing();
             }
             return new Response(reqId, status, overlayId, overlaySample, fileMetadata);

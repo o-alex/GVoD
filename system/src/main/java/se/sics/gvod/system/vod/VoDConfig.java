@@ -22,8 +22,8 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.system.video.VideoConfig;
-import se.sics.gvod.system.video.connMngr.ConnMngrConfig;
+import se.sics.gvod.system.downloadMngr.DownloadMngrConfig;
+import se.sics.gvod.system.connMngr.ConnMngrConfig;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -44,12 +44,12 @@ public class VoDConfig {
         this.hashAlg = hashAlg;
     }
 
-    public VideoConfig.Builder getVideoConfig() {
-        return new VideoConfig.Builder(config, selfAddress);
+    public DownloadMngrConfig.Builder getDownloadMngrConfig(int overlayId) {
+        return new DownloadMngrConfig.Builder(config, selfAddress, overlayId);
     }
 
-    public ConnMngrConfig.Builder getConnMngrConfig() {
-        return new ConnMngrConfig.Builder(config);
+    public ConnMngrConfig.Builder getConnMngrConfig(int overlayId) {
+        return new ConnMngrConfig.Builder(config, selfAddress, overlayId);
     }
 
     public static class Builder {

@@ -17,28 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.video.msg;
-
-import java.util.UUID;
-import se.sics.gvod.common.msg.GvodMsg;
+package se.sics.gvod.common.util;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class Connect {
-    public static class Request extends GvodMsg.Request {
-        public Request(UUID reqId) {
-            super(reqId);
-        }
-
-        @Override
-        public Request copy() {
-            return new Request(id);
-        }
-        
-        @Override
-        public String toString() {
-            return "ConnectRequest " + id;
-        }
+public class VodDescriptor {
+    public final int overlayId;
+    public final int downloadPos;
+    
+    public VodDescriptor(int overlayId, int downloadPosition) {
+        this.overlayId = overlayId;
+        this.downloadPos = downloadPosition;
     }
 }

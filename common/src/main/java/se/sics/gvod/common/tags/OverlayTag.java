@@ -17,40 +17,39 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system;
-
-import se.sics.gvod.manager.DownloadFileInfo;
-import se.sics.gvod.manager.UploadFileInfo;
-import se.sics.gvod.manager.VoDManager;
-import se.sics.gvod.system.downloadMngr.VideoFileMeta;
-import se.sics.gvod.system.vod.VoDPort;
-import se.sics.gvod.system.vod.msg.DownloadVideo;
-import se.sics.gvod.system.vod.msg.UploadVideo;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
+package se.sics.gvod.common.tags;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
-
-    Positive<VoDPort> vodPort = requires(VoDPort.class);
+public class OverlayTag implements MsgTag {
+    public final int overlayId;
     
-    public VoDManagerImpl() {
-    }
-    
-    public VoDManager getInstance() {
-        return this;
+    public OverlayTag(int overlayId) {
+        this.overlayId = overlayId;
     }
 
     @Override
-    public void uploadVideo(UploadFileInfo fileInfo) {
-        trigger(new UploadVideo.Request(fileInfo), vodPort);
+    public int hashCode() {
+        int hash = 7;
+        hash = 89 * hash + this.overlayId;
+        return hash;
     }
 
     @Override
-    public void downloadVideo(DownloadFileInfo fileInfo) {
-        trigger(new DownloadVideo.Request(fileInfo), vodPort);
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final OverlayTag other = (OverlayTag) obj;
+        if (this.overlayId != other.overlayId) {
+            return false;
+        }
+        return true;
     }
+    
+    
 }

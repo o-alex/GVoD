@@ -17,40 +17,44 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.video.downloadMngr;
+package se.sics.gvod.system.downloadMngr.msg;
 
-import java.util.Set;
-import se.sics.gvod.common.util.FileMetadata;
-import se.sics.gvod.system.video.storage.FileMngr;
+import java.util.UUID;
+import se.sics.gvod.common.msg.GvodMsg;
+import se.sics.gvod.system.connMngr.LocalVodDescriptor;
+import se.sics.gvod.timer.SchedulePeriodicTimeout;
+import se.sics.gvod.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class SimpleDownloadMngr implements DownloadMngr {
-    private final FileMetadata fileMeta;
-    private final FileMngr hashMngr;
-    private final FileMngr fileMngr;
+public class UpdateSelf extends GvodMsg.OneWay {
     
-    public SimpleDownloadMngr(FileMetadata fileMeta, FileMngr hashMngr, FileMngr fileMngr) {
-        this.fileMeta = fileMeta;
-        this.hashMngr = hashMngr;
-        this.fileMngr = fileMngr;
+    public final LocalVodDescriptor selfDesc;
+    
+    public UpdateSelf(UUID id, LocalVodDescriptor selfDesc) {
+        super(id);
+        this.selfDesc = selfDesc;
     }
 
     @Override
-    public boolean hashComplete() {
-        return hashMngr.isComplete();
-    }
-
-    @Override
-    public Set<Integer> nextHashesNeeded(int n) {
-//        int hashPos = fileMeta.pieceSize / HashUtil.getHashSize(fileMeta.hashAlg);
-//        return hashMngr.nextPiecesNeeded(n, hashPos);
-        return null;
+    public UpdateSelf copy() {
+        return new UpdateSelf(id, selfDesc);
     }
     
     @Override
     public String toString() {
-        return "<" + fileMngr + ", " + hashMngr + ">";
+        return "UpdateSelfDesc<" + id + ">";
+    }
+    
+    public static class UpdateTimeout extends Timeout {
+        public UpdateTimeout(SchedulePeriodicTimeout spt) {
+            super(spt);
+        }
+        
+        @Override
+        public String toString() {
+            return "UpdateSelf.Timeout<" + getTimeoutId() + ">";
+        }
     }
 }

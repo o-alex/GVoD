@@ -23,13 +23,13 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>se.sics.gvod</groupId>
-            <artifactId>common</artifactId>
+            <groupId>se.sics.gvod.bootstrap</groupId>
+            <artifactId>client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>se.sics.gvod.bootstrap</groupId>
-            <artifactId>client</artifactId>
+            <groupId>se.sics.gvod</groupId>
+            <artifactId>common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -40,6 +40,11 @@
         <dependency>
             <groupId>se.sics.gvod</groupId>
             <artifactId>network</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>se.sics.gvod</groupId>
+            <artifactId>croupier-fake</artifactId>
             <version>${project.version}</version>
         </dependency>
         

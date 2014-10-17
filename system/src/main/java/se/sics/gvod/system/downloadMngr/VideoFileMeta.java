@@ -17,14 +17,17 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.video.downloadMngr;
-
-import java.util.Set;
+package se.sics.gvod.system.downloadMngr;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface DownloadMngr {
-    public boolean hashComplete();
-    public Set<Integer> nextHashesNeeded(int n);
+public class VideoFileMeta {
+    public final String filePath;
+    public final int size;
+    
+    public VideoFileMeta(String filePath, int size) {
+        this.filePath = filePath;
+        this.size = size;
+    }
 }

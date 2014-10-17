@@ -1,3 +1,5 @@
+package se.sics.gvod.common.tags;
+
 /*
  * Copyright (C) 2009 Swedish Institute of Computer Science (SICS) Copyright (C)
  * 2009 Royal Institute of Technology (KTH)
@@ -17,18 +19,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.video.connMngr;
 
-import java.util.Map;
-import java.util.Set;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.system.video.VodDescriptor;
+
+import se.sics.gvod.common.tags.MsgTag;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface ConnMngr {
-    public void updateConnections(Map<VodAddress, VodDescriptor> vodSamples);
-    public Map<Integer, VodAddress> getPeersForPieces(Set<Integer> pieces);
-    public void finishedPieceDownload(int peerId);
+public enum BaseTags implements MsgTag {
+    NoTag
 }

@@ -16,8 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
-package se.sics.gvod.system.video;
+package se.sics.gvod.system.downloadMngr;
 
 import com.typesafe.config.Config;
 import se.sics.gvod.common.util.GVoDConfigException;
@@ -27,37 +26,43 @@ import se.sics.gvod.net.VodAddress;
  *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VideoConfig {
+public class DownloadMngrConfig {
+
     private final Config config;
-    public final VodAddress selfAddress;
-    public final boolean downloader;
+    private final VodAddress selfAddress;
+    public final int overlayId;
+    public final int startPieces;
+    public final long periodicUpdate;
     
-    private VideoConfig(Config config, VodAddress selfAddress, boolean downloader) {
+
+    private DownloadMngrConfig(Config config, VodAddress selfAddress, int overlayId, int startPieces, long timeoutPeriod) {
         this.config = config;
         this.selfAddress = selfAddress;
-        this.downloader = downloader;
+        this.overlayId = overlayId;
+        this.startPieces = startPieces;
+        this.periodicUpdate = timeoutPeriod;
     }
-    
+
+    public VodAddress getSelf() {
+        return selfAddress;
+    }
+
     public static class Builder {
+
         private final Config config;
         private final VodAddress selfAddress;
-        private Boolean downloader;
-        
-        public Builder(Config config, VodAddress selfAddress) {
+        private final int overlayId;
+
+        public Builder(Config config, VodAddress selfAddress, int overlayId) {
             this.config = config;
             this.selfAddress = selfAddress;
+            this.overlayId = overlayId;
         }
-        
-        public Builder setDownloader(boolean downloader) {
-            this.downloader = downloader;
-            return this;
-        }
-        
-        public VideoConfig finalise() throws GVoDConfigException.Missing {
-            if(downloader == null) {
-                throw new GVoDConfigException.Missing("downloader not set");
-            }
-            return new VideoConfig(config, selfAddress, downloader);
+
+        public DownloadMngrConfig finalise() throws GVoDConfigException.Missing {
+            int startPieces = config.getInt("vod.video.startPieces");
+            long timeoutPeriod = config.getLong("vod.video.timeoutPeriod");
+            return new DownloadMngrConfig(config, selfAddress, overlayId, startPieces, timeoutPeriod);
         }
     }
 }

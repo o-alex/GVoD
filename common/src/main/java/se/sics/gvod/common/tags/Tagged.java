@@ -17,15 +17,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.video;
+package se.sics.gvod.common.tags;
+
+import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VodDescriptor {
-    public final int downloadPos;
-    
-    public VodDescriptor(int downloadPosition) {
-        this.downloadPos = downloadPosition;
-    }
+public interface Tagged<E extends MsgTag> extends KompicsEvent {
+    public E getTag();
 }

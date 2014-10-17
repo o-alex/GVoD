@@ -17,40 +17,35 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system;
+package se.sics.gvod.system.connMngr;
 
-import se.sics.gvod.manager.DownloadFileInfo;
-import se.sics.gvod.manager.UploadFileInfo;
-import se.sics.gvod.manager.VoDManager;
-import se.sics.gvod.system.downloadMngr.VideoFileMeta;
-import se.sics.gvod.system.vod.VoDPort;
-import se.sics.gvod.system.vod.msg.DownloadVideo;
-import se.sics.gvod.system.vod.msg.UploadVideo;
-import se.sics.kompics.ComponentDefinition;
-import se.sics.kompics.Positive;
+import se.sics.gvod.common.util.VodDescriptor;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
-
-    Positive<VoDPort> vodPort = requires(VoDPort.class);
+public class DownloaderVodDescriptor {
+    private VodDescriptor desc;
+    private int freeSlots;
     
-    public VoDManagerImpl() {
+    public DownloaderVodDescriptor(VodDescriptor desc, int freeSlots) {
+        this.desc = desc;
+        this.freeSlots = freeSlots;
     }
     
-    public VoDManager getInstance() {
-        return this;
+    public void updateDesc(VodDescriptor desc) {
+        this.desc = desc;
     }
-
-    @Override
-    public void uploadVideo(UploadFileInfo fileInfo) {
-        trigger(new UploadVideo.Request(fileInfo), vodPort);
+    
+    public void useSlot() {
+        freeSlots--;
     }
-
-    @Override
-    public void downloadVideo(DownloadFileInfo fileInfo) {
-        trigger(new DownloadVideo.Request(fileInfo), vodPort);
+    
+    public void freeSlot() {
+        freeSlots++;
+    }
+    
+    public boolean isViable() {
+        return freeSlots > 0;
     }
 }
