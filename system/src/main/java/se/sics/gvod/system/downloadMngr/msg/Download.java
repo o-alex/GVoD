@@ -22,8 +22,6 @@ package se.sics.gvod.system.downloadMngr.msg;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.tags.OverlayTag;
-import se.sics.gvod.common.tags.Tagged;
 import se.sics.gvod.timer.ScheduleTimeout;
 import se.sics.gvod.timer.Timeout;
 
@@ -31,7 +29,7 @@ import se.sics.gvod.timer.Timeout;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class Download {
-    public static class Request extends GvodMsg.Request implements Tagged<OverlayTag> {
+    public static class Request extends GvodMsg.Request {
         public final int overlayId;
         public final int pieceId;
         
@@ -59,13 +57,9 @@ public class Download {
             return new Response(id, ReqStatus.FAIL, overlayId, pieceId, null);
         }
         
-        @Override
-        public OverlayTag getTag() {
-            return new OverlayTag(overlayId);
-        }
     }        
     
-    public static class Response extends GvodMsg.Response implements Tagged<OverlayTag> {
+    public static class Response extends GvodMsg.Response {
         
         public final int overlayId;
         public final int pieceId;
@@ -88,10 +82,6 @@ public class Download {
             return "Download.Response<" + id + ">";
         }
         
-        @Override
-        public OverlayTag getTag() {
-            return new OverlayTag(overlayId);
-        }
     }
     
     public static class ReqTimeout extends Timeout {

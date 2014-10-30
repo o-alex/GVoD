@@ -21,8 +21,6 @@ package se.sics.gvod.system.connMngr.msg;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.tags.OverlayTag;
-import se.sics.gvod.common.tags.Tagged;
 import se.sics.gvod.common.util.VodDescriptor;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;
 import se.sics.gvod.timer.Timeout;
@@ -32,7 +30,7 @@ import se.sics.gvod.timer.Timeout;
  */
 public class Connection {
 
-    public static class Request extends GvodMsg.Request implements Tagged<OverlayTag> {
+    public static class Request extends GvodMsg.Request {
 
         public final VodDescriptor desc;
 
@@ -52,30 +50,24 @@ public class Connection {
         }
 
         public Response fail() {
-            return new Response(id, ReqStatus.FAIL, desc.overlayId);
+            return new Response(id, ReqStatus.FAIL);
         }
 
         public Response accept() {
-            return new Response(id, ReqStatus.SUCCESS, desc.overlayId);
+            return new Response(id, ReqStatus.SUCCESS);
         }
 
-        @Override
-        public OverlayTag getTag() {
-            return new OverlayTag(desc.overlayId);
-        }
     }
 
-    public static class Response extends GvodMsg.Response implements Tagged<OverlayTag> {
-        public final int overlayId;
+    public static class Response extends GvodMsg.Response {
         
-        public Response(UUID id, ReqStatus status, int overlayId) {
+        public Response(UUID id, ReqStatus status) {
             super(id, status);
-            this.overlayId = overlayId;
         }
 
         @Override
         public Response copy() {
-            return new Response(id, status, overlayId);
+            return new Response(id, status);
         }
 
         @Override
@@ -83,13 +75,9 @@ public class Connection {
             return "Connect.Response<" + id + "> " + status;
         }
 
-        @Override
-        public OverlayTag getTag() {
-            return new OverlayTag(overlayId);
-        }
     }
 
-    public static class Update extends GvodMsg.OneWay implements Tagged<OverlayTag> {
+    public static class Update extends GvodMsg.OneWay {
 
         public final VodDescriptor desc;
 
@@ -108,10 +96,6 @@ public class Connection {
             return "Connect.Update<" + id + ">";
         }
         
-        @Override
-        public OverlayTag getTag() {
-            return new OverlayTag(desc.overlayId);
-        }
     }
 
     public static class UpdateTimeout extends Timeout {
@@ -127,28 +111,20 @@ public class Connection {
         
     }
 
-    public static class Close extends GvodMsg.OneWay implements Tagged<OverlayTag> {
+    public static class Close extends GvodMsg.OneWay {
 
-        public final int overlayId;
-
-        public Close(UUID id, int overlayId) {
+        public Close(UUID id) {
             super(id);
-            this.overlayId = overlayId;
         }
 
         @Override
         public Close copy() {
-            return new Close(id, overlayId);
+            return new Close(id);
         }
 
         @Override
         public String toString() {
             return "Connect.Close<" + id + ">";
-        }
-        
-        @Override
-        public OverlayTag getTag() {
-            return new OverlayTag(overlayId);
         }
     }
 }

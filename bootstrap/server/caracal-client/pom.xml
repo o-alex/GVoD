@@ -37,7 +37,7 @@
         <dependency>
             <groupId>se.sics.caracaldb</groupId>
             <artifactId>caracaldb-core</artifactId>
-            <version>${caracaldb-version}</version>
+            <version>0.0.5-SNAPSHOT</version>
         </dependency>
         
     </dependencies>

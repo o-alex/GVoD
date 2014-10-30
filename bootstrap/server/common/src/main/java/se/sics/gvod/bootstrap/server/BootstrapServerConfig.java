@@ -22,7 +22,6 @@ import com.typesafe.config.Config;
 import se.sics.gvod.net.VodAddress;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class BootstrapServerConfig {

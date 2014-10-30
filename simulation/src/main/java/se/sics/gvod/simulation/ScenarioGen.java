@@ -116,10 +116,10 @@ public class ScenarioGen {
                         }
                         writer.flush();
                         writer.close();
+                        return new UploadVideoCmd(nodeId, new UploadFileInfo(overlayId, libDir, fileNames.get(overlayId)));
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
-                    return new UploadVideoCmd(nodeId, new UploadFileInfo(overlayId, fileNames.get(overlayId)));
                 }
             };
 

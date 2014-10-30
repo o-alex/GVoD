@@ -24,7 +24,8 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
-import se.sics.gvod.common.msg.impl.JoinOverlay;
+import se.sics.gvod.common.msg.ReqStatus;
+import se.sics.gvod.common.msg.impl.OverlaySample;
 import se.sics.gvod.common.util.VodDescriptor;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;
@@ -48,11 +49,13 @@ public class CroupierComp extends ComponentDefinition {
     private Positive<BootstrapClientPort> bootstrapClient = requires(BootstrapClientPort.class);
     
     private final int overlayId;
-
+    private final VodAddress self;
+    
     public CroupierComp(CroupierInit init) {
         log.info("create CroupierComp");
 
         this.overlayId = init.overlayId;
+        this.self = init.self;
         
         subscribe(handleStart, control);
         subscribe(handleSampleTimeout, timer);
@@ -74,20 +77,28 @@ public class CroupierComp extends ComponentDefinition {
         @Override
         public void handle(SampleTimeout event) {
             log.debug("sampling");
-            trigger(new JoinOverlay.Request(UUID.randomUUID(), overlayId, 0), bootstrapClient);
+            trigger(new OverlaySample.Request(UUID.randomUUID(), overlayId), bootstrapClient);
         }
         
     };
     
-    private Handler<JoinOverlay.Response> handleSampleResponse = new Handler<JoinOverlay.Response>() {
+    private Handler<OverlaySample.Response> handleSampleResponse = new Handler<OverlaySample.Response>() {
 
         @Override
-        public void handle(JoinOverlay.Response resp) {
+        public void handle(OverlaySample.Response resp) {
             log.debug("received sample");
+            
+            if(resp.status != ReqStatus.SUCCESS) {
+                log.warn("corrupted sample");
+                return;
+            }
             
             Map<VodAddress, VodDescriptor> sample = new HashMap<VodAddress, VodDescriptor>();
             for(Map.Entry<VodAddress, Integer> e : resp.overlaySample.entrySet()) {
-                sample.put(e.getKey(), new VodDescriptor(overlayId, e.getValue()));
+                if(e.getKey().equals(self)) {
+                    continue;
+                }
+                sample.put(e.getKey(), new VodDescriptor(e.getValue()));
             }
             
             trigger(new CroupierSample(sample), myPort);
@@ -97,9 +108,11 @@ public class CroupierComp extends ComponentDefinition {
 
     public static class CroupierInit extends Init<CroupierComp> {
         public final int overlayId;
+        public final VodAddress self;
         
-        public CroupierInit(int overlayId) {
+        public CroupierInit(int overlayId, VodAddress self) {
             this.overlayId = overlayId;
+            this.self = self;
         }
     }
 }

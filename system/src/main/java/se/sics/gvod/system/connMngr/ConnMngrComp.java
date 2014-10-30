@@ -26,14 +26,20 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.util.MsgProcessor;
 import se.sics.gvod.croupierfake.CroupierPort;
 import se.sics.gvod.croupierfake.CroupierSample;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
-import se.sics.gvod.network.nettymsg.GvodNetMsg;
 import se.sics.gvod.common.util.VodDescriptor;
+import se.sics.gvod.network.nettymsg.MyNetMsg;
+import se.sics.gvod.network.tags.ContextTag;
+import se.sics.gvod.network.tags.OverlayTag;
+import se.sics.gvod.network.tags.Tag;
+import se.sics.gvod.network.tags.TagType;
 import se.sics.gvod.system.connMngr.msg.Connection;
+import se.sics.gvod.system.connMngr.msg.Ready;
 import se.sics.gvod.system.downloadMngr.msg.UpdateSelf;
 import se.sics.gvod.system.downloadMngr.msg.Download;
 import se.sics.gvod.system.downloadMngr.msg.DownloadControl;
@@ -74,6 +80,9 @@ public class ConnMngrComp extends ComponentDefinition {
     private Map<Integer, Set<VodAddress>> pendingUploadReq;
 
     private TimeoutId connUpdateTId;
+    private Map<TagType, Tag> tags;
+
+    private boolean ready;
 
     public ConnMngrComp(ConnMngrInit init) {
         this.config = init.config;
@@ -86,46 +95,19 @@ public class ConnMngrComp extends ComponentDefinition {
         this.uploadersConn = new HashMap<VodAddress, UploaderVodDescriptor>();
         this.pendingDownloads = new HashMap<VodAddress, Map<Integer, TimeoutId>>();
         this.pendingUploadReq = new HashMap<Integer, Set<VodAddress>>();
+        this.tags = new HashMap<TagType, Tag>();
+        this.tags.put(TagType.OVERLAY, new OverlayTag(config.overlayId));
+        this.tags.put(TagType.CONTEXT, ContextTag.VIDEO);
+        this.ready = false;
 
         subscribe(handleUpdateSelf, myPort);
     }
 
-    private void start() {
-
-        log.debug("{} starting...", config.getSelf());
-        if (selfDesc.downloading) {
-            SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(config.updatePeriod, config.updatePeriod);
-            Timeout t = new Connection.UpdateTimeout(spt);
-            connUpdateTId = t.getTimeoutId();
-            spt.setTimeoutEvent(t);
-            trigger(spt, timer);
-        }
-
-        subscribe(handleNetRequest, network);
-        subscribe(handleNetResponse, network);
-        subscribe(handleNetOneWay, network);
-
-        subscribe(handleConnectionUpdateTimeout, timer);
-        subscribe(handleCroupierSample, croupier);
-
-        msgProc.subscribe(handleConnectionRequest);
-        msgProc.subscribe(handleConnectionResponse);
-        msgProc.subscribe(handleConnectionUpdate);
-        msgProc.subscribe(handleConnectionClose);
-
-        subscribe(handleLocalDownloadRequest, myPort);
-        subscribe(handleLocalDownloadResponse, myPort);
-        subscribe(handleDownloadTimeout, timer);
-
-        msgProc.subscribe(handleNetDownloadRequest);
-        msgProc.subscribe(handleNetDownloadResponse);
-    }
-    
     private Handler<UpdateSelf> handleUpdateSelf = new Handler<UpdateSelf>() {
 
         @Override
         public void handle(UpdateSelf event) {
-            log.debug("{} updating self descriptor", config.getSelf(), selfDesc);
+            log.trace("{} updating self descriptor", config.getSelf(), selfDesc);
 
             if (selfDesc == null) {
                 selfDesc = event.selfDesc;
@@ -135,12 +117,12 @@ public class ConnMngrComp extends ComponentDefinition {
                 if (selfDesc.downloading && !event.selfDesc.downloading) {
                     log.debug("{} completed - closing download connections", config.getSelf());
                     for (VodAddress partner : uploadersConn.keySet()) {
-                        Connection.Close cl = new Connection.Close(UUID.randomUUID(), config.overlayId);
-                        trigger(new GvodNetMsg.OneWay(config.getSelf(), partner, cl), network);
+                        Connection.Close cl = new Connection.Close(UUID.randomUUID());
+                        trigger(new MyNetMsg.OneWay(config.getSelf(), partner, tags, cl), network);
                     }
                     for (VodAddress partner : pendingUploadersConn.keySet()) {
-                        Connection.Close cl = new Connection.Close(UUID.randomUUID(), config.overlayId);
-                        trigger(new GvodNetMsg.OneWay(config.getSelf(), partner, cl), network);
+                        Connection.Close cl = new Connection.Close(UUID.randomUUID());
+                        trigger(new MyNetMsg.OneWay(config.getSelf(), partner, tags, cl), network);
                     }
                     uploadersConn = new HashMap<VodAddress, UploaderVodDescriptor>();
                     pendingUploadersConn = new HashMap<VodAddress, VodDescriptor>();
@@ -163,28 +145,63 @@ public class ConnMngrComp extends ComponentDefinition {
         }
     };
 
-    private Handler<GvodNetMsg.OneWay> handleNetOneWay = new Handler<GvodNetMsg.OneWay>() {
+    private void start() {
+
+        log.debug("{} starting...", config.getSelf());
+        if (selfDesc.downloading) {
+            SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(config.updatePeriod, config.updatePeriod);
+            Timeout t = new Connection.UpdateTimeout(spt);
+            connUpdateTId = t.getTimeoutId();
+            spt.setTimeoutEvent(t);
+            trigger(spt, timer);
+        } else {
+            ready = true;
+            trigger(new Ready(UUID.randomUUID()), myPort);
+        }
+
+        subscribe(handleNetRequest, network);
+        subscribe(handleNetResponse, network);
+        subscribe(handleNetOneWay, network);
+
+        subscribe(handleConnectionUpdateTimeout, timer);
+        subscribe(handleCroupierSample, croupier);
+
+        msgProc.subscribe(handleConnectionRequest);
+        msgProc.subscribe(handleConnectionResponse);
+        msgProc.subscribe(handleConnectionUpdate);
+        msgProc.subscribe(handleConnectionClose);
+
+        subscribe(handleLocalDownloadRequest, myPort);
+        subscribe(handleLocalDownloadResponse, myPort);
+        subscribe(handleDownloadTimeout, timer);
+
+        msgProc.subscribe(handleNetDownloadRequest);
+        msgProc.subscribe(handleNetDownloadResponse);
+
+    }
+
+    private Handler<MyNetMsg.OneWay> handleNetOneWay = new Handler<MyNetMsg.OneWay>() {
 
         @Override
-        public void handle(GvodNetMsg.OneWay netReq) {
+        public void handle(MyNetMsg.OneWay netReq) {
             log.trace("{} received {}", config.getSelf(), netReq.toString());
             msgProc.trigger(netReq.getVodSource(), netReq.payload);
         }
     };
 
-    private Handler<GvodNetMsg.Request> handleNetRequest = new Handler<GvodNetMsg.Request>() {
+    private Handler<MyNetMsg.Request> handleNetRequest = new Handler<MyNetMsg.Request>() {
 
         @Override
-        public void handle(GvodNetMsg.Request netReq) {
+        public void handle(MyNetMsg.Request netReq) {
             log.trace("{} received {}", config.getSelf(), netReq.toString());
             msgProc.trigger(netReq.getVodSource(), netReq.payload);
         }
     };
 
-    private Handler<GvodNetMsg.Response> handleNetResponse = new Handler<GvodNetMsg.Response>() {
+    private Handler<MyNetMsg.Response> handleNetResponse = new Handler<MyNetMsg.Response>() {
 
         @Override
-        public void handle(GvodNetMsg.Response netResp) {
+        public void handle(MyNetMsg.Response netResp) {
             log.trace("{} received {}", config.getSelf(), netResp.toString());
             msgProc.trigger(netResp.getVodSource(), netResp.payload);
         }
@@ -196,17 +213,18 @@ public class ConnMngrComp extends ComponentDefinition {
         @Override
         public void handle(CroupierSample event) {
             log.debug("{} handle new samples {}", config.getSelf(), event.sample);
+
             for (Map.Entry<VodAddress, VodDescriptor> e : event.sample.entrySet()) {
                 if (e.getValue().downloadPos < selfDesc.vodDesc.downloadPos) {
                     continue;
                 }
-                if (downloadersConn.containsKey(e.getKey()) || pendingUploadersConn.containsKey(e.getKey())) {
+                if (uploadersConn.containsKey(e.getKey()) || pendingUploadersConn.containsKey(e.getKey())) {
                     continue;
                 }
                 log.debug("{} opening connection to {}", config.getSelf(), e.getKey());
                 pendingUploadersConn.put(e.getKey(), e.getValue());
                 Connection.Request req = new Connection.Request(UUID.randomUUID(), selfDesc.vodDesc);
-                trigger(new GvodNetMsg.Request(config.getSelf(), e.getKey(), req), network);
+                trigger(new MyNetMsg.Request(config.getSelf(), e.getKey(), tags, req), network);
             }
         }
     };
@@ -215,15 +233,15 @@ public class ConnMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(Connection.UpdateTimeout event) {
-            log.trace("{} handle {}", config.getSelf());
+            log.trace("{} handle {}", config.getSelf(), event);
             for (VodAddress partner : downloadersConn.keySet()) {
                 Connection.Update upd = new Connection.Update(UUID.randomUUID(), selfDesc.vodDesc);
-                trigger(new GvodNetMsg.OneWay(config.getSelf(), partner, upd), network);
+                trigger(new MyNetMsg.OneWay(config.getSelf(), partner, tags, upd), network);
             }
 
             for (VodAddress partner : uploadersConn.keySet()) {
                 Connection.Update upd = new Connection.Update(UUID.randomUUID(), selfDesc.vodDesc);
-                trigger(new GvodNetMsg.OneWay(config.getSelf(), partner, upd), network);
+                trigger(new MyNetMsg.OneWay(config.getSelf(), partner, tags, upd), network);
             }
         }
     };
@@ -233,16 +251,16 @@ public class ConnMngrComp extends ComponentDefinition {
 
                 @Override
                 public void handle(VodAddress src, Connection.Request req) {
-                    log.trace("{} handling {}", new Object[]{config.getSelf(), req});
+                    log.trace("{} handle {}", new Object[]{config.getSelf(), req});
 
-                    if (uploadersConn.containsKey(src)) {
+                    if (downloadersConn.containsKey(src)) {
                         return;
                     }
 
                     log.debug("{} new connection to downloader {}", config.getSelf(), src);
                     downloadersConn.put(src, new DownloaderVodDescriptor(req.desc, config.defaultMaxPipeline));
                     Connection.Response resp = req.accept();
-                    trigger(new GvodNetMsg.Response(config.getSelf(), src, resp), network);
+                    trigger(new MyNetMsg.Response(config.getSelf(), src, tags, resp), network);
                 }
             };
 
@@ -251,16 +269,28 @@ public class ConnMngrComp extends ComponentDefinition {
 
                 @Override
                 public void handle(VodAddress src, Connection.Response resp) {
-                    log.trace("{} handling {}", new Object[]{config.getSelf(), resp});
+                    log.trace("{} handle {}", new Object[]{config.getSelf(), resp});
+
+                    if (!resp.status.equals(ReqStatus.SUCCESS)) {
+                        log.debug("{} connection req status {}", config.getSelf(), resp.status);
+                        pendingUploadersConn.remove(src);
+                        return;
+                    }
 
                     if (!pendingUploadersConn.containsKey(src)) {
                         log.debug("{} closing connection to {}", config.getSelf(), src);
-                        trigger(new GvodNetMsg.OneWay(config.getSelf(), src, new Connection.Close(UUID.randomUUID(), config.overlayId)), network);
+                        trigger(new MyNetMsg.OneWay(config.getSelf(), src, tags, new Connection.Close(UUID.randomUUID())), network);
                         return;
                     }
 
                     log.debug("{} new connection to uploader {}", config.getSelf(), src);
                     uploadersConn.put(src, new UploaderVodDescriptor(pendingUploadersConn.remove(src), config.defaultMaxPipeline));
+
+                    if (!ready) {
+                        log.debug("{} first uploader connection, can start serving", config.getSelf());
+                        ready = true;
+                        trigger(new Ready(UUID.randomUUID()), myPort);
+                    }
                 }
             };
 
@@ -269,7 +299,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
                 @Override
                 public void handle(VodAddress src, Connection.Update event) {
-                    log.trace("{} handling {}", new Object[]{config.getSelf(), event});
+                    log.trace("{} handle {}", new Object[]{config.getSelf(), event});
 
                     if (downloadersConn.containsKey(src)) {
                         downloadersConn.get(src).updateDesc(event.desc);
@@ -286,7 +316,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
                 @Override
                 public void handle(VodAddress src, Connection.Close event) {
-                    log.debug("{} handling {}", new Object[]{config.getSelf(), event});
+                    log.debug("{} handle {}", new Object[]{config.getSelf(), event});
                     downloadersConn.remove(src);
                     pendingUploadersConn.remove(src);
                     uploadersConn.remove(src);
@@ -319,7 +349,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 pendingDownloads.put(uploader.getKey(), partnerReq);
             }
             partnerReq.put(req.pieceId, t.getTimeoutId());
-            trigger(new GvodNetMsg.Request(config.getSelf(), uploader.getKey(), req), network);
+            trigger(new MyNetMsg.Request(config.getSelf(), uploader.getKey(), tags, req), network);
         }
 
     };
@@ -359,9 +389,9 @@ public class ConnMngrComp extends ComponentDefinition {
                         log.debug("{} no connection open, dropping req {} from {}", new Object[]{config.getSelf(), req, src});
                         return;
                     }
-                    if (downDesc.isViable()) {
+                    if (!downDesc.isViable()) {
                         //TODO should not happen yet, but will need to be treated later, when downloader has no more slots available
-                        log.info("{} no more slots {}", config.getSelf(), src);
+                        log.info("{} no more slots for peer:{}", config.getSelf(), src);
                         return;
                     }
                     downDesc.useSlot();
@@ -392,7 +422,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 DownloaderVodDescriptor down = downloadersConn.get(src);
                 if (down != null) {
                     log.debug("{} sending piece {} to {}", new Object[]{config.getSelf(), resp.pieceId, src});
-                    trigger(new GvodNetMsg.Response(config.getSelf(), src, resp), network);
+                    trigger(new MyNetMsg.Response(config.getSelf(), src, tags, resp), network);
                     down.freeSlot();
                 }
             }
@@ -410,6 +440,10 @@ public class ConnMngrComp extends ComponentDefinition {
                     if (up != null) {
                         up.freeSlot();
                     }
+                    
+                    TimeoutId tid = pendingDownloads.get(src).remove(resp.pieceId);
+                    cancelDownloadReqTimeout(tid);
+                    
                     trigger(resp, myPort);
                 }
             };
@@ -447,6 +481,12 @@ public class ConnMngrComp extends ComponentDefinition {
         }
     };
 
+    private void cancelDownloadReqTimeout(TimeoutId tid) {
+        log.debug("{} canceling download req timeout {}", config.getSelf(), tid);
+        CancelTimeout ct = new CancelTimeout(tid);
+        trigger(ct, timer);
+    }
+    
     public static class ConnMngrInit extends Init<ConnMngrComp> {
 
         public final ConnMngrConfig config;

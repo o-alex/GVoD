@@ -57,7 +57,7 @@ public class GetOverlaySampleOp implements Operation<CaracalOp> {
 
     @Override
     public void start() {
-        opMngr.sendCaracalReq(req.id, new RangeQuery.Request(UUID.randomUUID(), CaracalKeyFactory.getOverlayRange(req.overlayId), Limit.toItems(sampleSize), TFFactory.noTF(), ActionFactory.noop(), RangeQuery.Type.SEQUENTIAL));
+        opMngr.sendCaracalReq(req.id, CaracalKeyFactory.getOverlayRange(req.overlayId).begin, new RangeQuery.Request(UUID.randomUUID(), CaracalKeyFactory.getOverlayRange(req.overlayId), Limit.toItems(sampleSize), TFFactory.noTF(), ActionFactory.noop(), RangeQuery.Type.SEQUENTIAL));
     }
 
     @Override

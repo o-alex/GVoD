@@ -87,4 +87,31 @@ public class GvodNettyAdapter {
             return new GvodNetMsg.Response(vodSrc, vodDest, payload);
         }
     }
+    
+    public static class OneWay extends DirectMsgNettyFactory.Oneway implements NettyAdapter {
+
+        //**********NettyAdapter
+        @Override
+        public RewriteableMsg decodeMsg(ByteBuf buffer) throws DecodingException {
+            try {
+                return decode(buffer);
+            } catch (MessageDecodingException ex) {
+                throw new DecodingException(ex);
+            }
+        }
+
+        @Override
+        public ByteBuf encodeMsg(ByteBuf buffer) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        //**********DirectMsgNettyFactory.Request
+        @Override
+        protected DirectMsg process(ByteBuf buffer) throws MessageDecodingException {
+            byte opCode = buffer.readByte();
+            GVoDAdapter<? extends KompicsEvent> currentAdapter = GVoDAdapterFactory.getAdapter(opCode);
+            GvodMsg.OneWay payload = (GvodMsg.OneWay) currentAdapter.decode(buffer);
+            return new GvodNetMsg.OneWay(vodSrc, vodDest, payload);
+        }
+    }
 }

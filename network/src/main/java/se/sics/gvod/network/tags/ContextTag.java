@@ -17,20 +17,11 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system;
-
-import se.sics.kompics.Component;
-import se.sics.kompics.Init;
+package se.sics.gvod.network.tags;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class HostManagerInit extends Init<HostManagerComp> {
-    public final HostConfiguration config;
-    public final Component peerManager;
-    
-    public HostManagerInit(HostConfiguration config, Component peerManager) {
-        this.config = config;
-        this.peerManager = peerManager;
-    }
+public enum ContextTag implements Tag {
+     VIDEO
 }

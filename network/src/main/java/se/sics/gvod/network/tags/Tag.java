@@ -17,13 +17,10 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.common.tags;
-
-import se.sics.kompics.KompicsEvent;
+package se.sics.gvod.network.tags;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface Tagged<E extends MsgTag> extends KompicsEvent {
-    public E getTag();
+public interface Tag {
 }

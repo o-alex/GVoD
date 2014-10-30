@@ -18,103 +18,49 @@
  */
 package se.sics.gvod.common.msg.impl;
 
+import java.util.Map;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.util.BuilderException;
-import se.sics.gvod.common.util.FileMetadata;
+import se.sics.gvod.net.VodAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class JoinOverlay {
+public class OverlaySample {
 
     public static class Request extends GvodMsg.Request {
 
         public final int overlayId;
-        public final int utility;
 
-        public Request(UUID reqId, int overlayId, int utility) {
-            super(reqId);
+        public Request(UUID id, int overlayId) {
+            super(id);
             this.overlayId = overlayId;
-            this.utility = utility;
         }
-
-        public ResponseBuilder getResponseBuilder() {
-            return new ResponseBuilder(id, overlayId);
+        
+        public Response success(Map<VodAddress, Integer> overlaySample) {
+            return new Response(id, ReqStatus.SUCCESS, overlayId, overlaySample);
         }
-
-        public Response success(FileMetadata fileMeta) {
-            return new Response(id, ReqStatus.SUCCESS, overlayId, fileMeta);
-        }
-
+        
         public Response fail() {
             return new Response(id, ReqStatus.FAIL, overlayId, null);
         }
-
+        
         @Override
         public Request copy() {
-            return new Request(id, overlayId, utility);
+            return new Request(id, overlayId);
         }
 
         @Override
         public String toString() {
-            return "JoinOverlayRequest " + id.toString();
+            return "OverlaySample.Request<" + id + "> overlay:" + overlayId;
         }
 
         @Override
         public int hashCode() {
             int hash = 3;
-            hash = 29 * hash + this.overlayId;
-            hash = 29 * hash + this.utility;
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            final Request other = (Request) obj;
-            if (this.overlayId != other.overlayId) {
-                return false;
-            }
-            if (this.utility != other.utility) {
-                return false;
-            }
-            return true;
-        }
-    }
-
-    public static class Response extends GvodMsg.Response {
-
-        public final int overlayId;
-        public final FileMetadata fileMeta;
-
-        public Response(UUID reqId, ReqStatus status, int overlayId, FileMetadata fileMeta) {
-            super(reqId, status);
-            this.overlayId = overlayId;
-            this.fileMeta = fileMeta;
-        }
-
-        @Override
-        public Response copy() {
-            return new Response(id, status, overlayId, fileMeta);
-        }
-
-        @Override
-        public String toString() {
-            return "JoinOverlayMsgResponse<" + status.toString() + "> " + id.toString();
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 5;
-            hash = 71 * hash + this.overlayId;
-            hash = 71 * hash + (this.fileMeta != null ? this.fileMeta.hashCode() : 0);
+            hash = 59 * hash + (this.id != null ? this.id.hashCode() : 0);
+            hash = 59 * hash + this.overlayId;
             return hash;
         }
 
@@ -127,40 +73,65 @@ public class JoinOverlay {
                 return false;
             }
             final Response other = (Response) obj;
-            if (this.overlayId != other.overlayId) {
+            if (this.id != other.id && (this.id == null || !this.id.equals(other.id))) {
                 return false;
             }
-            if (this.fileMeta != other.fileMeta && (this.fileMeta == null || !this.fileMeta.equals(other.fileMeta))) {
+            if (this.overlayId != other.overlayId) {
                 return false;
             }
             return true;
         }
     }
 
-    public static class ResponseBuilder {
+    public static class Response extends GvodMsg.Response {
 
-        public final UUID reqId;
         public final int overlayId;
-        private FileMetadata fileMetadata = null;
-
-        public ResponseBuilder(UUID reqId, int overlayId) {
-            this.reqId = reqId;
+        public final Map<VodAddress, Integer> overlaySample; //<peer, utility>
+        
+        public Response(UUID id, ReqStatus status, int overlayId, Map<VodAddress, Integer> overlaySample) {
+            super(id, status);
             this.overlayId = overlayId;
+            this.overlaySample = overlaySample;
         }
 
-
-        public void setFileMetadata(FileMetadata fileMetadata) {
-            this.fileMetadata = fileMetadata;
+        @Override
+        public Response copy() {
+            return new Response(id, status, overlayId, overlaySample);
+        }
+        
+        @Override
+        public String toString() {
+            return "OverlaySample.Response<" + id + "> overlay:" + overlayId;
+        }
+        
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 37 * hash + (this.id != null ? this.id.hashCode() : 0);
+            hash = 37 * hash + this.overlayId;
+            hash = 37 * hash + (this.overlaySample != null ? this.overlaySample.hashCode() : 0);
+            return hash;
         }
 
-        public Response finalise(ReqStatus status) throws BuilderException.Missing {
-            if (status == ReqStatus.FAIL) {
-                return new Response(reqId, status, overlayId, null);
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
             }
-            if (fileMetadata == null) {
-                throw new BuilderException.Missing();
+            if (getClass() != obj.getClass()) {
+                return false;
             }
-            return new Response(reqId, status, overlayId, fileMetadata);
+            final Response other = (Response) obj;
+            if (this.id != other.id && (this.id == null || !this.id.equals(other.id))) {
+                return false;
+            }
+            if (this.overlayId != other.overlayId) {
+                return false;
+            }
+            if (this.overlaySample != other.overlaySample && (this.overlaySample == null || !this.overlaySample.equals(other.overlaySample))) {
+                return false;
+            }
+            return true;
         }
     }
 }

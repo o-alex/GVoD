@@ -67,12 +67,16 @@ public class HostManagerComp extends ComponentDefinition {
             this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration().finalise()));
             this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig().finalise()));
 
+            log.info("{} node NAT is {}", config.self, config.self.getNatType());
             if (config.self.getNatType().equals(NatType.OPEN)) {
                 bootstrapServer = create(BootstrapServerComp.class, new BootstrapServerComp.BootstrapServerInit(config.getBootstrapServerConfig()));
                 peerManager = init.peerManager;
-                
+
                 connect(bootstrapServer.getNegative(VodNetwork.class), network);
                 connect(bootstrapServer.getNegative(PeerManagerPort.class), peerManager.getPositive(PeerManagerPort.class));
+            } else {
+                bootstrapServer = null;
+                peerManager = null;
             }
 
             connect(vodMngr.getNegative(VoDPort.class), vod.getPositive(VoDPort.class));
@@ -90,5 +94,16 @@ public class HostManagerComp extends ComponentDefinition {
     public VoDManager getVoDManager() {
         VoDManagerImpl vodM = (VoDManagerImpl) vodMngr.getComponent();
         return vodM;
+    }
+
+    public static class HostManagerInit extends Init<HostManagerComp> {
+
+        public final HostConfiguration config;
+        public final Component peerManager;
+
+        public HostManagerInit(HostConfiguration config, Component peerManager) {
+            this.config = config;
+            this.peerManager = peerManager;
+        }
     }
 }

@@ -30,6 +30,7 @@ import se.sics.gvod.bootstrap.server.operations.BootstrapGlobalOp;
 import se.sics.gvod.bootstrap.server.operations.HeartbeatOp;
 import se.sics.gvod.bootstrap.server.operations.JoinOverlayOp;
 import se.sics.gvod.bootstrap.server.operations.Operation;
+import se.sics.gvod.bootstrap.server.operations.OverlaySampleOp;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
 import se.sics.gvod.common.msg.GvodMsg;
@@ -37,6 +38,7 @@ import se.sics.gvod.common.msg.impl.AddOverlay;
 import se.sics.gvod.common.msg.impl.BootstrapGlobal;
 import se.sics.gvod.common.msg.impl.Heartbeat;
 import se.sics.gvod.common.msg.impl.JoinOverlay;
+import se.sics.gvod.common.msg.impl.OverlaySample;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.network.nettymsg.GvodNetMsg;
@@ -87,6 +89,9 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
             } else if (netReq.payload instanceof JoinOverlay.Request) {
                 JoinOverlay.Request gvodReq = (JoinOverlay.Request) netReq.payload;
                 op = new JoinOverlayOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
+            } else if (netReq.payload instanceof OverlaySample.Request) {
+                OverlaySample.Request gvodReq = (OverlaySample.Request) netReq.payload;
+                op = new OverlaySampleOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
             } else {
                 throw new RuntimeException("wrong message");
             }

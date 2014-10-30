@@ -24,7 +24,7 @@ import com.typesafe.config.ConfigFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
-import se.sics.gvod.bootstrap.cclient.BCCManagerConfig;
+import se.sics.gvod.bootstrap.cclient.CaracalPSManagerConfig;
 import se.sics.gvod.bootstrap.client.BootstrapClientConfig;
 import se.sics.gvod.bootstrap.server.BootstrapServerConfig;
 import se.sics.gvod.common.util.GVoDConfigException;
@@ -62,8 +62,8 @@ public class HostConfiguration {
         return new BootstrapServerConfig(config, self, seed);
     }
     
-    public BCCManagerConfig getBCCManagerConfig() {
-        return new BCCManagerConfig.Builder(config, seed).setSelfAddress(self.getIp(), self.getPort(), self.getId()).finalise();
+    public CaracalPSManagerConfig getCaracalPSManagerConfig() {
+        return new CaracalPSManagerConfig.Builder(config, seed).setSelfAddress(self.getIp(), self.getPort() + 1, self.getId()).finalise();
     }
 
     public static class SimulationBuilder {

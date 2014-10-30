@@ -23,11 +23,9 @@ package se.sics.gvod.common.util;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class VodDescriptor {
-    public final int overlayId;
     public final int downloadPos;
     
-    public VodDescriptor(int overlayId, int downloadPosition) {
-        this.overlayId = overlayId;
+    public VodDescriptor(int downloadPosition) {
         this.downloadPos = downloadPosition;
     }
 }

@@ -26,20 +26,20 @@ import se.sics.kompics.address.Address;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BCCManagerConfig {
+public class CaracalPSManagerConfig {
 
     private final Config config;
     public final Address selfAddress;
     public final byte[] seed;
 
-    private BCCManagerConfig(Config config, Address selfAddress, byte[] seed) {
+    private CaracalPSManagerConfig(Config config, Address selfAddress, byte[] seed) {
         this.config = config;
         this.selfAddress = selfAddress;
         this.seed = seed;
     }
 
-    public BCClientConfig getBCClientConfig() throws GVoDConfigException.Missing {
-        return new BCClientConfig.Builder(config, seed, selfAddress).finalise();
+    public CaracalPeerStoreConfig getCaracalPeerStoreConfig() throws GVoDConfigException.Missing {
+        return new CaracalPeerStoreConfig.Builder(config, seed, selfAddress).finalise();
     }
     
     public static class Builder {
@@ -57,8 +57,8 @@ public class BCCManagerConfig {
             return this;
         }
         
-        public BCCManagerConfig finalise() {
-            return new BCCManagerConfig(config, selfAddress, seed);
+        public CaracalPSManagerConfig finalise() {
+            return new CaracalPSManagerConfig(config, selfAddress, seed);
         }
     }
 }

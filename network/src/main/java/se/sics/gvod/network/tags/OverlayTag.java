@@ -1,5 +1,3 @@
-package se.sics.gvod.common.tags;
-
 /*
  * Copyright (C) 2009 Swedish Institute of Computer Science (SICS) Copyright (C)
  * 2009 Royal Institute of Technology (KTH)
@@ -19,13 +17,42 @@ package se.sics.gvod.common.tags;
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-
-
-import se.sics.gvod.common.tags.MsgTag;
+package se.sics.gvod.network.tags;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public enum BaseTags implements MsgTag {
-    NoTag
+public class OverlayTag implements Tag {
+    public final int overlayId;
+    
+    public OverlayTag(int overlayId) {
+        this.overlayId = overlayId;
+    }
+    
+    @Override
+    public String toString() {
+        return "overlay <" + overlayId + ">";
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 37 * hash + this.overlayId;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final OverlayTag other = (OverlayTag) obj;
+        if (this.overlayId != other.overlayId) {
+            return false;
+        }
+        return true;
+    }
 }

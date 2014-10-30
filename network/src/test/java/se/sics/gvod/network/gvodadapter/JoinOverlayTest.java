@@ -24,9 +24,7 @@ import io.netty.buffer.Unpooled;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Test;
@@ -60,9 +58,7 @@ public class JoinOverlayTest {
      @Test
     public void testResponseSuccess() throws UnknownHostException {
         GVoDAdapter<JoinOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
-        Map<VodAddress, Integer> overlaySample = new HashMap<VodAddress, Integer>();
-        overlaySample.put(new VodAddress(new Address(InetAddress.getLocalHost(), 12345, 1), -1), 1);
-        JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1, overlaySample, new FileMetadata(10000, 1024, "SHA", 100));
+        JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1, new FileMetadata(10000, 1024, "SHA", 100));
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);
@@ -77,7 +73,7 @@ public class JoinOverlayTest {
     @Test
     public void tesResponsetFail() {
         GVoDAdapter<JoinOverlay.Response> adapter = GVoDAdapterFactory.getAdapter(GVoDAdapterFactory.JOIN_OVERLAY_RESPONSE);
-        JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.FAIL, 1, null, null);
+        JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.FAIL, 1, null);
         int expectedSize = adapter.getEncodedSize(expected);
         ByteBuf buf = Unpooled.buffer();
         adapter.encode(expected, buf);

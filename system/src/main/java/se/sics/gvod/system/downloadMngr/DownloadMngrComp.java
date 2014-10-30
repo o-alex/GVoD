@@ -25,13 +25,16 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.util.VodDescriptor;
 import se.sics.gvod.system.connMngr.ConnMngrPort;
 import se.sics.gvod.system.connMngr.LocalVodDescriptor;
+import se.sics.gvod.system.connMngr.msg.Ready;
 import se.sics.gvod.system.downloadMngr.msg.Download;
 import se.sics.gvod.system.downloadMngr.msg.DownloadControl;
 import se.sics.gvod.system.downloadMngr.msg.UpdateSelf;
 import se.sics.gvod.system.video.storage.FileMngr;
+import se.sics.gvod.timer.CancelPeriodicTimeout;
 import se.sics.gvod.timer.CancelTimeout;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;
 import se.sics.gvod.timer.ScheduleTimeout;
@@ -63,7 +66,7 @@ public class DownloadMngrComp extends ComponentDefinition {
     private Set<Integer> pendingPieces;
     private List<Integer> nextPieces;
 
-    private TimeoutId speedUpTId;
+    private TimeoutId speedUpTId = null;
     private TimeoutId updateSelfTId;
 
     public DownloadMngrComp(DownloadMngrInit init) {
@@ -78,31 +81,49 @@ public class DownloadMngrComp extends ComponentDefinition {
         this.nextPieces = new ArrayList<Integer>();
 
         subscribe(handleStart, control);
-        subscribe(handleDownloadRequest, connMngr);
-        subscribe(handleDownloadResponse, connMngr);
-        subscribe(handleDownloadSlowDown, connMngr);
-        subscribe(handleDownloadSpeedUp, connMngr);
-        subscribe(handleDownloadTimeout, connMngr);
-        subscribe(handleUpdateSelf, timer);
     }
 
     private Handler<Start> handleStart = new Handler<Start>() {
 
         @Override
         public void handle(Start event) {
+            log.trace("{} starting...", config.getSelf());
+
+            VodDescriptor newSelf = new VodDescriptor(fileMngr.contiguousStart());
+            LocalVodDescriptor localSelf = new LocalVodDescriptor(newSelf, downloading);
+
+            log.info("{} download at piece: {}", config.getSelf(), newSelf.downloadPos);
+            trigger(new UpdateSelf(UUID.randomUUID(), localSelf), connMngr);
+
+            subscribe(handleConnReady, connMngr);
+        }
+    };
+
+    private Handler<Ready> handleConnReady = new Handler<Ready>() {
+        @Override
+        public void handle(Ready event) {
             if (downloading) {
                 log.info("{} starting video download", config.getSelf());
-                
+
                 getNewPieces();
                 for (int i = 0; i < config.startPieces; i++) {
                     downloadPiece();
                 }
 
-                scheduleSpeedUp(10);
+                scheduleSpeedUp(10000);
+                subscribe(handleDownloadSpeedUp, timer);
+
                 schedulePeriodicUpdateSelf();
+                subscribe(handleUpdateSelf, timer);
             } else {
                 log.info("{} seeding file", config.getSelf());
             }
+
+            subscribe(handleDownloadRequest, connMngr);
+            subscribe(handleDownloadResponse, connMngr);
+            subscribe(handleDownloadSlowDown, connMngr);
+            subscribe(handleDownloadTimeout, connMngr);
+
         }
     };
 
@@ -129,6 +150,10 @@ public class DownloadMngrComp extends ComponentDefinition {
         public void handle(Download.Response resp) {
             log.trace("{} handle {}", config.getSelf(), resp);
 
+            if (!resp.status.equals(ReqStatus.SUCCESS)) {
+                log.debug("{} req for piece {} returned with status {}", new Object[]{config.getSelf(), resp.pieceId, resp.status});
+                return;
+            }
             //TODO check hash
             fileMngr.writePiece(resp.pieceId, resp.piece);
 
@@ -139,7 +164,10 @@ public class DownloadMngrComp extends ComponentDefinition {
                 }
                 getNewPieces();
             }
-            downloadPiece();
+            log.debug("{} next pieces to download {}", config.getSelf(), nextPieces);
+            if (!nextPieces.isEmpty()) {
+                downloadPiece();
+            }
         }
     };
 
@@ -163,9 +191,8 @@ public class DownloadMngrComp extends ComponentDefinition {
             pendingPieces.remove(event.canceledPiece);
             nextPieces.add(0, event.canceledPiece);
 
-            CancelTimeout cancelSpeedUp = new CancelTimeout(speedUpTId);
-            trigger(cancelSpeedUp, timer);
-            scheduleSpeedUp(1000);
+            cancelSpeedUp();
+            scheduleSpeedUp(10000);
         }
     };
 
@@ -173,8 +200,12 @@ public class DownloadMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(DownloadControl.ScheduledSpeedUp event) {
-            log.trace("{} handling speedup");
+            log.trace("{} handling speedup {}", config.getSelf(), event.getTimeoutId());
 
+            if (speedUpTId == null) {
+                log.info("{} late timeout {}", config.getSelf(), speedUpTId);
+                return;
+            }
             if (nextPieces.isEmpty()) {
                 if (fileMngr.isComplete()) {
                     finishDownload();
@@ -183,8 +214,10 @@ public class DownloadMngrComp extends ComponentDefinition {
                 getNewPieces();
             }
 
-            downloadPiece();
-            scheduleSpeedUp(10);
+            if (!nextPieces.isEmpty()) {
+                downloadPiece();
+            }
+            scheduleSpeedUp(10000);
         }
 
     };
@@ -194,9 +227,10 @@ public class DownloadMngrComp extends ComponentDefinition {
         @Override
         public void handle(UpdateSelf.UpdateTimeout event) {
             log.trace("{} handle {}", config.getSelf(), event);
-            
-            VodDescriptor newSelf = new VodDescriptor(config.overlayId, fileMngr.contiguousStart());
+
+            VodDescriptor newSelf = new VodDescriptor(fileMngr.contiguousStart());
             LocalVodDescriptor localSelf = new LocalVodDescriptor(newSelf, downloading);
+            log.info("{} download at piece: {}", config.getSelf(), newSelf.downloadPos);
             trigger(new UpdateSelf(UUID.randomUUID(), localSelf), connMngr);
         }
     };
@@ -218,11 +252,18 @@ public class DownloadMngrComp extends ComponentDefinition {
     }
 
     private void scheduleSpeedUp(int periodFactor) {
-        ScheduleTimeout st = new ScheduleTimeout(periodFactor * config.periodicUpdate);
+        ScheduleTimeout st = new ScheduleTimeout(periodFactor);
         Timeout t = new DownloadControl.ScheduledSpeedUp(st);
         st.setTimeoutEvent(t);
-        trigger(st, timer);
         speedUpTId = t.getTimeoutId();
+        log.debug("{} scheduling speedup timeout {}", config.getSelf(), speedUpTId);
+        trigger(st, timer);
+    }
+
+    private void cancelSpeedUp() {
+        log.debug("{} canceling speedup timeout {}", config.getSelf(), speedUpTId);
+        CancelTimeout cancelSpeedUp = new CancelTimeout(speedUpTId);
+        trigger(cancelSpeedUp, timer);
     }
 
     private void schedulePeriodicUpdateSelf() {
@@ -231,25 +272,29 @@ public class DownloadMngrComp extends ComponentDefinition {
         Timeout t = new UpdateSelf.UpdateTimeout(spt);
         updateSelfTId = t.getTimeoutId();
         spt.setTimeoutEvent(t);
+        log.debug("{} scheduling periodic timeout {}", config.getSelf(), t);
         trigger(spt, timer);
     }
 
+    private void cancelPeriodicUpdateSelf() {
+        log.debug("{} canceling periodic timeout {}", config.getSelf(), updateSelfTId);
+        CancelPeriodicTimeout cpt = new CancelPeriodicTimeout(updateSelfTId);
+        trigger(cpt, timer);
+    }
+    
     private void finishDownload() {
         log.info("{} finished download", config.getSelf());
-        
+
         downloading = false;
 
         //one last update
-        VodDescriptor newSelf = new VodDescriptor(config.overlayId, fileMngr.contiguousStart());
+        VodDescriptor newSelf = new VodDescriptor(fileMngr.contiguousStart());
         LocalVodDescriptor localSelf = new LocalVodDescriptor(newSelf, downloading);
         trigger(new UpdateSelf(UUID.randomUUID(), localSelf), connMngr);
-        
+
         //cancel timeouts
-        CancelTimeout ct = new CancelTimeout(speedUpTId);
-        trigger(ct, timer);
-        
-        ct = new CancelTimeout(updateSelfTId);
-        trigger(ct, timer);
+        cancelSpeedUp();
+        cancelPeriodicUpdateSelf();
     }
 
     public static class DownloadMngrInit extends Init<DownloadMngrComp> {
@@ -259,7 +304,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         public final FileMngr fileMngr;
         public final boolean downloader;
 
-        public DownloadMngrInit(DownloadMngrConfig config, FileMngr hashMngr, FileMngr fileMngr, boolean downloader) {
+        public DownloadMngrInit(DownloadMngrConfig config, FileMngr fileMngr, FileMngr hashMngr, boolean downloader) {
             this.config = config;
             this.hashMngr = hashMngr;
             this.fileMngr = fileMngr;

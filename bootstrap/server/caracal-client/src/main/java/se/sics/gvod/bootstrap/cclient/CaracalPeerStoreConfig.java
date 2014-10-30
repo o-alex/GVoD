@@ -28,7 +28,7 @@ import se.sics.kompics.address.Address;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BCClientConfig {
+public class CaracalPeerStoreConfig {
 
     public final Address self;
     public final Address caracalServer;
@@ -36,7 +36,7 @@ public class BCClientConfig {
     public final byte[] seed;
     public final int sampleSize;
 
-    private BCClientConfig(Config config, Address self, Address caracalServer, byte[] seed, int sampleSize) {
+    private CaracalPeerStoreConfig(Config config, Address self, Address caracalServer, byte[] seed, int sampleSize) {
         this.config = config;
         this.self = self;
         this.caracalServer = caracalServer;
@@ -57,7 +57,7 @@ public class BCClientConfig {
             this.selfAddress = selfAddress;
         }
         
-        public BCClientConfig finalise() throws GVoDConfigException.Missing {
+        public CaracalPeerStoreConfig finalise() throws GVoDConfigException.Missing {
 
             if (selfAddress == null) {
                 throw new GVoDConfigException.Missing("self Address");
@@ -78,7 +78,7 @@ public class BCClientConfig {
             } catch (ConfigException.Missing ex) {
                 throw new GVoDConfigException.Missing("ip");
             }
-            return new BCClientConfig(config, selfAddress, caracalServer, seed, sampleSize);
+            return new CaracalPeerStoreConfig(config, selfAddress, caracalServer, seed, sampleSize);
         }
     }
 }

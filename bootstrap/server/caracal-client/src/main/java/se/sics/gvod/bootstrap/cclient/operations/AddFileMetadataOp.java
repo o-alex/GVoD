@@ -48,7 +48,7 @@ public class AddFileMetadataOp implements Operation<CaracalOp> {
 
     @Override
     public void start() {
-        opMngr.sendCaracalReq(req.id, new PutRequest(UUID.randomUUID(), CaracalKeyFactory.getFileMetadataKey(req.overlayId), req.fileMetadata));
+        opMngr.sendCaracalReq(req.id, CaracalKeyFactory.getFileMetadataKey(req.overlayId), new PutRequest(UUID.randomUUID(), CaracalKeyFactory.getFileMetadataKey(req.overlayId), req.fileMetadata));
     }
 
     @Override

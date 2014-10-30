@@ -17,39 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.common.tags;
+package se.sics.gvod.network.tags;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class OverlayTag implements MsgTag {
-    public final int overlayId;
-    
-    public OverlayTag(int overlayId) {
-        this.overlayId = overlayId;
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 89 * hash + this.overlayId;
-        return hash;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final OverlayTag other = (OverlayTag) obj;
-        if (this.overlayId != other.overlayId) {
-            return false;
-        }
-        return true;
-    }
-    
-    
+public enum TagType {
+    CONTEXT, OVERLAY
 }

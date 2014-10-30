@@ -41,7 +41,6 @@ import se.sics.gvod.simulation.cmd.system.StartBSCmd;
 import se.sics.gvod.simulation.cmd.system.StartVodPeerCmd;
 import se.sics.gvod.system.HostConfiguration;
 import se.sics.gvod.system.HostManagerComp;
-import se.sics.gvod.system.HostManagerInit;
 import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
@@ -141,7 +140,7 @@ public class SimManagerComp extends ComponentDefinition {
                 VodAddress selfAddress = new VodAddress(new Address(InetAddress.getLocalHost(), port, start.id), -1);
                 HostConfiguration hostConfig = new HostConfiguration.SimulationBuilder().setSeed(seed).setId(start.id).setLibDir(start.libDir).finalise();
                 Component peerManager = create(SimPMComp.class, new SimPMComp.SimPMInit(new SimPMConfig.Builder(ConfigFactory.load(), seed, selfAddress.getPeerAddress()).finalise()));
-                Component vodPeerHost = create(HostManagerComp.class, new HostManagerInit(hostConfig, peerManager));
+                Component vodPeerHost = create(HostManagerComp.class, new HostManagerComp.HostManagerInit(hostConfig, peerManager));
                 systemComp.put(start.id, vodPeerHost);
 
                 connect(vodPeerHost.getNegative(VodNetwork.class), network, new NodeIdFilter(start.id));

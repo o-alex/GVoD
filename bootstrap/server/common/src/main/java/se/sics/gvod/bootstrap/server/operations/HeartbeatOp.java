@@ -56,10 +56,14 @@ public class HeartbeatOp implements Operation {
 
     @Override
     public void start() {
+        PMJoinOverlay.Request joinSystem = new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array());
+        opMngr.sendPeerManagerReq(getId(), joinSystem);
+        pendingJoins.add(joinSystem.id);
+        
         for (Map.Entry<Integer, Integer> e : oneWay.overlaysUtility.entrySet()) {
             byte[] heartbeatEntry = Util.encodeHeartbeatEntry(Unpooled.buffer(), src, e.getValue()).array();
             PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getPeerAddress().getId(), heartbeatEntry);
-            opMngr.sendPeerManagerReq(oneWay.id, joinOverlay);
+            opMngr.sendPeerManagerReq(getId(), joinOverlay);
             pendingJoins.add(joinOverlay.id);
         }
     }

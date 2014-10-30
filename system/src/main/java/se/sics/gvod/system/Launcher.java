@@ -18,12 +18,20 @@
  */
 package se.sics.gvod.system;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.net.InetAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
-import se.sics.gvod.bootstrap.cclient.BCCManagerComp;
+import se.sics.gvod.bootstrap.cclient.CaracalPSManagerComp;
 import se.sics.gvod.common.util.GVoDConfigException;
+import se.sics.gvod.manager.UploadFileInfo;
+import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.net.NatNetworkControl;
 import se.sics.gvod.net.NettyInit;
 import se.sics.gvod.net.NettyNetwork;
@@ -54,20 +62,18 @@ public class Launcher extends ComponentDefinition {
 
     public static int seed = 1234;
     public static byte[] bseed = new byte[]{1, 2, 3, 4};
-    public static int port = 22009;
-    public static int id = 100;
 
     private Component timer;
     private Component resolveIp;
     private Component network;
     private Component manager;
+    private VoDManager vodManager;
 
     private Address selfAddress;
     private final HostConfiguration.ExecBuilder config;
 
     public Launcher() {
         log.info("init");
-        System.setProperty("java.net.preferIPv4Stack", "true");
         subscribe(handleStart, control);
 
         config = new HostConfiguration.ExecBuilder();
@@ -85,30 +91,62 @@ public class Launcher extends ComponentDefinition {
     }
 
     private void phase2(InetAddress selfIp) {
-        log.info("phase 2 - ip:{} - binding port:{}", selfIp, port);
-        selfAddress = new Address(selfIp, port, id);
+        try {
+            log.info("phase 2 - ip:{} - binding port:{}", selfIp, config.getPort());
+            selfAddress = new Address(selfIp, config.getPort(), config.getId());
 
-        network = create(NettyNetwork.class, new NettyInit(seed, true, GVoDNetFrameDecoder.class));
-        connect(network.getNegative(Timer.class), timer.getPositive(Timer.class));
+            network = create(NettyNetwork.class, new NettyInit(seed, true, GVoDNetFrameDecoder.class));
+            connect(network.getNegative(Timer.class), timer.getPositive(Timer.class));
 
-        subscribe(handlePsPortBindResponse, network.getPositive(NatNetworkControl.class));
-        trigger(Start.event, network.getControl());
+            subscribe(handlePsPortBindResponse, network.getPositive(NatNetworkControl.class));
+            trigger(Start.event, network.getControl());
+        } catch (GVoDConfigException.Missing ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private void phase3(Address selfAddress) {
         log.info("phase 3 - starting with Address: {}", selfAddress);
         try {
-            HostConfiguration hostConfig = config.setSelfAddress(selfAddress).finalise();
-            Component peerManager = create(BCCManagerComp.class, new BCCManagerComp.BCCManagerInit(hostConfig.getBCCManagerConfig()));
-            manager = create(HostManagerComp.class, new HostManagerInit(hostConfig, peerManager));
+            HostConfiguration hostConfig = config.setSelfAddress(selfAddress).setSeed(bseed).finalise();
+            //TODO
+            //should create and start only on open nodes
+            Component peerManager = create(CaracalPSManagerComp.class, new CaracalPSManagerComp.CaracalPSManagerInit(hostConfig.getCaracalPSManagerConfig()));
+            manager = create(HostManagerComp.class, new HostManagerComp.HostManagerInit(hostConfig, peerManager));
+            vodManager = ((HostManagerComp) manager.getComponent()).getVoDManager();
+            connect(manager.getNegative(VodNetwork.class), network.getPositive(VodNetwork.class));
+            connect(manager.getNegative(Timer.class), timer.getPositive(Timer.class));
+
+            trigger(Start.event, peerManager.control());
+            trigger(Start.event, manager.control());
+//        phase4();
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
+    }
 
-        connect(manager.getNegative(VodNetwork.class), network.getPositive(VodNetwork.class));
-        connect(manager.getNegative(Timer.class), timer.getPositive(Timer.class));
+    private void phase4() {
+        String videoName = "video1.mp4";
+        String libDir = "/Users/Alex/Documents/Work/Code/GVoD/video-catalog";
+        log.info("{} libDir:{}", selfAddress, libDir);
+        try {
+            File f = new File(libDir);
+            f.delete();
+            f.mkdir();
+            File videoFile = new File(libDir + File.separator + videoName);
+            videoFile.createNewFile();
+            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(videoFile)));
+            for (int i = 0; i < 10000; i++) {
+                writer.write("abc" + i + "\n");
+            }
+            writer.flush();
+            writer.close();
+            vodManager.uploadVideo(new UploadFileInfo(10, libDir, videoName));
 
-        trigger(Start.event, manager.control());
+//            vodManager.downloadVideo(new DownloadFileInfo(10, libDir, videoName));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     public Handler<Start> handleStart = new Handler<Start>() {

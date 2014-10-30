@@ -18,7 +18,6 @@
  */
 package se.sics.gvod.common.msg;
 
-import se.sics.gvod.common.tags.MsgTag;
 import java.util.UUID;
 import se.sics.kompics.KompicsEvent;
 

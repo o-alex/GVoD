@@ -20,6 +20,7 @@
 package se.sics.gvod.bootstrap.cclient;
 
 import java.util.UUID;
+import se.sics.caracaldb.Key;
 import se.sics.caracaldb.operations.CaracalOp;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 
@@ -28,5 +29,5 @@ import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
  */
 public interface CaracalOpManager {
     public void finish(PeerManagerMsg.Response resp);
-    public void sendCaracalReq(UUID opId, CaracalOp req);
+    public void sendCaracalReq(UUID opId, Key forwardTo, CaracalOp req);
 }

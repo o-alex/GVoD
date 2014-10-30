@@ -31,7 +31,7 @@ public class SimplePieceTracker implements PieceTracker {
     private final int nrPieces;
     
     public SimplePieceTracker(int nrPieces) {
-        this.pieces = new BitSet(nrPieces);
+        this.pieces = new BitSet(nrPieces+1);
         this.nrPieces = nrPieces;
     }
     

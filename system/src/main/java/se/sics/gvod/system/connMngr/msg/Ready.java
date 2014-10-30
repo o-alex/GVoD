@@ -16,23 +16,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.common.filters;
 
-import se.sics.gvod.common.tags.MsgTag;
-import se.sics.gvod.common.tags.Tagged;
-import se.sics.kompics.ChannelFilter;
+package se.sics.gvod.system.connMngr.msg;
+
+import java.util.UUID;
+import se.sics.gvod.common.msg.GvodMsg;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class TagFilter extends ChannelFilter<Tagged, MsgTag> {
+public class Ready extends GvodMsg.OneWay {
 
-    public TagFilter(MsgTag tag) {
-        super(Tagged.class, tag, true);
+    public Ready(UUID id) {
+        super(id);
     }
-
+    
     @Override
-    public MsgTag getValue(Tagged event) {
-        return event.getTag();
+    public Ready copy() {
+        return new Ready(id);
     }
+    
 }

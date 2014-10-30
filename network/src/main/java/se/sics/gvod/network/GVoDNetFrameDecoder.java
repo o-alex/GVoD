@@ -44,9 +44,12 @@ public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
     static {
         GvodNettyAdapter.Request.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
         GvodNettyAdapter.Response.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
-        
+        GvodNettyAdapter.OneWay.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
+  
         nettyAdapters.put(GVOD_NET_REQUEST, new GvodNettyAdapter.Request());
         nettyAdapters.put(GVOD_NET_RESPONSE, new GvodNettyAdapter.Response());
+        nettyAdapters.put(GVOD_NET_ONEWAY, new GvodNettyAdapter.OneWay());
+        
     }
     
     public GVoDNetFrameDecoder() {

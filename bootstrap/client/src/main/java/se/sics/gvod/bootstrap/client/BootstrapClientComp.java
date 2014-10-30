@@ -35,6 +35,7 @@ import se.sics.gvod.common.msg.impl.AddOverlay;
 import se.sics.gvod.common.msg.impl.BootstrapGlobal;
 import se.sics.gvod.common.msg.impl.Heartbeat;
 import se.sics.gvod.common.msg.impl.JoinOverlay;
+import se.sics.gvod.common.msg.impl.OverlaySample;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.common.util.MsgProcessor;
 import se.sics.gvod.net.VodAddress;
@@ -83,9 +84,11 @@ public class BootstrapClientComp extends ComponentDefinition {
         subscribe(handleNetResponse, network);
         subscribe(handleAddOverlayRequest, myPort);
         subscribe(handleJoinOverlayRequest, myPort);
+        subscribe(handleOverlaySampleRequest, myPort);
         msgProc.subscribe(handleBootstrapResponse);
         msgProc.subscribe(handleAddOverlayResponse);
         msgProc.subscribe(handleJoinOverlayResponse);
+        msgProc.subscribe(handleOverlaySampleResponse);
         subscribe(handleUtilityUpdate, utilityPort);
         subscribe(handleHeartbeat, timer);
     }
@@ -154,6 +157,18 @@ public class BootstrapClientComp extends ComponentDefinition {
             trigger(netReq, network);
         }
     };
+    
+    public Handler<OverlaySample.Request> handleOverlaySampleRequest = new Handler<OverlaySample.Request>() {
+
+        @Override
+        public void handle(OverlaySample.Request req) {
+            log.trace("{} {} - overlay:{}", new Object[]{config.self, req, req.overlayId});
+
+            GvodNetMsg.Request netReq = new GvodNetMsg.Request(config.self, config.server, req);
+            log.debug("{} sending {}", new Object[]{config.self, netReq});
+            trigger(netReq, network);
+        }
+    };
 
     public MsgProcessor.Handler<AddOverlay.Response> handleAddOverlayResponse
             = new MsgProcessor.Handler<AddOverlay.Response>(AddOverlay.Response.class
@@ -185,6 +200,18 @@ public class BootstrapClientComp extends ComponentDefinition {
                 }
             };
 
+    public MsgProcessor.Handler<OverlaySample.Response> handleOverlaySampleResponse
+            = new MsgProcessor.Handler<OverlaySample.Response>(OverlaySample.Response.class
+            ) {
+
+                @Override
+                public void handle(VodAddress src, OverlaySample.Response resp) {
+                    log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
+                    trigger(resp, myPort);
+                }
+            };
+
+    
     public Handler<UtilityUpdate> handleUtilityUpdate = new Handler<UtilityUpdate>() {
 
         @Override

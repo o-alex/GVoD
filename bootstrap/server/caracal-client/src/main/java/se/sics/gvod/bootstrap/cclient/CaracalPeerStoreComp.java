@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.caracaldb.Key;
+import se.sics.caracaldb.global.ForwardMessage;
 import se.sics.caracaldb.operations.CaracalMsg;
 import se.sics.caracaldb.operations.CaracalOp;
 import se.sics.gvod.bootstrap.cclient.operations.AddFileMetadataOp;
@@ -41,35 +43,37 @@ import se.sics.gvod.common.util.Operation;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
+import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.network.Network;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BCClientComp extends ComponentDefinition implements CaracalOpManager {
+public class CaracalPeerStoreComp extends ComponentDefinition implements CaracalOpManager {
 
-    private static final Logger log = LoggerFactory.getLogger(BCClientComp.class);
+    private static final Logger log = LoggerFactory.getLogger(CaracalPeerStoreComp.class);
 
     private Positive<Network> network = requires(Network.class);
-    private Positive<PeerManagerPort> peerManager = requires(PeerManagerPort.class);
+    private Negative<PeerManagerPort> myPort = provides(PeerManagerPort.class);
 
-    private final BCClientConfig config;
+    private final CaracalPeerStoreConfig config;
 
     private final Map<UUID, Operation<CaracalOp>> pendingOps;
     private final Map<UUID, UUID> pendingCaracalOps;
 
-    public BCClientComp(BCClientInit init) {
-        log.debug("init");
+    public CaracalPeerStoreComp(CaracalPeerStoreInit init) {
         this.config = init.config;
+        log.info("{} initializing", config.self);
+        
         this.pendingOps = new HashMap<UUID, Operation<CaracalOp>>();
         this.pendingCaracalOps = new HashMap<UUID, UUID>();
 
         subscribe(handleCaracalResponse, network);
-        subscribe(handleJoinOverlay, peerManager);
-        subscribe(handleGetOverlaySample, peerManager);
-        subscribe(handleAddFileMetadata, peerManager);
-        subscribe(handleGetFileMetadata, peerManager);
+        subscribe(handleJoinOverlay, myPort);
+        subscribe(handleGetOverlaySample, myPort);
+        subscribe(handleAddFileMetadata, myPort);
+        subscribe(handleGetFileMetadata, myPort);
     }
 
     public Handler<CaracalMsg> handleCaracalResponse = new Handler<CaracalMsg>() {
@@ -90,7 +94,7 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
         @Override
         public void handle(PMJoinOverlay.Request req) {
             log.debug("{} received {}", new Object[]{config.self, req});
-            Operation op = new AddOverlayPeerOp(BCClientComp.this, req);
+            Operation op = new AddOverlayPeerOp(CaracalPeerStoreComp.this, req);
             pendingOps.put(req.id, op);
             op.start();
         }
@@ -101,29 +105,29 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
         @Override
         public void handle(PMGetOverlaySample.Request req) {
             log.debug("{} received {}", new Object[]{config.self, req});
-            Operation op = new GetOverlaySampleOp(BCClientComp.this, req, config.sampleSize);
+            Operation op = new GetOverlaySampleOp(CaracalPeerStoreComp.this, req, config.sampleSize);
             pendingOps.put(req.id, op);
             op.start();
         }
     };
-    
+
     public Handler<PMAddFileMetadata.Request> handleAddFileMetadata = new Handler<PMAddFileMetadata.Request>() {
 
         @Override
         public void handle(PMAddFileMetadata.Request req) {
             log.debug("{} received {}", new Object[]{config.self, req});
-            Operation op = new AddFileMetadataOp(BCClientComp.this, req);
+            Operation op = new AddFileMetadataOp(CaracalPeerStoreComp.this, req);
             pendingOps.put(req.id, op);
             op.start();
         }
     };
-    
+
     public Handler<PMGetFileMetadata.Request> handleGetFileMetadata = new Handler<PMGetFileMetadata.Request>() {
 
         @Override
         public void handle(PMGetFileMetadata.Request req) {
             log.debug("{} received {}", new Object[]{config.self, req});
-            Operation op = new GetFileMetadataOp(BCClientComp.this, req);
+            Operation op = new GetFileMetadataOp(CaracalPeerStoreComp.this, req);
             pendingOps.put(req.id, op);
             op.start();
         }
@@ -137,14 +141,15 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
         }
         cleanRequests(resp.id);
         log.debug("{} sending {}", new Object[]{config.self, resp});
-        trigger(resp, peerManager);
+        trigger(resp, myPort);
     }
 
     @Override
-    public void sendCaracalReq(UUID opId, CaracalOp req) {
+    public void sendCaracalReq(UUID opId, Key forwardTo, CaracalOp req) {
         log.debug("{} sending {}", new Object[]{config.self, req});
-        pendingCaracalOps.put(opId, req.id);
-        trigger(req, network);
+        pendingCaracalOps.put(req.id, opId);
+        CaracalMsg cmsg = new CaracalMsg(config.self, config.caracalServer, req);
+        trigger(new ForwardMessage(config.self, config.caracalServer, forwardTo, cmsg), network);
     }
 
     //***************************
@@ -156,12 +161,12 @@ public class BCClientComp extends ComponentDefinition implements CaracalOpManage
             }
         }
     }
+    
+    public static class CaracalPeerStoreInit extends Init<CaracalPeerStoreComp> {
 
-    public static class BCClientInit extends Init<BCClientComp> {
+        public final CaracalPeerStoreConfig config;
 
-        public final BCClientConfig config;
-
-        public BCClientInit(BCClientConfig config) {
+        public CaracalPeerStoreInit(CaracalPeerStoreConfig config) {
             this.config = config;
         }
     }

@@ -43,7 +43,7 @@ public class JoinOverlayOp implements Operation {
     private final PeerOpManager opMngr;
     private final JoinOverlay.Request req;
     private final VodAddress src;
-    private JoinOverlay.ResponseBuilder resp;
+    private final JoinOverlay.ResponseBuilder resp;
 
     public JoinOverlayOp(PeerOpManager opMngr, JoinOverlay.Request req, VodAddress src) {
         this.opMngr = opMngr;
@@ -59,21 +59,14 @@ public class JoinOverlayOp implements Operation {
 
     @Override
     public void start() {
-        opMngr.sendPeerManagerReq(getId(), new PMGetOverlaySample.Request(UUID.randomUUID(), req.overlayId));
+        opMngr.sendPeerManagerReq(getId(), new PMGetFileMetadata.Request(UUID.randomUUID(), req.overlayId));
+        opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), req.overlayId, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
+
     }
 
     @Override
     public void handle(PeerManagerMsg.Response peerResp) {
-        if (peerResp instanceof PMGetOverlaySample.Response) {
-            PMGetOverlaySample.Response sampleResp = (PMGetOverlaySample.Response) peerResp;
-            if (sampleResp.status == ReqStatus.SUCCESS) {
-                resp.setOverlaySample(processOverlaySample(sampleResp.overlaySample));
-                opMngr.sendPeerManagerReq(getId(), new PMGetFileMetadata.Request(UUID.randomUUID(), req.overlayId));
-                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), sampleResp.overlayId, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
-            } else {
-                opMngr.finish(getId(), src, req.fail());
-            }
-        } else if (peerResp instanceof PMJoinOverlay.Response) {
+        if (peerResp instanceof PMJoinOverlay.Response) {
             PMJoinOverlay.Response joinResp = (PMJoinOverlay.Response) peerResp;
             if (joinResp.status == ReqStatus.SUCCESS) {
                 try {
@@ -99,14 +92,5 @@ public class JoinOverlayOp implements Operation {
         } else {
             throw new RuntimeException("wrong phase");
         }
-    }
-
-    private Map<VodAddress, Integer> processOverlaySample(Set<byte[]> boverlaySample) {
-        Map<VodAddress, Integer> overlaySample = new HashMap<VodAddress, Integer>();
-        for (byte[] data : boverlaySample) {
-            Pair<VodAddress, Integer> heartbeatEntry = Util.decodeHeartbeatEntry(Unpooled.wrappedBuffer(data));
-            overlaySample.put(heartbeatEntry.getValue0(), heartbeatEntry.getValue1());
-        }
-        return overlaySample;
     }
 }

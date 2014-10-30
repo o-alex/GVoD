@@ -24,11 +24,13 @@ import se.sics.gvod.common.msg.impl.AddOverlay;
 import se.sics.gvod.common.msg.impl.BootstrapGlobal;
 import se.sics.gvod.common.msg.impl.Heartbeat;
 import se.sics.gvod.common.msg.impl.JoinOverlay;
+import se.sics.gvod.common.msg.impl.OverlaySample;
 import se.sics.gvod.network.gvodadapter.AddOverlayAdapter;
 import se.sics.gvod.network.gvodadapter.BootstrapGlobalAdapter;
 import se.sics.gvod.network.gvodadapter.GVoDAdapter;
 import se.sics.gvod.network.gvodadapter.HeartbeatAdapter;
 import se.sics.gvod.network.gvodadapter.JoinOverlayAdapter;
+import se.sics.gvod.network.gvodadapter.OverlaySampleAdapter;
 import se.sics.kompics.KompicsEvent;
 
 /**
@@ -46,6 +48,8 @@ public class GVoDAdapterFactory {
     public static final byte JOIN_OVERLAY_REQUEST = 0x07;
     public static final byte JOIN_OVERLAY_RESPONSE = 0x08;
     public static final byte OVERLAY_HEARTBEAT = 0x09;
+    public static final byte OVERLAY_SAMPLE_REQUEST = 0x10;
+    public static final byte OVERLAY_SAMPLE_RESPONSE = 0x11;
 
     private static final Map<Byte, GVoDAdapter<? extends KompicsEvent>> gvodAdapters = new HashMap<Byte, GVoDAdapter<? extends KompicsEvent>>();
 
@@ -57,6 +61,8 @@ public class GVoDAdapterFactory {
         gvodAdapters.put(JOIN_OVERLAY_REQUEST, new JoinOverlayAdapter.Request());
         gvodAdapters.put(JOIN_OVERLAY_RESPONSE, new JoinOverlayAdapter.Response());
         gvodAdapters.put(OVERLAY_HEARTBEAT, new HeartbeatAdapter.OneWay());
+        gvodAdapters.put(OVERLAY_SAMPLE_REQUEST, new OverlaySampleAdapter.Request());
+        gvodAdapters.put(OVERLAY_SAMPLE_RESPONSE, new OverlaySampleAdapter.Response());
     }
 
     public static GVoDAdapter getAdapter(byte opCode) {
@@ -78,6 +84,10 @@ public class GVoDAdapterFactory {
             return JOIN_OVERLAY_RESPONSE;
         } else if (msg instanceof Heartbeat.OneWay) {
             return OVERLAY_HEARTBEAT;
+        } else if(msg instanceof OverlaySample.Request) {
+            return OVERLAY_SAMPLE_REQUEST;
+        } else if(msg instanceof OverlaySample.Response) {
+            return OVERLAY_SAMPLE_RESPONSE;
         }
         throw new RuntimeException("no opcode translation");
     }

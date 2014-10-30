@@ -25,9 +25,11 @@ package se.sics.gvod.manager;
 public class UploadFileInfo {
     public final int overlayId;
     public final String fileName;
+    public final String libDir;
     
-    public UploadFileInfo(int overlayId, String fileName) {
+    public UploadFileInfo(int overlayId, String libDir, String fileName) {
         this.overlayId = overlayId;
+        this.libDir = libDir;
         this.fileName = fileName;
     }
 }

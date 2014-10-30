@@ -21,6 +21,9 @@ package se.sics.gvod.bootstrap.cclient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.caracaldb.CoreSerializer;
+import se.sics.caracaldb.global.ForwardMessage;
+import se.sics.caracaldb.operations.CaracalMsg;
+import se.sics.caracaldb.operations.CaracalOp;
 import se.sics.caracaldb.operations.PutRequest;
 import se.sics.caracaldb.operations.PutResponse;
 import se.sics.caracaldb.operations.RangeQuery;
@@ -38,25 +41,25 @@ import se.sics.kompics.network.netty.serialization.Serializers;
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class BCCManagerComp extends ComponentDefinition {
+public class CaracalPSManagerComp extends ComponentDefinition {
 
-    private static final Logger log = LoggerFactory.getLogger(BCCManagerComp.class);
+    private static final Logger log = LoggerFactory.getLogger(CaracalPSManagerComp.class);
 
     private Negative<PeerManagerPort> peerManager = provides(PeerManagerPort.class);
     
     private Component network;
     private Component caracal;
 
-    private final BCCManagerConfig config;
+    private final CaracalPSManagerConfig config;
 
-    public BCCManagerComp(BCCManagerInit init) {
+    public CaracalPSManagerComp(CaracalPSManagerInit init) {
         registerSerializers();
         try {
-            log.debug("init");
             this.config = init.config;
+            log.info("{} connecting components", config.selfAddress);
             
             network = create(NettyNetwork.class, new NettyInit(config.selfAddress));
-            caracal = create(BCClientComp.class, new BCClientComp.BCClientInit(config.getBCClientConfig()));
+            caracal = create(CaracalPeerStoreComp.class, new CaracalPeerStoreComp.CaracalPeerStoreInit(config.getCaracalPeerStoreConfig()));
             
             connect(caracal.getNegative(Network.class), network.getPositive(Network.class));
             connect(peerManager, caracal.getPositive(PeerManagerPort.class));
@@ -66,6 +69,12 @@ public class BCCManagerComp extends ComponentDefinition {
     }
     
     private void registerSerializers() {
+        Serializers.register(CoreSerializer.LOOKUP.instance, "lookupS");
+        Serializers.register(ForwardMessage.class, "lookupS");
+        Serializers.register(se.sics.caracaldb.global.Message.class, "lookupS");
+        Serializers.register(CoreSerializer.OP.instance, "opS");
+        Serializers.register(CaracalMsg.class, "opS");
+        Serializers.register(CaracalOp.class, "opS");
         Serializers.register(CoreSerializer.OP.instance, "caracal-op");
         Serializers.register(RangeQuery.Request.class, "caracal-op");
         Serializers.register(RangeQuery.Response.class, "caracal-op");
@@ -73,10 +82,10 @@ public class BCCManagerComp extends ComponentDefinition {
         Serializers.register(PutResponse.class, "caracal-op");
     }
 
-    public static class BCCManagerInit extends Init<BCCManagerComp> {
-        public final BCCManagerConfig config;
+    public static class CaracalPSManagerInit extends Init<CaracalPSManagerComp> {
+        public final CaracalPSManagerConfig config;
         
-        public BCCManagerInit(BCCManagerConfig config) {
+        public CaracalPSManagerInit(CaracalPSManagerConfig config) {
             this.config = config;
         }
     }
