@@ -33,15 +33,11 @@ import se.sics.gvod.croupierfake.CroupierSample;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.common.util.VodDescriptor;
-import se.sics.gvod.network.nettymsg.MyNetMsg;
-import se.sics.gvod.network.tags.ContextTag;
-import se.sics.gvod.network.tags.OverlayTag;
-import se.sics.gvod.network.tags.Tag;
-import se.sics.gvod.network.tags.TagType;
-import se.sics.gvod.system.connMngr.msg.Connection;
+import se.sics.gvod.network.nettymsg.OverlayNetMsg;
+import se.sics.gvod.common.msg.vod.Connection;
 import se.sics.gvod.system.connMngr.msg.Ready;
 import se.sics.gvod.system.downloadMngr.msg.UpdateSelf;
-import se.sics.gvod.system.downloadMngr.msg.Download;
+import se.sics.gvod.common.msg.vod.Download;
 import se.sics.gvod.system.downloadMngr.msg.DownloadControl;
 import se.sics.gvod.timer.CancelTimeout;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;
@@ -80,7 +76,6 @@ public class ConnMngrComp extends ComponentDefinition {
     private Map<Integer, Set<VodAddress>> pendingUploadReq;
 
     private TimeoutId connUpdateTId;
-    private Map<TagType, Tag> tags;
 
     private boolean ready;
 
@@ -95,9 +90,6 @@ public class ConnMngrComp extends ComponentDefinition {
         this.uploadersConn = new HashMap<VodAddress, UploaderVodDescriptor>();
         this.pendingDownloads = new HashMap<VodAddress, Map<Integer, TimeoutId>>();
         this.pendingUploadReq = new HashMap<Integer, Set<VodAddress>>();
-        this.tags = new HashMap<TagType, Tag>();
-        this.tags.put(TagType.OVERLAY, new OverlayTag(config.overlayId));
-        this.tags.put(TagType.CONTEXT, ContextTag.VIDEO);
         this.ready = false;
 
         subscribe(handleUpdateSelf, myPort);
@@ -118,11 +110,11 @@ public class ConnMngrComp extends ComponentDefinition {
                     log.debug("{} completed - closing download connections", config.getSelf());
                     for (VodAddress partner : uploadersConn.keySet()) {
                         Connection.Close cl = new Connection.Close(UUID.randomUUID());
-                        trigger(new MyNetMsg.OneWay(config.getSelf(), partner, tags, cl), network);
+                        trigger(new OverlayNetMsg.OneWay(config.getSelf(), partner, config.overlayId, cl), network);
                     }
                     for (VodAddress partner : pendingUploadersConn.keySet()) {
                         Connection.Close cl = new Connection.Close(UUID.randomUUID());
-                        trigger(new MyNetMsg.OneWay(config.getSelf(), partner, tags, cl), network);
+                        trigger(new OverlayNetMsg.OneWay(config.getSelf(), partner, config.overlayId, cl), network);
                     }
                     uploadersConn = new HashMap<VodAddress, UploaderVodDescriptor>();
                     pendingUploadersConn = new HashMap<VodAddress, VodDescriptor>();
@@ -180,28 +172,28 @@ public class ConnMngrComp extends ComponentDefinition {
 
     }
 
-    private Handler<MyNetMsg.OneWay> handleNetOneWay = new Handler<MyNetMsg.OneWay>() {
+    private Handler<OverlayNetMsg.OneWay> handleNetOneWay = new Handler<OverlayNetMsg.OneWay>() {
 
         @Override
-        public void handle(MyNetMsg.OneWay netReq) {
+        public void handle(OverlayNetMsg.OneWay netReq) {
             log.trace("{} received {}", config.getSelf(), netReq.toString());
             msgProc.trigger(netReq.getVodSource(), netReq.payload);
         }
     };
 
-    private Handler<MyNetMsg.Request> handleNetRequest = new Handler<MyNetMsg.Request>() {
+    private Handler<OverlayNetMsg.Request> handleNetRequest = new Handler<OverlayNetMsg.Request>() {
 
         @Override
-        public void handle(MyNetMsg.Request netReq) {
+        public void handle(OverlayNetMsg.Request netReq) {
             log.trace("{} received {}", config.getSelf(), netReq.toString());
             msgProc.trigger(netReq.getVodSource(), netReq.payload);
         }
     };
 
-    private Handler<MyNetMsg.Response> handleNetResponse = new Handler<MyNetMsg.Response>() {
+    private Handler<OverlayNetMsg.Response> handleNetResponse = new Handler<OverlayNetMsg.Response>() {
 
         @Override
-        public void handle(MyNetMsg.Response netResp) {
+        public void handle(OverlayNetMsg.Response netResp) {
             log.trace("{} received {}", config.getSelf(), netResp.toString());
             msgProc.trigger(netResp.getVodSource(), netResp.payload);
         }
@@ -224,7 +216,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 log.debug("{} opening connection to {}", config.getSelf(), e.getKey());
                 pendingUploadersConn.put(e.getKey(), e.getValue());
                 Connection.Request req = new Connection.Request(UUID.randomUUID(), selfDesc.vodDesc);
-                trigger(new MyNetMsg.Request(config.getSelf(), e.getKey(), tags, req), network);
+                trigger(new OverlayNetMsg.Request(config.getSelf(), e.getKey(), config.overlayId, req), network);
             }
         }
     };
@@ -236,12 +228,12 @@ public class ConnMngrComp extends ComponentDefinition {
             log.trace("{} handle {}", config.getSelf(), event);
             for (VodAddress partner : downloadersConn.keySet()) {
                 Connection.Update upd = new Connection.Update(UUID.randomUUID(), selfDesc.vodDesc);
-                trigger(new MyNetMsg.OneWay(config.getSelf(), partner, tags, upd), network);
+                trigger(new OverlayNetMsg.OneWay(config.getSelf(), partner, config.overlayId, upd), network);
             }
 
             for (VodAddress partner : uploadersConn.keySet()) {
                 Connection.Update upd = new Connection.Update(UUID.randomUUID(), selfDesc.vodDesc);
-                trigger(new MyNetMsg.OneWay(config.getSelf(), partner, tags, upd), network);
+                trigger(new OverlayNetMsg.OneWay(config.getSelf(), partner, config.overlayId, upd), network);
             }
         }
     };
@@ -260,7 +252,7 @@ public class ConnMngrComp extends ComponentDefinition {
                     log.debug("{} new connection to downloader {}", config.getSelf(), src);
                     downloadersConn.put(src, new DownloaderVodDescriptor(req.desc, config.defaultMaxPipeline));
                     Connection.Response resp = req.accept();
-                    trigger(new MyNetMsg.Response(config.getSelf(), src, tags, resp), network);
+                    trigger(new OverlayNetMsg.Response(config.getSelf(), src, config.overlayId, resp), network);
                 }
             };
 
@@ -279,7 +271,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
                     if (!pendingUploadersConn.containsKey(src)) {
                         log.debug("{} closing connection to {}", config.getSelf(), src);
-                        trigger(new MyNetMsg.OneWay(config.getSelf(), src, tags, new Connection.Close(UUID.randomUUID())), network);
+                        trigger(new OverlayNetMsg.OneWay(config.getSelf(), src, config.overlayId, new Connection.Close(UUID.randomUUID())), network);
                         return;
                     }
 
@@ -349,7 +341,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 pendingDownloads.put(uploader.getKey(), partnerReq);
             }
             partnerReq.put(req.pieceId, t.getTimeoutId());
-            trigger(new MyNetMsg.Request(config.getSelf(), uploader.getKey(), tags, req), network);
+            trigger(new OverlayNetMsg.Request(config.getSelf(), uploader.getKey(), config.overlayId, req), network);
         }
 
     };
@@ -422,7 +414,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 DownloaderVodDescriptor down = downloadersConn.get(src);
                 if (down != null) {
                     log.debug("{} sending piece {} to {}", new Object[]{config.getSelf(), resp.pieceId, src});
-                    trigger(new MyNetMsg.Response(config.getSelf(), src, tags, resp), network);
+                    trigger(new OverlayNetMsg.Response(config.getSelf(), src, config.overlayId, resp), network);
                     down.freeSlot();
                 }
             }

@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.OverlaySample;
+import se.sics.gvod.common.msg.peerMngr.OverlaySample;
 import se.sics.gvod.common.util.VodDescriptor;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;

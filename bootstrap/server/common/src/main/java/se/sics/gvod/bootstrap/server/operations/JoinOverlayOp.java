@@ -30,7 +30,7 @@ import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetFileMetadata;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.JoinOverlay;
+import se.sics.gvod.common.msg.peerMngr.JoinOverlay;
 import se.sics.gvod.common.util.BuilderException;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.Util;

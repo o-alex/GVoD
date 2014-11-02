@@ -32,15 +32,15 @@ public class DownloadMngrConfig {
     private final VodAddress selfAddress;
     public final int overlayId;
     public final int startPieces;
-    public final long periodicUpdate;
+    public final long descriptorUpdate;
     
 
-    private DownloadMngrConfig(Config config, VodAddress selfAddress, int overlayId, int startPieces, long timeoutPeriod) {
+    private DownloadMngrConfig(Config config, VodAddress selfAddress, int overlayId, int startPieces, long descriptorUpdate) {
         this.config = config;
         this.selfAddress = selfAddress;
         this.overlayId = overlayId;
         this.startPieces = startPieces;
-        this.periodicUpdate = timeoutPeriod;
+        this.descriptorUpdate = descriptorUpdate;
     }
 
     public VodAddress getSelf() {
@@ -61,8 +61,8 @@ public class DownloadMngrConfig {
 
         public DownloadMngrConfig finalise() throws GVoDConfigException.Missing {
             int startPieces = config.getInt("vod.video.startPieces");
-            long timeoutPeriod = config.getLong("vod.video.timeoutPeriod");
-            return new DownloadMngrConfig(config, selfAddress, overlayId, startPieces, timeoutPeriod);
+            long descriptorUpdate = config.getLong("vod.video.descriptorUpdate");
+            return new DownloadMngrConfig(config, selfAddress, overlayId, startPieces, descriptorUpdate);
         }
     }
 }

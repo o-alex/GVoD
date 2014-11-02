@@ -27,6 +27,8 @@ import se.sics.gvod.net.BaseMsgFrameDecoder;
 import se.sics.gvod.net.msgs.RewriteableMsg;
 import se.sics.gvod.network.nettyadapter.GvodNettyAdapter;
 import se.sics.gvod.network.nettyadapter.NettyAdapter;
+import se.sics.gvod.network.nettyadapter.OverlayNetAdapter;
+import se.sics.gvod.network.nettymsg.OverlayNetMsg;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -39,17 +41,26 @@ public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
     public static final byte GVOD_NET_REQUEST = 0x60;
     public static final byte GVOD_NET_RESPONSE = 0x61;
     public static final byte GVOD_NET_ONEWAY = 0x62;
+    public static final byte OVERLAY_NET_REQUEST = 0x63;
+    public static final byte OVERLAY_NET_RESPONSE = 0x64;
+    public static final byte OVERLAY_NET_ONEWAY = 0x65;
 
     private static final Map<Byte, NettyAdapter> nettyAdapters = new HashMap<Byte, NettyAdapter>();
     static {
         GvodNettyAdapter.Request.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
         GvodNettyAdapter.Response.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
         GvodNettyAdapter.OneWay.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
-  
+        
+        OverlayNetAdapter.Request.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
+        OverlayNetAdapter.Response.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
+        OverlayNetAdapter.OneWay.setMsgFrameDecoder(GVoDNetFrameDecoder.class);
+        
         nettyAdapters.put(GVOD_NET_REQUEST, new GvodNettyAdapter.Request());
         nettyAdapters.put(GVOD_NET_RESPONSE, new GvodNettyAdapter.Response());
         nettyAdapters.put(GVOD_NET_ONEWAY, new GvodNettyAdapter.OneWay());
-        
+        nettyAdapters.put(OVERLAY_NET_REQUEST, new OverlayNetAdapter.Request());
+        nettyAdapters.put(OVERLAY_NET_RESPONSE, new OverlayNetAdapter.Response());
+        nettyAdapters.put(OVERLAY_NET_ONEWAY, new OverlayNetAdapter.OneWay());
     }
     
     public GVoDNetFrameDecoder() {

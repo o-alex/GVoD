@@ -30,7 +30,7 @@ import se.sics.gvod.common.util.VodDescriptor;
 import se.sics.gvod.system.connMngr.ConnMngrPort;
 import se.sics.gvod.system.connMngr.LocalVodDescriptor;
 import se.sics.gvod.system.connMngr.msg.Ready;
-import se.sics.gvod.system.downloadMngr.msg.Download;
+import se.sics.gvod.common.msg.vod.Download;
 import se.sics.gvod.system.downloadMngr.msg.DownloadControl;
 import se.sics.gvod.system.downloadMngr.msg.UpdateSelf;
 import se.sics.gvod.system.video.storage.FileMngr;
@@ -267,7 +267,7 @@ public class DownloadMngrComp extends ComponentDefinition {
     }
 
     private void schedulePeriodicUpdateSelf() {
-        long updateSelfPeriod = config.periodicUpdate; //get proper value later
+        long updateSelfPeriod = config.descriptorUpdate; //get proper value later
         SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(updateSelfPeriod, updateSelfPeriod);
         Timeout t = new UpdateSelf.UpdateTimeout(spt);
         updateSelfTId = t.getTimeoutId();

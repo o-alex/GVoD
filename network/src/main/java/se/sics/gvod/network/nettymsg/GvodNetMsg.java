@@ -26,7 +26,7 @@ import se.sics.gvod.common.msgs.MessageEncodingException;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
 import se.sics.gvod.network.GVoDNetFrameDecoder;
-import se.sics.gvod.network.gvodadapter.GVoDAdapter;
+import se.sics.gvod.network.pmadapter.GVoDAdapter;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>

@@ -26,7 +26,7 @@ import se.sics.gvod.common.msgs.MessageDecodingException;
 import se.sics.gvod.net.msgs.DirectMsg;
 import se.sics.gvod.net.msgs.RewriteableMsg;
 import se.sics.gvod.network.GVoDAdapterFactory;
-import se.sics.gvod.network.gvodadapter.GVoDAdapter;
+import se.sics.gvod.network.pmadapter.GVoDAdapter;
 import se.sics.kompics.KompicsEvent;
 
 /**

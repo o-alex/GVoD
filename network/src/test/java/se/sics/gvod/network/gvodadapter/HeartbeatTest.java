@@ -19,6 +19,7 @@
 
 package se.sics.gvod.network.gvodadapter;
 
+import se.sics.gvod.network.pmadapter.GVoDAdapter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.HashMap;
@@ -26,7 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Test;
-import se.sics.gvod.common.msg.impl.Heartbeat;
+import se.sics.gvod.common.msg.peerMngr.Heartbeat;
 import se.sics.gvod.network.GVoDAdapterFactory;
 
 /**

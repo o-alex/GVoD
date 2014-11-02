@@ -28,7 +28,7 @@ import se.sics.gvod.bootstrap.server.PeerOpManager;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.OverlaySample;
+import se.sics.gvod.common.msg.peerMngr.OverlaySample;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.Util;
 

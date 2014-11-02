@@ -29,9 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.AddOverlay;
-import se.sics.gvod.common.msg.impl.BootstrapGlobal;
-import se.sics.gvod.common.msg.impl.JoinOverlay;
+import se.sics.gvod.common.msg.peerMngr.AddOverlay;
+import se.sics.gvod.common.msg.peerMngr.BootstrapGlobal;
+import se.sics.gvod.common.msg.peerMngr.JoinOverlay;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.common.util.HashUtil;
@@ -39,9 +39,7 @@ import se.sics.gvod.croupierfake.CroupierComp;
 import se.sics.gvod.croupierfake.CroupierPort;
 import se.sics.gvod.manager.DownloadFileInfo;
 import se.sics.gvod.net.VodNetwork;
-import se.sics.gvod.network.filters.ContextOverlayFilter;
-import se.sics.gvod.network.tags.ContextTag;
-import se.sics.gvod.network.tags.OverlayTag;
+import se.sics.gvod.network.filters.OverlayFilter;
 import se.sics.gvod.system.connMngr.ConnMngrComp;
 import se.sics.gvod.system.downloadMngr.DownloadMngrComp;
 import se.sics.gvod.system.downloadMngr.DownloadMngrConfig;
@@ -222,7 +220,7 @@ public class VoDComp extends ComponentDefinition {
         connect(croupier.getNegative(Timer.class), timer);
         connect(croupier.getNegative(BootstrapClientPort.class), bootstrap);
         
-        connect(connMngr.getNegative(VodNetwork.class), network, new ContextOverlayFilter(ContextTag.VIDEO, new OverlayTag(overlayId)));
+        connect(connMngr.getNegative(VodNetwork.class), network, new OverlayFilter(overlayId));
         connect(connMngr.getNegative(Timer.class), timer);
         connect(connMngr.getNegative(CroupierPort.class), croupier.getPositive(CroupierPort.class));
 

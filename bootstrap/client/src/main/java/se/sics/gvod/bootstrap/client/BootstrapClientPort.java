@@ -18,10 +18,10 @@
  */
 package se.sics.gvod.bootstrap.client;
 
-import se.sics.gvod.common.msg.impl.AddOverlay;
-import se.sics.gvod.common.msg.impl.BootstrapGlobal;
-import se.sics.gvod.common.msg.impl.JoinOverlay;
-import se.sics.gvod.common.msg.impl.OverlaySample;
+import se.sics.gvod.common.msg.peerMngr.AddOverlay;
+import se.sics.gvod.common.msg.peerMngr.BootstrapGlobal;
+import se.sics.gvod.common.msg.peerMngr.JoinOverlay;
+import se.sics.gvod.common.msg.peerMngr.OverlaySample;
 import se.sics.kompics.PortType;
 
 /**

@@ -21,7 +21,7 @@ package se.sics.gvod.system.connMngr;
 
 import se.sics.gvod.system.connMngr.msg.Ready;
 import se.sics.gvod.system.downloadMngr.msg.UpdateSelf;
-import se.sics.gvod.system.downloadMngr.msg.Download;
+import se.sics.gvod.common.msg.vod.Download;
 import se.sics.gvod.system.downloadMngr.msg.DownloadControl;
 import se.sics.kompics.PortType;
 

@@ -19,6 +19,7 @@
 
 package se.sics.gvod.network.gvodadapter;
 
+import se.sics.gvod.network.pmadapter.GVoDAdapter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.net.InetAddress;
@@ -30,7 +31,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.JoinOverlay;
+import se.sics.gvod.common.msg.peerMngr.JoinOverlay;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;

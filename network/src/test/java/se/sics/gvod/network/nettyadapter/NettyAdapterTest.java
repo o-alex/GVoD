@@ -27,14 +27,14 @@ import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Test;
 import se.sics.gvod.address.Address;
-import se.sics.gvod.common.msg.impl.AddOverlay;
-import se.sics.gvod.common.msg.impl.BootstrapGlobal;
+import se.sics.gvod.common.msg.peerMngr.AddOverlay;
+import se.sics.gvod.common.msg.peerMngr.BootstrapGlobal;
 import se.sics.gvod.common.msgs.MessageEncodingException;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
 import se.sics.gvod.network.GVoDNetFrameDecoder;
-import se.sics.gvod.network.gvodadapter.GVoDAdapter;
+import se.sics.gvod.network.pmadapter.GVoDAdapter;
 import se.sics.gvod.network.nettymsg.GvodNetMsg;
 
 /**

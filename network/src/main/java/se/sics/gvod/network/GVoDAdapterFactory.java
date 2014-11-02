@@ -20,17 +20,17 @@ package se.sics.gvod.network;
 
 import java.util.HashMap;
 import java.util.Map;
-import se.sics.gvod.common.msg.impl.AddOverlay;
-import se.sics.gvod.common.msg.impl.BootstrapGlobal;
-import se.sics.gvod.common.msg.impl.Heartbeat;
-import se.sics.gvod.common.msg.impl.JoinOverlay;
-import se.sics.gvod.common.msg.impl.OverlaySample;
-import se.sics.gvod.network.gvodadapter.AddOverlayAdapter;
-import se.sics.gvod.network.gvodadapter.BootstrapGlobalAdapter;
-import se.sics.gvod.network.gvodadapter.GVoDAdapter;
-import se.sics.gvod.network.gvodadapter.HeartbeatAdapter;
-import se.sics.gvod.network.gvodadapter.JoinOverlayAdapter;
-import se.sics.gvod.network.gvodadapter.OverlaySampleAdapter;
+import se.sics.gvod.common.msg.peerMngr.AddOverlay;
+import se.sics.gvod.common.msg.peerMngr.BootstrapGlobal;
+import se.sics.gvod.common.msg.peerMngr.Heartbeat;
+import se.sics.gvod.common.msg.peerMngr.JoinOverlay;
+import se.sics.gvod.common.msg.peerMngr.OverlaySample;
+import se.sics.gvod.network.pmadapter.AddOverlayAdapter;
+import se.sics.gvod.network.pmadapter.BootstrapGlobalAdapter;
+import se.sics.gvod.network.pmadapter.GVoDAdapter;
+import se.sics.gvod.network.pmadapter.HeartbeatAdapter;
+import se.sics.gvod.network.pmadapter.JoinOverlayAdapter;
+import se.sics.gvod.network.pmadapter.OverlaySampleAdapter;
 import se.sics.kompics.KompicsEvent;
 
 /**

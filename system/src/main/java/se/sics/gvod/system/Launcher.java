@@ -119,7 +119,7 @@ public class Launcher extends ComponentDefinition {
 
             trigger(Start.event, peerManager.control());
             trigger(Start.event, manager.control());
-//        phase4();
+            phase4();
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
@@ -127,7 +127,7 @@ public class Launcher extends ComponentDefinition {
 
     private void phase4() {
         String videoName = "video1.mp4";
-        String libDir = "/Users/Alex/Documents/Work/Code/GVoD/video-catalog";
+        String libDir = "/Users/Alex/Documents/Work/Code/GVoD/video-catalog/node1";
         log.info("{} libDir:{}", selfAddress, libDir);
         try {
             File f = new File(libDir);
