@@ -18,19 +18,17 @@
  */
 package se.sics.gvod.network.serializers;
 
-import se.sics.gvod.common.newmsg.NetworkMsg;
-
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public interface SerializationContext {
     public <E extends Object> SerializationContext registerSerializer(String serializerName, Serializer<E> serializer) throws DuplicateException;
-    public SerializationContext registerMessageCode(Class<? extends NetworkMsg> messageClass, byte messageCode) throws DuplicateException;
+    public SerializationContext registerMessageCode(Class<?> messageClass, byte messageCode) throws DuplicateException;
     public SerializationContext registerClass(String serializerName, Class<?> serializedClass) throws DuplicateException, MissingException;
     
     public <E extends Object> Serializer<E> getSerializer(Class<E> serializedClass) throws MissingException;
-    public Class<? extends NetworkMsg> getMessageClass(Byte mcode) throws MissingException;
-    public Byte getOpcode(Class<? extends NetworkMsg> messageClass) throws MissingException;
+    public Class<?> getMessageClass(Byte mcode) throws MissingException;
+    public Byte getOpcode(Class<?> messageClass) throws MissingException;
     
     public static class DuplicateException extends Exception {
         public DuplicateException() {

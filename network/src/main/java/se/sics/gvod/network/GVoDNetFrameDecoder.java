@@ -22,13 +22,29 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import se.sics.gvod.common.msg.ReqStatus;
+import se.sics.gvod.common.msg.vod.Connection;
+import se.sics.gvod.common.msg.vod.Download;
 import se.sics.gvod.common.msgs.MessageDecodingException;
+import se.sics.gvod.common.util.VodDescriptor;
 import se.sics.gvod.net.BaseMsgFrameDecoder;
+import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.msgs.RewriteableMsg;
 import se.sics.gvod.network.nettyadapter.GvodNettyAdapter;
 import se.sics.gvod.network.nettyadapter.NettyAdapter;
 import se.sics.gvod.network.nettyadapter.OverlayNetAdapter;
 import se.sics.gvod.network.nettymsg.OverlayNetMsg;
+import se.sics.gvod.network.serializers.SerializationContext;
+import se.sics.gvod.network.serializers.SerializationContextImpl;
+import se.sics.gvod.network.serializers.util.ReqStatusSerializer;
+import se.sics.gvod.network.serializers.util.UUIDSerializer;
+import se.sics.gvod.network.serializers.util.VodAddressSerializer;
+import se.sics.gvod.network.serializers.util.VodDescriptorSerializer;
+import se.sics.gvod.network.serializers.vod.ConnectionSerializer;
+import se.sics.gvod.network.serializers.vod.DownloadSerializer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -61,6 +77,45 @@ public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
         nettyAdapters.put(OVERLAY_NET_REQUEST, new OverlayNetAdapter.Request());
         nettyAdapters.put(OVERLAY_NET_RESPONSE, new OverlayNetAdapter.Response());
         nettyAdapters.put(OVERLAY_NET_ONEWAY, new OverlayNetAdapter.OneWay());
+    }
+    
+    private static final SerializationContext context = new SerializationContextImpl();
+    static {
+        try {
+            context.registerSerializer("request-status", new ReqStatusSerializer());
+            context.registerClass("request-status", ReqStatus.class);
+            context.registerSerializer("uuid", new UUIDSerializer());
+            context.registerClass("uuid", UUID.class);
+            context.registerSerializer("vod-address", new VodAddressSerializer());
+            context.registerClass("vod-address", VodAddress.class);
+            context.registerSerializer("vod-descriptor", new VodDescriptorSerializer());
+            context.registerClass("vod-descriptor", VodDescriptor.class);
+            
+            //payloads - with opcodes
+            context.registerSerializer("conn-req", new ConnectionSerializer.Request());
+            context.registerClass("conn-req", Connection.Request.class);
+            context.registerMessageCode(Connection.Request.class, (byte)0x01);
+            context.registerSerializer("conn-resp", new ConnectionSerializer.Response());
+            context.registerClass("conn-resp", Connection.Response.class);
+            context.registerMessageCode(Connection.Response.class, (byte)0x02);
+            context.registerSerializer("conn-update", new ConnectionSerializer.Update());
+            context.registerClass("conn-update", Connection.Update.class);
+            context.registerMessageCode(Connection.Update.class, (byte)0x03);
+            context.registerSerializer("conn-close", new ConnectionSerializer.Close());
+            context.registerClass("conn-close", Connection.Close.class);
+            context.registerMessageCode(Connection.Close.class, (byte)0x04);
+            
+            context.registerSerializer("down-req", new DownloadSerializer.Request());
+            context.registerClass("down-req", Download.Request.class);
+            context.registerMessageCode(Download.Request.class, (byte)0x05);
+            context.registerSerializer("down-resp", new DownloadSerializer.Response());
+            context.registerClass("down-resp", Download.Response.class);
+            context.registerMessageCode(Download.Response.class, (byte)0x06);
+        } catch (SerializationContext.DuplicateException ex) {
+            throw new RuntimeException(ex);
+        } catch (SerializationContext.MissingException ex) {
+           throw new RuntimeException(ex);
+        }
     }
     
     public GVoDNetFrameDecoder() {

@@ -71,6 +71,7 @@ public class OverlayNetMsg {
         public int getSize() {
             try {
                 int size = getHeaderSize();
+                size += Byte.SIZE / 8; //payload code
                 size += Integer.SIZE / 8; //overlayId
                 Serializer<E> serializer = (Serializer<E>) context.getSerializer(payload.getClass());
                 size += serializer.getSize(context, payload);
@@ -91,6 +92,7 @@ public class OverlayNetMsg {
         public ByteBuf toByteArray() throws MessageEncodingException {
             try {
                 ByteBuf buffer = createChannelBufferWithHeader();
+                buffer.writeByte(context.getOpcode(payload.getClass()));
                 buffer.writeInt(overlayId);
                 Serializer<E> serializer = (Serializer<E>) context.getSerializer(payload.getClass());
                 serializer.encode(context, buffer, payload);
@@ -158,6 +160,7 @@ public class OverlayNetMsg {
         public int getSize() {
             try {
                 int size = getHeaderSize();
+                size += Byte.SIZE / 8; //payload code
                 size += Integer.SIZE / 8; //overlayId
                 Serializer<E> serializer = (Serializer<E>) context.getSerializer(payload.getClass());
                 size += serializer.getSize(context, payload);
@@ -179,6 +182,7 @@ public class OverlayNetMsg {
         public ByteBuf toByteArray() throws MessageEncodingException {
             try {
                 ByteBuf buffer = createChannelBufferWithHeader();
+                buffer.writeByte(context.getOpcode(payload.getClass()));
                 buffer.writeInt(overlayId);
                 Serializer<E> serializer = (Serializer<E>) context.getSerializer(payload.getClass());
                 serializer.encode(context, buffer, payload);
@@ -243,6 +247,7 @@ public class OverlayNetMsg {
         public int getSize() {
             try {
                 int size = getHeaderSize();
+                size += Byte.SIZE / 8; //payload code
                 size += Integer.SIZE/8; //overlayId
                 Serializer<E> serializer = (Serializer<E>) context.getSerializer(payload.getClass());
                 size += serializer.getSize(context, payload);
@@ -263,6 +268,7 @@ public class OverlayNetMsg {
         public ByteBuf toByteArray() throws MessageEncodingException {
             try {
                 ByteBuf buffer = createChannelBufferWithHeader();
+                buffer.writeByte(context.getOpcode(payload.getClass()));
                 buffer.writeInt(overlayId);
                 Serializer<E> serializer = (Serializer<E>) context.getSerializer(payload.getClass());
                 serializer.encode(context, buffer, payload);

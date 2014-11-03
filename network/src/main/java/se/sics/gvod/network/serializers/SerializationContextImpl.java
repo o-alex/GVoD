@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import se.sics.gvod.common.newmsg.NetworkMsg;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -35,14 +34,14 @@ public class SerializationContextImpl implements SerializationContext {
     private final ReentrantReadWriteLock rwLock;
 
     private final Map<String, Serializer<?>> serializers;
-    private final Map<Class<? extends NetworkMsg>, Byte> classToMcode;
+    private final Map<Class<?>, Byte> classToMcode;
     private final Map<Class<?>, Serializer<?>> classToSerializer;
 
     public SerializationContextImpl() {
         this.rwLock = new ReentrantReadWriteLock();
 
         this.serializers = new HashMap<String, Serializer<?>>();
-        this.classToMcode = new HashMap<Class<? extends NetworkMsg>, Byte>();
+        this.classToMcode = new HashMap<Class<?>, Byte>();
         this.classToSerializer = new HashMap<Class<?>, Serializer<?>>();
     }
 
@@ -61,7 +60,7 @@ public class SerializationContextImpl implements SerializationContext {
     }
 
     @Override
-    public SerializationContext registerMessageCode(Class<? extends NetworkMsg> messageClass, byte messageCode) throws DuplicateException {
+    public SerializationContext registerMessageCode(Class<?> messageClass, byte messageCode) throws DuplicateException {
         rwLock.writeLock().lock();
         try {
             if (classToMcode.containsKey(messageCode)) {
@@ -93,12 +92,12 @@ public class SerializationContextImpl implements SerializationContext {
 
     //TODO improve - the iterator will slow performance quite a bit
     @Override
-    public Class<? extends NetworkMsg> getMessageClass(Byte mcode) throws MissingException {
+    public Class<?> getMessageClass(Byte mcode) throws MissingException {
         rwLock.readLock().lock();
         try {
-            Iterator<Map.Entry<Class<? extends NetworkMsg>, Byte>> it = classToMcode.entrySet().iterator();
+            Iterator<Map.Entry<Class<?>, Byte>> it = classToMcode.entrySet().iterator();
             while (it.hasNext()) {
-                Map.Entry<Class<? extends NetworkMsg>, Byte> e = it.next();
+                Map.Entry<Class<?>, Byte> e = it.next();
                 if (e.getValue().equals(mcode)) {
                     return e.getKey();
                 }
@@ -110,7 +109,7 @@ public class SerializationContextImpl implements SerializationContext {
     }
 
     @Override
-    public Byte getOpcode(Class<? extends NetworkMsg> messageClass) throws MissingException {
+    public Byte getOpcode(Class<?> messageClass) throws MissingException {
         rwLock.readLock().lock();
         try {
             if (classToMcode.containsKey(messageClass)) {

@@ -16,10 +16,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.network.nettyadapter;
 
 import io.netty.buffer.ByteBuf;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msgs.DirectMsgNettyFactory;
 import se.sics.gvod.common.msgs.MessageDecodingException;
@@ -29,12 +30,21 @@ import se.sics.gvod.network.GVoDAdapterFactory;
 import se.sics.gvod.network.pmadapter.GVoDAdapter;
 import se.sics.gvod.network.nettymsg.GvodNetMsg;
 import se.sics.gvod.network.nettymsg.OverlayNetMsg;
+import se.sics.gvod.network.serializers.SerializationContext;
+import se.sics.gvod.network.serializers.Serializer;
 import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class OverlayNetAdapter {
+
+    private static SerializationContext context;
+    
+    public void setContext(SerializationContext context) {
+        this.context = context;
+    }
+
     public static class Request extends DirectMsgNettyFactory.Request implements NettyAdapter {
 
         //**********NettyAdapter
@@ -55,10 +65,17 @@ public class OverlayNetAdapter {
         //**********DirectMsgNettyFactory.Request
         @Override
         protected DirectMsg process(ByteBuf buffer) throws MessageDecodingException {
-            byte opCode = buffer.readByte();
-            int overlay = buffer.readInt();
-            GvodMsg.Request payload = (GvodMsg.Request)GVoDAdapterFactory.getAdapter(opCode).decode(buffer);
-            return new OverlayNetMsg.Request(vodSrc, vodDest, overlay, payload);
+            try {
+                byte opCode = buffer.readByte();
+                int overlay = buffer.readInt();
+                Class<?> payloadClass = context.getMessageClass(opCode);
+                GvodMsg.Request payload = (GvodMsg.Request) context.getSerializer(payloadClass).decode(context, buffer);
+                return new OverlayNetMsg.Request(vodSrc, vodDest, overlay, payload);
+            } catch (SerializationContext.MissingException ex) {
+                throw new MessageDecodingException(ex);
+            } catch (Serializer.SerializerException ex) {
+                throw new MessageDecodingException(ex);
+            }
         }
     }
 
@@ -82,13 +99,20 @@ public class OverlayNetAdapter {
         //**********DirectMsgNettyFactory.Request
         @Override
         protected DirectMsg process(ByteBuf buffer) throws MessageDecodingException {
-            byte opCode = buffer.readByte();
-            int overlay = buffer.readInt();
-            GvodMsg.Response payload = (GvodMsg.Response) GVoDAdapterFactory.getAdapter(opCode).decode(buffer);
-            return new OverlayNetMsg.Response(vodSrc, vodDest, overlay, payload);
+            try {
+                byte opCode = buffer.readByte();
+                int overlay = buffer.readInt();
+                Class<?> payloadClass = context.getMessageClass(opCode);
+                GvodMsg.Response payload = (GvodMsg.Response) context.getSerializer(payloadClass).decode(context, buffer);
+                return new OverlayNetMsg.Response(vodSrc, vodDest, overlay, payload);
+            } catch (SerializationContext.MissingException ex) {
+                throw new MessageDecodingException(ex);
+            } catch (Serializer.SerializerException ex) {
+                throw new MessageDecodingException(ex);
+            }
         }
     }
-    
+
     public static class OneWay extends DirectMsgNettyFactory.Oneway implements NettyAdapter {
 
         //**********NettyAdapter
@@ -109,10 +133,17 @@ public class OverlayNetAdapter {
         //**********DirectMsgNettyFactory.Request
         @Override
         protected DirectMsg process(ByteBuf buffer) throws MessageDecodingException {
-            byte opCode = buffer.readByte();
-            int overlay = buffer.readInt();
-            GvodMsg.OneWay payload = (GvodMsg.OneWay) GVoDAdapterFactory.getAdapter(opCode).decode(buffer);
-            return new OverlayNetMsg.OneWay(vodSrc, vodDest, overlay, payload);
+            try {
+                byte opCode = buffer.readByte();
+                int overlay = buffer.readInt();
+                Class<?> payloadClass = context.getMessageClass(opCode);
+                GvodMsg.OneWay payload = (GvodMsg.OneWay) context.getSerializer(payloadClass).decode(context, buffer);
+                return new OverlayNetMsg.OneWay(vodSrc, vodDest, overlay, payload);
+            } catch (SerializationContext.MissingException ex) {
+                throw new MessageDecodingException(ex);
+            } catch (Serializer.SerializerException ex) {
+                throw new MessageDecodingException(ex);
+            }
         }
     }
 }
