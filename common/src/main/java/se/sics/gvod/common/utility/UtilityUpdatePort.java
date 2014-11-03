@@ -17,24 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.client.utility;
+package se.sics.gvod.common.utility;
 
-import se.sics.kompics.KompicsEvent;
+import se.sics.kompics.PortType;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class UtilityUpdate implements KompicsEvent {
-    public final int overlayId;
-    public final int downloadPos;
-    
-    public UtilityUpdate(int overlayId, int downloadPos) {
-        this.overlayId = overlayId;
-        this.downloadPos = downloadPos;
-    }
-    
-    @Override
-    public String toString() {
-        return "UtilityUpdate " + overlayId + " utility:" + downloadPos;
+public class UtilityUpdatePort extends PortType {
+    {
+        indication(UtilityUpdate.class);
     }
 }

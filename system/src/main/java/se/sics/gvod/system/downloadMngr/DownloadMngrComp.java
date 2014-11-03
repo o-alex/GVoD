@@ -31,8 +31,9 @@ import se.sics.gvod.system.connMngr.ConnMngrPort;
 import se.sics.gvod.system.connMngr.LocalVodDescriptor;
 import se.sics.gvod.system.connMngr.msg.Ready;
 import se.sics.gvod.common.msg.vod.Download;
+import se.sics.gvod.common.utility.UtilityUpdate;
+import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.system.downloadMngr.msg.DownloadControl;
-import se.sics.gvod.system.downloadMngr.msg.UpdateSelf;
 import se.sics.gvod.system.video.storage.FileMngr;
 import se.sics.gvod.timer.CancelPeriodicTimeout;
 import se.sics.gvod.timer.CancelTimeout;
@@ -44,6 +45,7 @@ import se.sics.gvod.timer.Timer;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
+import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
 
@@ -54,6 +56,7 @@ public class DownloadMngrComp extends ComponentDefinition {
 
     private static final Logger log = LoggerFactory.getLogger(DownloadMngrComp.class);
 
+    private Negative<UtilityUpdatePort> utilityUpdate = provides(UtilityUpdatePort.class);
     private Positive<Timer> timer = requires(Timer.class);
     private Positive<ConnMngrPort> connMngr = requires(ConnMngrPort.class);
 
@@ -89,11 +92,9 @@ public class DownloadMngrComp extends ComponentDefinition {
         public void handle(Start event) {
             log.trace("{} starting...", config.getSelf());
 
-            VodDescriptor newSelf = new VodDescriptor(fileMngr.contiguousStart());
-            LocalVodDescriptor localSelf = new LocalVodDescriptor(newSelf, downloading);
-
-            log.info("{} download at piece: {}", config.getSelf(), newSelf.downloadPos);
-            trigger(new UpdateSelf(UUID.randomUUID(), localSelf), connMngr);
+            int downloadPos = fileMngr.contiguousStart();
+            log.info("{} download at piece: {}", config.getSelf(), downloadPos);
+            trigger(new UtilityUpdate(config.overlayId, downloading, downloadPos), utilityUpdate);
 
             subscribe(handleConnReady, connMngr);
         }
@@ -222,16 +223,15 @@ public class DownloadMngrComp extends ComponentDefinition {
 
     };
 
-    private Handler<UpdateSelf.UpdateTimeout> handleUpdateSelf = new Handler<UpdateSelf.UpdateTimeout>() {
+    private Handler<UtilityUpdate.UpdateTimeout> handleUpdateSelf = new Handler<UtilityUpdate.UpdateTimeout>() {
 
         @Override
-        public void handle(UpdateSelf.UpdateTimeout event) {
+        public void handle(UtilityUpdate.UpdateTimeout event) {
             log.trace("{} handle {}", config.getSelf(), event);
 
-            VodDescriptor newSelf = new VodDescriptor(fileMngr.contiguousStart());
-            LocalVodDescriptor localSelf = new LocalVodDescriptor(newSelf, downloading);
-            log.info("{} download at piece: {}", config.getSelf(), newSelf.downloadPos);
-            trigger(new UpdateSelf(UUID.randomUUID(), localSelf), connMngr);
+            int downloadPos = fileMngr.contiguousStart();
+            log.info("{} download at piece: {}", config.getSelf(), downloadPos);
+            trigger(new UtilityUpdate(config.overlayId, downloading, downloadPos), utilityUpdate);
         }
     };
 
@@ -269,7 +269,7 @@ public class DownloadMngrComp extends ComponentDefinition {
     private void schedulePeriodicUpdateSelf() {
         long updateSelfPeriod = config.descriptorUpdate; //get proper value later
         SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(updateSelfPeriod, updateSelfPeriod);
-        Timeout t = new UpdateSelf.UpdateTimeout(spt);
+        Timeout t = new UtilityUpdate.UpdateTimeout(spt);
         updateSelfTId = t.getTimeoutId();
         spt.setTimeoutEvent(t);
         log.debug("{} scheduling periodic timeout {}", config.getSelf(), t);
@@ -288,9 +288,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         downloading = false;
 
         //one last update
-        VodDescriptor newSelf = new VodDescriptor(fileMngr.contiguousStart());
-        LocalVodDescriptor localSelf = new LocalVodDescriptor(newSelf, downloading);
-        trigger(new UpdateSelf(UUID.randomUUID(), localSelf), connMngr);
+        trigger(new UtilityUpdate(config.overlayId, downloading, fileMngr.contiguousStart()), utilityUpdate);
 
         //cancel timeouts
         cancelSpeedUp();

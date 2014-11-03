@@ -17,35 +17,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.system.downloadMngr.msg;
+package se.sics.gvod.common.utility;
 
-import java.util.UUID;
-import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.system.connMngr.LocalVodDescriptor;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;
 import se.sics.gvod.timer.Timeout;
+import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class UpdateSelf extends GvodMsg.OneWay {
+public class UtilityUpdate implements KompicsEvent {
+    public final int overlayId;
+    public final boolean downloading;
+    public final int downloadPos;
     
-    public final LocalVodDescriptor selfDesc;
-    
-    public UpdateSelf(UUID id, LocalVodDescriptor selfDesc) {
-        super(id);
-        this.selfDesc = selfDesc;
-    }
-
-    @Override
-    public UpdateSelf copy() {
-        return new UpdateSelf(id, selfDesc);
+    public UtilityUpdate(int overlayId, boolean downloading, int downloadPos) {
+        this.overlayId = overlayId;
+        this.downloading = downloading;
+        this.downloadPos = downloadPos;
     }
     
     @Override
     public String toString() {
-        return "UpdateSelfDesc<" + id + ">";
+        return "UtilityUpdate " + overlayId + " utility:" + downloadPos;
     }
+    
     
     public static class UpdateTimeout extends Timeout {
         public UpdateTimeout(SchedulePeriodicTimeout spt) {

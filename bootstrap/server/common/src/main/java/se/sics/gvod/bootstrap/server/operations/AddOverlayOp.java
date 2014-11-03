@@ -36,8 +36,7 @@ import se.sics.gvod.network.Util;
 public class AddOverlayOp implements Operation {
 
     private static enum Phase {
-
-        CHECK_OVERLAY, JOIN_OVERLAY, ADD_FILE_METADATA
+        CHECK_OVERLAY, ADD_FILE_METADATA
     }
 
     private final PeerOpManager opMngr;
@@ -67,22 +66,14 @@ public class AddOverlayOp implements Operation {
         if (phase == Phase.CHECK_OVERLAY && peerResp instanceof PMGetOverlaySample.Response) {
             PMGetOverlaySample.Response phase1Resp = (PMGetOverlaySample.Response) peerResp;
             if (phase1Resp.status == ReqStatus.SUCCESS) {
-                phase = Phase.JOIN_OVERLAY;
-                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), req.overlayId, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
-            } else {
-                opMngr.finish(getId(), src, req.fail());
-            }
-        } else if (phase == Phase.JOIN_OVERLAY && peerResp instanceof PMJoinOverlay.Response) {
-            PMJoinOverlay.Response phase2Resp = (PMJoinOverlay.Response) peerResp;
-            if (phase2Resp.status == ReqStatus.SUCCESS) {
                 phase = Phase.ADD_FILE_METADATA;
                 opMngr.sendPeerManagerReq(getId(), new PMAddFileMetadata.Request(UUID.randomUUID(), req.overlayId, Util.encodeFileMeta(Unpooled.buffer(), req.fileMeta).array()));
             } else {
                 opMngr.finish(getId(), src, req.fail());
             }
         } else if (phase == Phase.ADD_FILE_METADATA && peerResp instanceof PMAddFileMetadata.Response) {
-            PMAddFileMetadata.Response phase3Resp = (PMAddFileMetadata.Response) peerResp;
-            if (phase3Resp.status == ReqStatus.SUCCESS) {
+            PMAddFileMetadata.Response phase2Resp = (PMAddFileMetadata.Response) peerResp;
+            if (phase2Resp.status == ReqStatus.SUCCESS) {
                 opMngr.finish(getId(), src, req.success());
             } else {
                 opMngr.finish(getId(), src, req.fail());

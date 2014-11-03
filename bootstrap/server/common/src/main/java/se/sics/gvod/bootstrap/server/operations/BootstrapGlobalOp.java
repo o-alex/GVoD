@@ -38,7 +38,7 @@ public class BootstrapGlobalOp implements Operation {
 
     private static enum Phase {
 
-        GET_SYSTEM_SAMPLE, JOIN_SYSTEM
+        GET_SYSTEM_SAMPLE
     }
 
     private final PeerOpManager opMngr;
@@ -69,15 +69,8 @@ public class BootstrapGlobalOp implements Operation {
         if (phase == Phase.GET_SYSTEM_SAMPLE && peerResp instanceof PMGetOverlaySample.Response) {
             PMGetOverlaySample.Response phase1Resp = (PMGetOverlaySample.Response) peerResp;
             if (phase1Resp.status == ReqStatus.SUCCESS) {
-                phase = Phase.JOIN_SYSTEM;
                 opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
                 resp = req.success(processOverlaySample(phase1Resp.overlaySample));
-            } else {
-                opMngr.finish(getId(), src, req.fail());
-            }
-        } else if (phase == Phase.JOIN_SYSTEM && peerResp instanceof PMJoinOverlay.Response) {
-            PMJoinOverlay.Response phase2Resp = (PMJoinOverlay.Response) peerResp;
-            if (phase2Resp.status == ReqStatus.SUCCESS) {
                 opMngr.finish(getId(), src, resp);
             } else {
                 opMngr.finish(getId(), src, req.fail());

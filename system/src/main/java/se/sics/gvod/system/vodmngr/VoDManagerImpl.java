@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.manager.FileStatus;
 import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.system.vod.VoDPort;
@@ -43,6 +44,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     private static final Logger log = LoggerFactory.getLogger(VoDManager.class);
 
     private final Positive<VoDPort> vodPort = requires(VoDPort.class);
+    private final Positive<UtilityUpdatePort> utilityPort = requires(UtilityUpdatePort.class);
     
     private final VoDManagerConfig config;
     

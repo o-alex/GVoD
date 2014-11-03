@@ -44,25 +44,17 @@ public class CaracalKeyFactory {
     private final static byte fileMetaKey = 0x02;
 
     public static KeyRange getOverlayRange(int overlayId) {
-        if (overlayId == Integer.MAX_VALUE) {
-            ByteBuffer startKey = ByteBuffer.allocate(sizeofOverlayKeyPrefix());
-            startKey.put(prefix);
-            startKey.putInt(overlayId);
-            startKey.put(peerKey);
-            return new KeyRange(KeyRange.Bound.CLOSED, new Key(startKey), Key.INF, KeyRange.Bound.OPEN);
-        } else {
-            ByteBuffer startKey = ByteBuffer.allocate(sizeofOverlayKeyPrefix());
-            startKey.put(prefix);
-            startKey.putInt(overlayId);
-            startKey.put(peerKey);
-            ByteBuffer endKey = ByteBuffer.allocate(sizeofOverlayKeyPrefix());
-            endKey.put(prefix);
-            endKey.putInt(overlayId + 1);
-            endKey.put(peerKey);
-            return new KeyRange(KeyRange.Bound.CLOSED, new Key(startKey), new Key(endKey), KeyRange.Bound.OPEN);
-        }
+        ByteBuffer startKey = ByteBuffer.allocate(sizeofOverlayKeyPrefix());
+        startKey.put(prefix);
+        startKey.putInt(overlayId);
+        startKey.put(peerKey);
+        ByteBuffer endKey = ByteBuffer.allocate(sizeofOverlayKeyPrefix());
+        endKey.put(prefix);
+        endKey.putInt(overlayId);
+        endKey.put(fileMetaKey);
+        return new KeyRange(KeyRange.Bound.CLOSED, new Key(startKey), new Key(endKey), KeyRange.Bound.OPEN);
     }
-    
+
     public static Key getOverlayPeerKey(int overlayId, int nodeId) {
         ByteBuffer oKey = ByteBuffer.allocate(sizeofOverlayPeerKey());
         oKey.put(prefix);
@@ -71,7 +63,7 @@ public class CaracalKeyFactory {
         oKey.putInt(nodeId);
         return new Key(oKey);
     }
-    
+
     public static Key getFileMetadataKey(int overlayId) {
         ByteBuffer byteKey = ByteBuffer.allocate(sizeofOverlayKeyPrefix());
         byteKey.put(prefix);
@@ -79,7 +71,7 @@ public class CaracalKeyFactory {
         byteKey.put(fileMetaKey);
         return new Key(byteKey);
     }
-    
+
     private static int sizeofOverlayKeyPrefix() {
         int size = 0;
         size += prefix.length;
@@ -87,14 +79,14 @@ public class CaracalKeyFactory {
         size += Byte.BYTES; //key type = overlay peer key
         return size;
     }
-    
+
     private static int sizeofOverlayPeerKey() {
         int size = 0;
         size += sizeofOverlayKeyPrefix();
         size += Integer.BYTES; //nodeId;
         return size;
     }
-    
+
     public static class KeyException extends Exception {
 
         public KeyException(String message) {

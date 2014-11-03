@@ -112,7 +112,7 @@ public class SerializationContextImpl implements SerializationContext {
     public Byte getOpcode(Class<?> messageClass) throws MissingException {
         rwLock.readLock().lock();
         try {
-            if (classToMcode.containsKey(messageClass)) {
+            if (!classToMcode.containsKey(messageClass)) {
                 throw new MissingException();
             }
             return classToMcode.get(messageClass);

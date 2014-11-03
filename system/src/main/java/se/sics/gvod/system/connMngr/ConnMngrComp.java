@@ -36,8 +36,9 @@ import se.sics.gvod.common.util.VodDescriptor;
 import se.sics.gvod.network.nettymsg.OverlayNetMsg;
 import se.sics.gvod.common.msg.vod.Connection;
 import se.sics.gvod.system.connMngr.msg.Ready;
-import se.sics.gvod.system.downloadMngr.msg.UpdateSelf;
 import se.sics.gvod.common.msg.vod.Download;
+import se.sics.gvod.common.utility.UtilityUpdate;
+import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.system.downloadMngr.msg.DownloadControl;
 import se.sics.gvod.timer.CancelTimeout;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;
@@ -62,7 +63,8 @@ public class ConnMngrComp extends ComponentDefinition {
     private Positive<VodNetwork> network = requires(VodNetwork.class);
     private Positive<Timer> timer = requires(Timer.class);
     private Positive<CroupierPort> croupier = requires(CroupierPort.class);
-
+    private Positive<UtilityUpdatePort> utilityUpdate = requires(UtilityUpdatePort.class);
+    
     private final ConnMngrConfig config;
     private final MsgProcessor msgProc;
 
@@ -92,21 +94,21 @@ public class ConnMngrComp extends ComponentDefinition {
         this.pendingUploadReq = new HashMap<Integer, Set<VodAddress>>();
         this.ready = false;
 
-        subscribe(handleUpdateSelf, myPort);
+        subscribe(handleUpdateUtility, utilityUpdate);
     }
 
-    private Handler<UpdateSelf> handleUpdateSelf = new Handler<UpdateSelf>() {
+    private Handler<UtilityUpdate> handleUpdateUtility = new Handler<UtilityUpdate>() {
 
         @Override
-        public void handle(UpdateSelf event) {
+        public void handle(UtilityUpdate event) {
             log.trace("{} updating self descriptor", config.getSelf(), selfDesc);
 
             if (selfDesc == null) {
-                selfDesc = event.selfDesc;
+                selfDesc = new LocalVodDescriptor(new VodDescriptor(event.downloadPos), event.downloading);
                 start();
             } else {
 
-                if (selfDesc.downloading && !event.selfDesc.downloading) {
+                if (selfDesc.downloading && !event.downloading) {
                     log.debug("{} completed - closing download connections", config.getSelf());
                     for (VodAddress partner : uploadersConn.keySet()) {
                         Connection.Close cl = new Connection.Close(UUID.randomUUID());
@@ -132,7 +134,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
                     pendingDownloads = null;
                 }
-                selfDesc = event.selfDesc;
+                selfDesc = new LocalVodDescriptor(new VodDescriptor(event.downloadPos), event.downloading);
             }
         }
     };

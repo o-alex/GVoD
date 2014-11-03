@@ -86,7 +86,7 @@ public class CroupierComp extends ComponentDefinition {
 
         @Override
         public void handle(OverlaySample.Response resp) {
-            log.debug("received sample");
+            log.debug("received overlay {} sample {}", resp.overlayId, resp.overlaySample);
             
             if(resp.status != ReqStatus.SUCCESS) {
                 log.warn("corrupted sample");

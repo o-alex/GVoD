@@ -27,6 +27,7 @@ import se.sics.gvod.bootstrap.client.BootstrapClientPort;
 import se.sics.gvod.bootstrap.server.BootstrapServerComp;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
 import se.sics.gvod.common.util.GVoDConfigException;
+import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.net.VodAddress.NatType;
 import se.sics.gvod.net.VodNetwork;
@@ -87,6 +88,9 @@ public class HostManagerComp extends ComponentDefinition {
             connect(vod.getNegative(Timer.class), timer);
             connect(bootstrapClient.getNegative(VodNetwork.class), network);
             connect(bootstrapClient.getNegative(Timer.class), timer);
+            
+            connect(bootstrapClient.getNegative(UtilityUpdatePort.class), vod.getPositive(UtilityUpdatePort.class));
+            connect(vodMngr.getNegative(UtilityUpdatePort.class), vod.getPositive(UtilityUpdatePort.class));
 
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);

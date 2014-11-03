@@ -35,6 +35,7 @@ import se.sics.gvod.common.msg.peerMngr.JoinOverlay;
 import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.common.util.HashUtil;
+import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.croupierfake.CroupierComp;
 import se.sics.gvod.croupierfake.CroupierPort;
 import se.sics.gvod.net.VodNetwork;
@@ -71,9 +72,11 @@ public class VoDComp extends ComponentDefinition {
 
     private static final Logger log = LoggerFactory.getLogger(VoDComp.class);
 
+    Negative<UtilityUpdatePort> utilityUpdate = provides(UtilityUpdatePort.class);
     Positive<Timer> timer = requires(Timer.class);
     Positive<VodNetwork> network = requires(VodNetwork.class);
     Positive<BootstrapClientPort> bootstrap = requires(BootstrapClientPort.class);
+    
     Negative<VoDPort> myPort = provides(VoDPort.class);
 
     private final VoDConfig config;
@@ -215,6 +218,8 @@ public class VoDComp extends ComponentDefinition {
         connect(downloadMngr.getNegative(Timer.class), timer);
         connect(downloadMngr.getNegative(ConnMngrPort.class), connMngr.getPositive(ConnMngrPort.class));
         
+        connect(connMngr.getNegative(UtilityUpdatePort.class), downloadMngr.getPositive(UtilityUpdatePort.class));
+        connect(utilityUpdate, downloadMngr.getPositive(UtilityUpdatePort.class));
         
         trigger(Start.event, downloadMngr.control());
         trigger(Start.event, connMngr.control());

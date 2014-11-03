@@ -27,8 +27,8 @@ import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.sics.gvod.bootstrap.client.utility.UtilityUpdate;
-import se.sics.gvod.bootstrap.client.utility.UtilityUpdatePort;
+import se.sics.gvod.common.utility.UtilityUpdate;
+import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.AddOverlay;
@@ -56,10 +56,10 @@ public class BootstrapClientComp extends ComponentDefinition {
 
     private static final Logger log = LoggerFactory.getLogger(BootstrapClientComp.class);
 
+    private Negative<BootstrapClientPort> myPort = provides(BootstrapClientPort.class);
     private Positive<VodNetwork> network = requires(VodNetwork.class);
     private Positive<Timer> timer = requires(Timer.class);
-    private Negative<BootstrapClientPort> myPort = provides(BootstrapClientPort.class);
-    private Negative<UtilityUpdatePort> utilityPort = provides(UtilityUpdatePort.class);
+    private Positive<UtilityUpdatePort> utilityPort = requires(UtilityUpdatePort.class);
 
     private BootstrapClientConfig config;
 
