@@ -1,0 +1,22 @@
+vod {
+    address {
+        port=
+        id=
+    }
+    libDir=
+}
+bootstrap {
+    server {
+        address {
+            ip=
+            port=
+            id=
+        }
+    }
+}
+caracal {
+    address {
+        ip=
+        port=
+    }
+}
