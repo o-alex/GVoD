@@ -16,20 +16,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.manager;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class DownloadFileInfo {
-    public final int overlayId;
-    public final String fileName;
-    public final String libDir;
-    
-    public DownloadFileInfo(int overlayId, String libDir, String fileName) {
-        this.overlayId = overlayId;
-        this.libDir = libDir;
-        this.fileName = fileName;
-    }
+public enum FileStatus {
+
+    DOWNLOADING, UPLOADING, PENDING, NONE
 }

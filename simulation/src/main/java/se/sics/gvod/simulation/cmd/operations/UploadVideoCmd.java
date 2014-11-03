@@ -19,7 +19,6 @@
 
 package se.sics.gvod.simulation.cmd.operations;
 
-import se.sics.gvod.manager.UploadFileInfo;
 import se.sics.gvod.simulation.cmd.OperationCmd;
 
 /**
@@ -27,15 +26,17 @@ import se.sics.gvod.simulation.cmd.OperationCmd;
  */
 public class UploadVideoCmd implements OperationCmd {
     public final int nodeId;
-    public final UploadFileInfo fileInfo;
+    public final int overlayId;
+    public final String videoName;
     
-    public UploadVideoCmd(int nodeId, UploadFileInfo fileInfo) {
+    public UploadVideoCmd(int nodeId, String videoName, int overlayId) {
         this.nodeId = nodeId;
-        this.fileInfo = fileInfo;
+        this.videoName = videoName;
+        this.overlayId = overlayId;
     }
     
     @Override
     public String toString() {
-        return "UploadVideoCmd - node:" + nodeId + " overlay:" + fileInfo.overlayId;
+        return "UploadVideoCmd - node:" + nodeId;
     }
 }

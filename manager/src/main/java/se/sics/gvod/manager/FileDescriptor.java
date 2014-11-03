@@ -26,16 +26,10 @@ public class FileDescriptor {
     public final String path;
     public final String name;
     public final long size;
-    public final Status status;
     
-    public FileDescriptor(String path, String name, long size, Status status) {
+    public FileDescriptor(String path, String name, long size) {
         this.path = path;
         this.name = name;
         this.size = size;
-        this.status = status;
-    }
-            
-    public static enum Status {
-        DOWNLOADING, UPLOADING, PENDING, NONE  
     }
 }

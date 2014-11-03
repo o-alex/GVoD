@@ -27,8 +27,6 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import se.sics.gvod.manager.DownloadFileInfo;
-import se.sics.gvod.manager.UploadFileInfo;
 import se.sics.gvod.simulation.cmd.operations.DownloadVideoCmd;
 import se.sics.gvod.simulation.cmd.operations.UploadVideoCmd;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
@@ -116,7 +114,7 @@ public class ScenarioGen {
                         }
                         writer.flush();
                         writer.close();
-                        return new UploadVideoCmd(nodeId, new UploadFileInfo(overlayId, libDir, fileNames.get(overlayId)));
+                        return new UploadVideoCmd(nodeId, fileNames.get(overlayId), overlayId);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
@@ -132,7 +130,7 @@ public class ScenarioGen {
                     File nodeLibDir = new File(experimentDir + File.separator + "node" + nodeId);
                     nodeLibDir.mkdir();
                     libDir = nodeLibDir.getPath();
-                    return new DownloadVideoCmd(nodeId, new DownloadFileInfo(overlayId, libDir, fileNames.get(overlayId)));
+                    return new DownloadVideoCmd(nodeId, fileNames.get(overlayId), overlayId);
                 }
             };
 

@@ -17,19 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.manager;
+package se.sics.gvod.system.vodmngr;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class UploadFileInfo {
-    public final int overlayId;
-    public final String fileName;
+public class VoDManagerConfig {
     public final String libDir;
     
-    public UploadFileInfo(int overlayId, String libDir, String fileName) {
-        this.overlayId = overlayId;
+    public VoDManagerConfig(String libDir) {
         this.libDir = libDir;
-        this.fileName = fileName;
     }
 }

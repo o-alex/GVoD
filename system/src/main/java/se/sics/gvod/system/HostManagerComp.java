@@ -18,6 +18,7 @@
  */
 package se.sics.gvod.system;
 
+import se.sics.gvod.system.vodmngr.VoDManagerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientComp;

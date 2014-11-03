@@ -37,7 +37,6 @@ import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.common.util.HashUtil;
 import se.sics.gvod.croupierfake.CroupierComp;
 import se.sics.gvod.croupierfake.CroupierPort;
-import se.sics.gvod.manager.DownloadFileInfo;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.network.filters.OverlayFilter;
 import se.sics.gvod.system.connMngr.ConnMngrComp;
@@ -82,19 +81,16 @@ public class VoDComp extends ComponentDefinition {
     private final Map<Integer, Triplet<Component, Component, Component>> videoComps;
     private final Map<Integer, FileMngr> videoStoreMngrs;
 
-    private final Map<UUID, Pair<String, FileMetadata>> pendingUploads;
-    private final Map<UUID, DownloadFileInfo> pendingDownloads;
+    private final Map<UUID, Pair<Pair<String, Integer>, FileMetadata>> pendingUploads;
+    private final Map<UUID, Pair<String, Integer>> pendingDownloads;
     
-    //TODO fix
-    private String libDir;
-
     public VoDComp(VoDInit init) {
         log.debug("init");
         this.config = init.config;
         this.videoComps = new HashMap<Integer, Triplet<Component, Component, Component>>();
         this.videoStoreMngrs = new HashMap<Integer, FileMngr>();
-        this.pendingDownloads = new HashMap<UUID, DownloadFileInfo>();
-        this.pendingUploads = new HashMap<UUID, Pair<String, FileMetadata>>();
+        this.pendingDownloads = new HashMap<UUID, Pair<String, Integer>>();
+        this.pendingUploads = new HashMap<UUID, Pair<Pair<String, Integer>, FileMetadata>>();
 
         subscribe(handleBootstrapGlobalResponse, bootstrap);
         subscribe(handleUploadVideoRequest, myPort);
@@ -113,16 +109,11 @@ public class VoDComp extends ComponentDefinition {
 
         @Override
         public void handle(UploadVideo.Request req) {
-            log.info("{} - {} - overlay: {}", new Object[]{config.selfAddress, req, req.fileInfo.overlayId});
-            String video = req.fileInfo.fileName;
-            String videoName = video.substring(0, video.indexOf("."));
-            String videoExt = video.substring(video.indexOf("."));
-            String videoFilePath = req.fileInfo.libDir + File.separator + video;
-            String hashFilePath = req.fileInfo.libDir + File.separator + videoName + ".hash";
+            log.info("{} - {} - videoName:{} overlay:{}", new Object[]{config.selfAddress, req, req.videoName, req.overlayId});
+            String videoNameNoExt = req.videoName.substring(0, req.videoName.indexOf("."));
+            String videoFilePath = config.libDir + File.separator + req.videoName;
+            String hashFilePath = config.libDir + File.separator + videoNameNoExt + ".hash";
             
-            //TODO fix
-            libDir = req.fileInfo.libDir;
-                    
             File videoFile = new File(videoFilePath);
             File hashFile = new File(hashFilePath);
             if (hashFile.exists()) {
@@ -137,8 +128,8 @@ public class VoDComp extends ComponentDefinition {
                 throw new RuntimeException(ex);
             }
             FileMetadata fileMeta = new FileMetadata((int) videoFile.length(), config.pieceSize, config.hashAlg, (int) hashFile.length());
-            trigger(new AddOverlay.Request(req.id, req.fileInfo.overlayId, fileMeta), bootstrap);
-            pendingUploads.put(req.id, Pair.with(req.fileInfo.fileName, fileMeta));
+            trigger(new AddOverlay.Request(req.id, req.overlayId, fileMeta), bootstrap);
+            pendingUploads.put(req.id, Pair.with(Pair.with(req.videoName, req.overlayId), fileMeta));
         }
     };
 
@@ -146,12 +137,9 @@ public class VoDComp extends ComponentDefinition {
 
         @Override
         public void handle(DownloadVideo.Request req) {
-            log.info("{} - {} - overlay: {}", new Object[]{config.selfAddress, req, req.fileInfo.overlayId});
-            trigger(new JoinOverlay.Request(req.id, req.fileInfo.overlayId, noDownloadResume), bootstrap);
-            pendingDownloads.put(req.id, req.fileInfo);
-            
-            //TODO fix
-            libDir = req.fileInfo.libDir;
+            log.info("{} - {} - videoName:{} overlay:{}", new Object[]{config.selfAddress, req, req.videoName, req.overlayId});
+            trigger(new JoinOverlay.Request(req.id, req.overlayId, noDownloadResume), bootstrap);
+            pendingDownloads.put(req.id, Pair.with(req.videoName, req.overlayId));
         }
     };
 
@@ -163,8 +151,8 @@ public class VoDComp extends ComponentDefinition {
 
             if (resp.status == ReqStatus.SUCCESS) {
                 try {
-                    Pair<String, FileMetadata> fileInfo = pendingUploads.remove(resp.id);
-                    Pair<FileMngr, FileMngr> videoMngrs = getUploadVideoMngrs(fileInfo.getValue0(), fileInfo.getValue1());
+                    Pair<Pair<String, Integer>, FileMetadata> fileInfo = pendingUploads.remove(resp.id);
+                    Pair<FileMngr, FileMngr> videoMngrs = getUploadVideoMngrs(fileInfo.getValue0().getValue0(), fileInfo.getValue1());
                     videoStoreMngrs.put(resp.overlayId, videoMngrs.getValue0());
                     startVideoComp(resp.overlayId, videoMngrs, false);
                 } catch (IOException ex) {
@@ -186,8 +174,8 @@ public class VoDComp extends ComponentDefinition {
 
             if (resp.status == ReqStatus.SUCCESS) {
                 try {
-                    DownloadFileInfo fileInfo = pendingDownloads.remove(resp.id);
-                    Pair<FileMngr, FileMngr> videoMngrs = getDownloadVideoMngrs(fileInfo.fileName, resp.fileMeta);
+                    Pair<String, Integer> fileInfo = pendingDownloads.remove(resp.id);
+                    Pair<FileMngr, FileMngr> videoMngrs = getDownloadVideoMngrs(fileInfo.getValue0(), resp.fileMeta);
                     videoStoreMngrs.put(resp.overlayId, videoMngrs.getValue0());
                     startVideoComp(resp.overlayId, videoMngrs, true);
                 } catch (IOException ex) {
@@ -237,8 +225,8 @@ public class VoDComp extends ComponentDefinition {
 
         String videoName = video.substring(0, video.indexOf("."));
         String videoExt = video.substring(video.indexOf("."));
-        String videoFilePath = libDir + File.separator + video;
-        String hashFilePath = libDir + File.separator + videoName + ".hash";
+        String videoFilePath = config.libDir + File.separator + video;
+        String hashFilePath = config.libDir + File.separator + videoName + ".hash";
 
 //        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg) + 1;
 //        PieceTracker hashPieceTracker = new CompletePieceTracker(hashPieces);
@@ -258,8 +246,8 @@ public class VoDComp extends ComponentDefinition {
         log.info("{} lib directory {}", config.selfAddress, config.libDir);
         String videoName = video.substring(0, video.indexOf("."));
         String videoExt = video.substring(video.indexOf("."));
-        String videoFilePath = libDir + File.separator + video;
-        String hashFilePath = libDir + File.separator + videoName + ".hash";
+        String videoFilePath = config.libDir + File.separator + video;
+        String hashFilePath = config.libDir + File.separator + videoName + ".hash";
 
         File hashFile = new File(hashFilePath);
         if (hashFile.exists()) {

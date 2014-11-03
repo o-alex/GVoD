@@ -18,13 +18,19 @@
  */
 package se.sics.gvod.manager;
 
+import java.util.Map;
+import java.util.Set;
+
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public interface VoDManager {
 
-    public void uploadVideo(UploadFileInfo fileInfo);
+    public Map<String, FileStatus> getFiles();
+    
+    public boolean pendingUpload(String videoName);
+    
+    public boolean uploadVideo(String videoName, int overlayId);
 
-    public void downloadVideo(DownloadFileInfo fileInfo);
+    public boolean downloadVideo(String videoName, int overlayId);
 }

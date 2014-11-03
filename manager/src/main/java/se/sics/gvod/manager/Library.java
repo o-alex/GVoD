@@ -23,6 +23,7 @@ import java.io.FileFilter;
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
+import org.javatuples.Pair;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -30,12 +31,12 @@ import java.util.TreeMap;
 public class Library {
 
     public final String path;
-    public final Map<String, FileDescriptor> view;
-    private final Map<String, FileDescriptor> files;
+    public final Map<String, Pair<FileDescriptor, FileStatus>> view;
+    private final Map<String, Pair<FileDescriptor, FileStatus>> files;
 
     public Library(String path) throws ManagerExceptions.LibraryException {
         this.path = path;
-        this.files = new TreeMap<String, FileDescriptor>();
+        this.files = new TreeMap<String, Pair<FileDescriptor, FileStatus>>();
         this.view = Collections.unmodifiableMap(files);
 
         loadLibrary();
@@ -59,7 +60,9 @@ public class Library {
         };
         
         for (File video : dir.listFiles(mp4Filter)) {
-            files.put(video.getName(), new FileDescriptor(video.getAbsolutePath(), video.getName(), video.length()/1024, FileDescriptor.Status.NONE));
+            files.put(video.getName(), Pair.with(new FileDescriptor(video.getAbsolutePath(), video.getName(), video.length()/1024), FileStatus.NONE));
         }
     }
+    
+    
 }

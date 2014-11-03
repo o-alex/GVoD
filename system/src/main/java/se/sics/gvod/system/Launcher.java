@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.bootstrap.cclient.CaracalPSManagerComp;
 import se.sics.gvod.common.util.GVoDConfigException;
-import se.sics.gvod.manager.UploadFileInfo;
 import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.net.NatNetworkControl;
 import se.sics.gvod.net.NettyInit;
@@ -126,6 +125,7 @@ public class Launcher extends ComponentDefinition {
     }
 
     private void phase4() {
+        int overlayId = 10;
         String videoName = "video1.mp4";
         String libDir = "/Users/Alex/Documents/Work/Code/GVoD/video-catalog/node1";
         log.info("{} libDir:{}", selfAddress, libDir);
@@ -141,7 +141,7 @@ public class Launcher extends ComponentDefinition {
             }
             writer.flush();
             writer.close();
-            vodManager.uploadVideo(new UploadFileInfo(10, libDir, videoName));
+            vodManager.uploadVideo(videoName, overlayId);
 
 //            vodManager.downloadVideo(new DownloadFileInfo(10, libDir, videoName));
         } catch (IOException ex) {
