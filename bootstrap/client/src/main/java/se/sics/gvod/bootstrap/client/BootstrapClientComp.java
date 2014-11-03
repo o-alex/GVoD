@@ -225,7 +225,7 @@ public class BootstrapClientComp extends ComponentDefinition {
 
         @Override
         public void handle(Heartbeat.PeriodicTimeout timeout) {
-            log.trace("{} periodic heartbeat", new Object[]{config.self});
+            log.trace("{} periodic heartbeat, active overlays:{}", new Object[]{config.self, overlaysUtility});
 
             Heartbeat.OneWay heartbeat = new Heartbeat.OneWay(UUID.randomUUID(), new HashMap<Integer, Integer>(overlaysUtility));
             GvodNetMsg.OneWay<Heartbeat.OneWay> netOneWay = new GvodNetMsg.OneWay<Heartbeat.OneWay>(config.self, config.server, heartbeat);

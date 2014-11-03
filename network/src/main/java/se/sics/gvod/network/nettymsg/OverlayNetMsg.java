@@ -161,7 +161,6 @@ public class OverlayNetMsg {
                 size += Integer.SIZE / 8; //overlayId
                 Serializer<E> serializer = (Serializer<E>) context.getSerializer(payload.getClass());
                 size += serializer.getSize(context, payload);
-                size += GVoDAdapterFactory.getAdapter(payload).getEncodedSize(this);
                 return size;
             } catch (SerializationContext.MissingException ex) {
                 throw new RuntimeException(ex);
