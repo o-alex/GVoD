@@ -40,10 +40,6 @@ public class JoinOverlay {
             this.utility = utility;
         }
 
-        public ResponseBuilder getResponseBuilder() {
-            return new ResponseBuilder(id, overlayId);
-        }
-
         public Response success(FileMetadata fileMeta) {
             return new Response(id, ReqStatus.SUCCESS, overlayId, fileMeta);
         }
@@ -134,33 +130,6 @@ public class JoinOverlay {
                 return false;
             }
             return true;
-        }
-    }
-
-    public static class ResponseBuilder {
-
-        public final UUID reqId;
-        public final int overlayId;
-        private FileMetadata fileMetadata = null;
-
-        public ResponseBuilder(UUID reqId, int overlayId) {
-            this.reqId = reqId;
-            this.overlayId = overlayId;
-        }
-
-
-        public void setFileMetadata(FileMetadata fileMetadata) {
-            this.fileMetadata = fileMetadata;
-        }
-
-        public Response finalise(ReqStatus status) throws BuilderException.Missing {
-            if (status == ReqStatus.FAIL) {
-                return new Response(reqId, status, overlayId, null);
-            }
-            if (fileMetadata == null) {
-                throw new BuilderException.Missing();
-            }
-            return new Response(reqId, status, overlayId, fileMetadata);
         }
     }
 }

@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.server.operations.AddOverlayOp;
 import se.sics.gvod.bootstrap.server.operations.BootstrapGlobalOp;
 import se.sics.gvod.bootstrap.server.operations.HeartbeatOp;
+import se.sics.gvod.bootstrap.server.operations.JoinOverlayOp;
 import se.sics.gvod.bootstrap.server.operations.Operation;
 import se.sics.gvod.bootstrap.server.operations.OverlaySampleOp;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
@@ -85,6 +86,9 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
             } else if (netReq.payload instanceof AddOverlay.Request) {
                 AddOverlay.Request gvodReq = (AddOverlay.Request) netReq.payload;
                 op = new AddOverlayOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
+            } else if (netReq.payload instanceof JoinOverlay.Request) {
+                JoinOverlay.Request gvodReq = (JoinOverlay.Request) netReq.payload;
+                op = new JoinOverlayOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
             } else if (netReq.payload instanceof OverlaySample.Request) {
                 OverlaySample.Request gvodReq = (OverlaySample.Request) netReq.payload;
                 op = new OverlaySampleOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
