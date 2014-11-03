@@ -33,6 +33,7 @@ import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.system.vod.VoDComp;
 import se.sics.gvod.system.vod.VoDInit;
 import se.sics.gvod.system.vod.VoDPort;
+import se.sics.gvod.system.vodmngr.VoDManagerConfig;
 import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
@@ -64,7 +65,7 @@ public class HostManagerComp extends ComponentDefinition {
         this.config = init.config;
 
         try {
-            this.vodMngr = create(VoDManagerImpl.class, Init.NONE);
+            this.vodMngr = create(VoDManagerImpl.class,new VoDManagerImpl.VoDManagerInit(new VoDManagerConfig(config.libDir)));
             this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration().finalise()));
             this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig().finalise()));
 

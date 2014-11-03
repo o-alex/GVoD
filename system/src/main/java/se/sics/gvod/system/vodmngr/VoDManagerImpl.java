@@ -24,7 +24,8 @@ import java.io.FileFilter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.javatuples.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import se.sics.gvod.manager.FileStatus;
 import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.system.vod.VoDPort;
@@ -39,6 +40,7 @@ import se.sics.kompics.Positive;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
+    private static final Logger log = LoggerFactory.getLogger(VoDManager.class);
 
     private final Positive<VoDPort> vodPort = requires(VoDPort.class);
     
@@ -50,11 +52,10 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     public VoDManagerImpl(VoDManagerInit init) {
         this.config = init.config;
         this.videos = new ConcurrentHashMap<String, FileStatus>();
-        
-        loadLibrary();
     }
     
-    private void loadLibrary() {
+    public void loadLibrary() {
+        log.info("loading library folder:{}", config.libDir);
         
         File dir = new File(config.libDir);
         if (!dir.isDirectory()) {
@@ -72,6 +73,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         };
         
         for (File video : dir.listFiles(mp4Filter)) {
+            log.debug("reading video: {} info", video.getName());
             videos.put(video.getName(), FileStatus.NONE);
         }
     }

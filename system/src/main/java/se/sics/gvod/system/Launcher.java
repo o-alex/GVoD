@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.InetAddress;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
@@ -39,6 +40,7 @@ import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.net.events.PortBindRequest;
 import se.sics.gvod.net.events.PortBindResponse;
 import se.sics.gvod.network.GVoDNetFrameDecoder;
+import se.sics.gvod.system.vodmngr.VoDManagerImpl;
 import se.sics.gvod.timer.Timer;
 import se.sics.gvod.timer.java.JavaTimer;
 import se.sics.kompics.Component;
@@ -118,6 +120,11 @@ public class Launcher extends ComponentDefinition {
 
             trigger(Start.event, peerManager.control());
             trigger(Start.event, manager.control());
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
             phase4();
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
@@ -126,7 +133,7 @@ public class Launcher extends ComponentDefinition {
 
     private void phase4() {
         int overlayId = 10;
-        String videoName = "video1.mp4";
+        String videoName = "video2.mp4";
         String libDir = "/Users/Alex/Documents/Work/Code/GVoD/video-catalog/node1";
         log.info("{} libDir:{}", selfAddress, libDir);
         try {
@@ -141,7 +148,13 @@ public class Launcher extends ComponentDefinition {
             }
             writer.flush();
             writer.close();
-            vodManager.uploadVideo(videoName, overlayId);
+            ((VoDManagerImpl)vodManager).loadLibrary();
+            if(!vodManager.pendingUpload(videoName)) {
+                throw new RuntimeException();
+            }
+            if(!vodManager.uploadVideo(videoName, overlayId)) {
+                throw new RuntimeException();
+            }
 
 //            vodManager.downloadVideo(new DownloadFileInfo(10, libDir, videoName));
         } catch (IOException ex) {
