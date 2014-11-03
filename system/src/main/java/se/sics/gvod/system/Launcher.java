@@ -125,13 +125,14 @@ public class Launcher extends ComponentDefinition {
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
             }
-            phase4();
+            uploadVideo();
+//            downloadVideo();
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
     }
 
-    private void phase4() {
+    private void uploadVideo() {
         int overlayId = 10;
         String videoName = "video2.mp4";
         String libDir = "/Users/Alex/Documents/Work/Code/GVoD/video-catalog/node1";
@@ -155,10 +156,17 @@ public class Launcher extends ComponentDefinition {
             if(!vodManager.uploadVideo(videoName, overlayId)) {
                 throw new RuntimeException();
             }
-
-//            vodManager.downloadVideo(new DownloadFileInfo(10, libDir, videoName));
         } catch (IOException ex) {
             throw new RuntimeException(ex);
+        }
+    }
+    
+    private void downloadVideo() {
+        int overlayId = 10;
+        String videoName = "video2.mp4";
+        ((VoDManagerImpl)vodManager).loadLibrary();
+        if(!vodManager.downloadVideo(videoName, overlayId)) {
+            throw new RuntimeException();
         }
     }
 
