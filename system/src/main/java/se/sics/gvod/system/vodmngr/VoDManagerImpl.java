@@ -107,7 +107,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     @Override
     public boolean downloadVideo(String videoName, int overlayId) {
         FileStatus videoStatus = videos.get(videoName);
-        if(videoStatus == null || !videoStatus.equals(FileStatus.NONE)) {
+        if(videoStatus != null) {
             return false;
         }
         videos.put(videoName, FileStatus.DOWNLOADING);
