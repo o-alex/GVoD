@@ -19,15 +19,12 @@
 package se.sics.gvod.network.nettymsg;
 
 import io.netty.buffer.ByteBuf;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msgs.DirectMsgNetty;
 import se.sics.gvod.common.msgs.MessageEncodingException;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.GVoDAdapterFactory;
 import se.sics.gvod.network.GVoDNetFrameDecoder;
-import se.sics.gvod.network.pmadapter.GVoDAdapter;
 import se.sics.gvod.network.serializers.SerializationContext;
 import se.sics.gvod.network.serializers.Serializer;
 
@@ -38,8 +35,8 @@ public class OverlayNetMsg {
 
     private static SerializationContext context;
 
-    public void setContext(SerializationContext context) {
-        this.context = context;
+    public static void setContext(SerializationContext setContext) {
+        context = setContext;
     }
 
     public static class Request<E extends GvodMsg.Request> extends DirectMsgNetty.Request {

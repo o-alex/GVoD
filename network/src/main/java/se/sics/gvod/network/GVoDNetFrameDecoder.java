@@ -81,6 +81,8 @@ public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
     
     private static final SerializationContext context = new SerializationContextImpl();
     static {
+        OverlayNetMsg.setContext(context);
+        OverlayNetAdapter.setContext(context);
         try {
             context.registerSerializer("request-status", new ReqStatusSerializer());
             context.registerClass("request-status", ReqStatus.class);
