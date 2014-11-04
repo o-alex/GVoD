@@ -34,6 +34,10 @@ public class DownloadMngrConfig {
     public final int startPieces;
     public final long descriptorUpdate;
     
+    public final int hashesPerMsg = 10;
+    public final int hashSpeed = 20; //if piece = 5 and hash = 20, you download hash, if hash is 25, you download piece
+    public final String hashAlg = "SHA";
+    public final long speedupPeriod = 2000;
 
     private DownloadMngrConfig(Config config, VodAddress selfAddress, int overlayId, int startPieces, long descriptorUpdate) {
         this.config = config;

@@ -108,11 +108,11 @@ public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
             context.registerMessageCode(Connection.Close.class, (byte)0x04);
             
             context.registerSerializer("down-req", new DownloadSerializer.Request());
-            context.registerClass("down-req", Download.Request.class);
-            context.registerMessageCode(Download.Request.class, (byte)0x05);
+            context.registerClass("down-req", Download.DataRequest.class);
+            context.registerMessageCode(Download.DataRequest.class, (byte)0x05);
             context.registerSerializer("down-resp", new DownloadSerializer.Response());
-            context.registerClass("down-resp", Download.Response.class);
-            context.registerMessageCode(Download.Response.class, (byte)0x06);
+            context.registerClass("down-resp", Download.DataResponse.class);
+            context.registerMessageCode(Download.DataResponse.class, (byte)0x06);
         } catch (SerializationContext.DuplicateException ex) {
             throw new RuntimeException(ex);
         } catch (SerializationContext.MissingException ex) {

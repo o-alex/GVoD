@@ -16,27 +16,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+package se.sics.gvod.system.downloadMngr.msg;
 
-package se.sics.gvod.common.utility;
-
-import se.sics.kompics.KompicsEvent;
+import se.sics.gvod.timer.ScheduleTimeout;
+import se.sics.gvod.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class UtilityUpdate implements KompicsEvent {
-    public final int overlayId;
-    public final boolean downloading;
-    public final int downloadPos;
-    
-    public UtilityUpdate(int overlayId, boolean downloading, int downloadPos) {
-        this.overlayId = overlayId;
-        this.downloading = downloading;
-        this.downloadPos = downloadPos;
-    }
-    
-    @Override
-    public String toString() {
-        return "UtilityUpdate " + overlayId + " utility:" + downloadPos;
+public class ScheduledSpeedUp extends Timeout {
+
+    public ScheduledSpeedUp(ScheduleTimeout schedule) {
+        super(schedule);
     }
 }

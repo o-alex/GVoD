@@ -30,7 +30,7 @@ import se.sics.gvod.network.serializers.base.GvodMsgSerializer;
  */
 public class DownloadSerializer {
 
-    public static abstract class AbsRequest<E extends Download.Request, F extends DownloadBuilder.Request> extends GvodMsgSerializer.AbsRequest<E, F> {
+    public static abstract class AbsRequest<E extends Download.DataRequest, F extends DownloadBuilder.Request> extends GvodMsgSerializer.AbsRequest<E, F> {
 
         @Override
         public F decode(SerializationContext context, ByteBuf buf, F shellObj) throws SerializerException, SerializationContext.MissingException {
@@ -59,10 +59,10 @@ public class DownloadSerializer {
         }
     }
 
-    public static final class Request extends AbsRequest<Download.Request, DownloadBuilder.Request> {
+    public static final class Request extends AbsRequest<Download.DataRequest, DownloadBuilder.Request> {
 
         @Override
-        public Download.Request decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
+        public Download.DataRequest decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
             try {
                 return decode(context, buf, new DownloadBuilder.Request()).finalise();
             } catch (GVoDMsgBuilder.IncompleteException ex) {
@@ -72,7 +72,7 @@ public class DownloadSerializer {
 
     }
 
-    public static abstract class AbsResponse<E extends Download.Response, F extends DownloadBuilder.Response> extends GvodMsgSerializer.AbsResponse<E, F> {
+    public static abstract class AbsResponse<E extends Download.DataResponse, F extends DownloadBuilder.Response> extends GvodMsgSerializer.AbsResponse<E, F> {
 
         @Override
         public F decode(SerializationContext context, ByteBuf buf, F shellObj) throws SerializerException, SerializationContext.MissingException {
@@ -109,10 +109,10 @@ public class DownloadSerializer {
         }
     }
 
-    public static final class Response extends AbsResponse<Download.Response, DownloadBuilder.Response> {
+    public static final class Response extends AbsResponse<Download.DataResponse, DownloadBuilder.Response> {
 
         @Override
-        public Download.Response decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
+        public Download.DataResponse decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
             try {
                 return decode(context, buf, new DownloadBuilder.Response()).finalise();
             } catch (GVoDMsgBuilder.IncompleteException ex) {

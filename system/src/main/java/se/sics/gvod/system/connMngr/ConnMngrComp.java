@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.common.msg.ReqStatus;
@@ -39,7 +40,9 @@ import se.sics.gvod.system.connMngr.msg.Ready;
 import se.sics.gvod.common.msg.vod.Download;
 import se.sics.gvod.common.utility.UtilityUpdate;
 import se.sics.gvod.common.utility.UtilityUpdatePort;
-import se.sics.gvod.system.downloadMngr.msg.DownloadControl;
+import se.sics.gvod.system.connMngr.msg.DownloadDataTimeout;
+import se.sics.gvod.system.connMngr.msg.DownloadHashTimeout;
+import se.sics.gvod.system.connMngr.msg.ScheduleConnUpdate;
 import se.sics.gvod.timer.CancelTimeout;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;
 import se.sics.gvod.timer.ScheduleTimeout;
@@ -64,7 +67,7 @@ public class ConnMngrComp extends ComponentDefinition {
     private Positive<Timer> timer = requires(Timer.class);
     private Positive<CroupierPort> croupier = requires(CroupierPort.class);
     private Positive<UtilityUpdatePort> utilityUpdate = requires(UtilityUpdatePort.class);
-    
+
     private final ConnMngrConfig config;
     private final MsgProcessor msgProc;
 
@@ -74,7 +77,8 @@ public class ConnMngrComp extends ComponentDefinition {
     private Map<VodAddress, VodDescriptor> pendingUploadersConn;
     private Map<VodAddress, UploaderVodDescriptor> uploadersConn;
 
-    private Map<VodAddress, Map<Integer, TimeoutId>> pendingDownloads;
+    private Map<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>> pendingDataTraffic; //<source, <reqId, <req, timeoutId>>>
+    private Map<VodAddress, Map<UUID, Pair<Download.HashRequest, TimeoutId>>> pendingHashTraffic;
     private Map<Integer, Set<VodAddress>> pendingUploadReq;
 
     private TimeoutId connUpdateTId;
@@ -90,7 +94,8 @@ public class ConnMngrComp extends ComponentDefinition {
         this.downloadersConn = new HashMap<VodAddress, DownloaderVodDescriptor>();
         this.pendingUploadersConn = new HashMap<VodAddress, VodDescriptor>();
         this.uploadersConn = new HashMap<VodAddress, UploaderVodDescriptor>();
-        this.pendingDownloads = new HashMap<VodAddress, Map<Integer, TimeoutId>>();
+        this.pendingDataTraffic = new HashMap<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>>();
+        this.pendingHashTraffic = new HashMap<VodAddress, Map<UUID, Pair<Download.HashRequest, TimeoutId>>>();
         this.pendingUploadReq = new HashMap<Integer, Set<VodAddress>>();
         this.ready = false;
 
@@ -122,9 +127,9 @@ public class ConnMngrComp extends ComponentDefinition {
                     pendingUploadersConn = new HashMap<VodAddress, VodDescriptor>();
 
                     log.debug("{} cleaning timeouts", config.getSelf());
-                    for (Map<Integer, TimeoutId> partnerTIds : pendingDownloads.values()) {
-                        for (TimeoutId tId : partnerTIds.values()) {
-                            CancelTimeout ct = new CancelTimeout(tId);
+                    for (Map<UUID, Pair<Download.DataRequest, TimeoutId>> partnerTIds : pendingDataTraffic.values()) {
+                        for (Pair<Download.DataRequest, TimeoutId> downReq : partnerTIds.values()) {
+                            CancelTimeout ct = new CancelTimeout(downReq.getValue1());
                             trigger(ct, timer);
                         }
                     }
@@ -132,7 +137,7 @@ public class ConnMngrComp extends ComponentDefinition {
                     CancelTimeout ct = new CancelTimeout(connUpdateTId);
                     trigger(ct, timer);
 
-                    pendingDownloads = null;
+                    pendingDataTraffic = null;
                 }
                 selfDesc = new LocalVodDescriptor(new VodDescriptor(event.downloadPos), event.downloading);
             }
@@ -143,11 +148,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
         log.debug("{} starting...", config.getSelf());
         if (selfDesc.downloading) {
-            SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(config.updatePeriod, config.updatePeriod);
-            Timeout t = new Connection.UpdateTimeout(spt);
-            connUpdateTId = t.getTimeoutId();
-            spt.setTimeoutEvent(t);
-            trigger(spt, timer);
+            connUpdateTId = scheduleConnectionUpdate();
         } else {
             ready = true;
             trigger(new Ready(UUID.randomUUID()), myPort);
@@ -157,7 +158,7 @@ public class ConnMngrComp extends ComponentDefinition {
         subscribe(handleNetResponse, network);
         subscribe(handleNetOneWay, network);
 
-        subscribe(handleConnectionUpdateTimeout, timer);
+        subscribe(handleScheduledConnectionUpdate, timer);
         subscribe(handleCroupierSample, croupier);
 
         msgProc.subscribe(handleConnectionRequest);
@@ -165,12 +166,17 @@ public class ConnMngrComp extends ComponentDefinition {
         msgProc.subscribe(handleConnectionUpdate);
         msgProc.subscribe(handleConnectionClose);
 
-        subscribe(handleLocalDownloadRequest, myPort);
-        subscribe(handleLocalDownloadResponse, myPort);
-        subscribe(handleDownloadTimeout, timer);
+//        subscribe(handleLocalHashRequest, myPort);
+//        subscribe(handleLocalHashResponse, myPort);
+        subscribe(handleLocalDataRequest, myPort);
+        subscribe(handleLocalDataResponse, myPort);
+        subscribe(handleDownloadDataTimeout, timer);
+        subscribe(handleDownloadHashTimeout, timer);
 
-        msgProc.subscribe(handleNetDownloadRequest);
-        msgProc.subscribe(handleNetDownloadResponse);
+//        msgProc.subscribe(handleNetHashRequest);
+//        msgProc.subscribe(handleNetHashResponse);
+        msgProc.subscribe(handleNetDataRequest);
+        msgProc.subscribe(handleNetDataResponse);
 
     }
 
@@ -223,10 +229,10 @@ public class ConnMngrComp extends ComponentDefinition {
         }
     };
 
-    private Handler<Connection.UpdateTimeout> handleConnectionUpdateTimeout = new Handler<Connection.UpdateTimeout>() {
+    private Handler<ScheduleConnUpdate> handleScheduledConnectionUpdate = new Handler<ScheduleConnUpdate>() {
 
         @Override
-        public void handle(Connection.UpdateTimeout event) {
+        public void handle(ScheduleConnUpdate event) {
             log.trace("{} handle {}", config.getSelf(), event);
             for (VodAddress partner : downloadersConn.keySet()) {
                 Connection.Update upd = new Connection.Update(UUID.randomUUID(), selfDesc.vodDesc);
@@ -318,31 +324,26 @@ public class ConnMngrComp extends ComponentDefinition {
             };
 
     //DOWNLOAD MANAGEMENT - partener load management
-    private Handler<Download.Request> handleLocalDownloadRequest = new Handler<Download.Request>() {
+    private Handler<Download.DataRequest> handleLocalDataRequest = new Handler<Download.DataRequest>() {
 
         @Override
-        public void handle(Download.Request req) {
+        public void handle(Download.DataRequest req) {
             log.trace("{} handle local {}", config.getSelf(), req);
 
             Map.Entry<VodAddress, UploaderVodDescriptor> uploader = getUploader(req.pieceId);
             if (uploader == null) {
                 log.debug("{} no candidate for piece {}", new Object[]{config.getSelf(), req.pieceId});
-                trigger(new DownloadControl.SlowDown(req.id, req.pieceId), myPort);
+                trigger(req.busy(), myPort);
                 return;
             }
             uploader.getValue().useSlot();
 
-            ScheduleTimeout st = new ScheduleTimeout(config.reqTimeoutPeriod);
-            Timeout t = new Download.ReqTimeout(st, req.pieceId);
-            st.setTimeoutEvent(t);
-            trigger(st, timer);
-
-            Map<Integer, TimeoutId> partnerReq = pendingDownloads.get(uploader.getKey());
+            Map<UUID, Pair<Download.DataRequest, TimeoutId>> partnerReq = pendingDataTraffic.get(uploader.getKey());
             if (partnerReq == null) {
-                partnerReq = new HashMap<Integer, TimeoutId>();
-                pendingDownloads.put(uploader.getKey(), partnerReq);
+                partnerReq = new HashMap<UUID, Pair<Download.DataRequest, TimeoutId>>();
+                pendingDataTraffic.put(uploader.getKey(), partnerReq);
             }
-            partnerReq.put(req.pieceId, t.getTimeoutId());
+            partnerReq.put(req.id, Pair.with(req, scheduleDownloadRequestTimeout(uploader.getKey(), req.id)));
             trigger(new OverlayNetMsg.Request(config.getSelf(), uploader.getKey(), config.overlayId, req), network);
         }
 
@@ -370,11 +371,11 @@ public class ConnMngrComp extends ComponentDefinition {
         return candidate;
     }
 
-    private MsgProcessor.Handler<Download.Request> handleNetDownloadRequest
-            = new MsgProcessor.Handler<Download.Request>(Download.Request.class) {
+    private MsgProcessor.Handler<Download.DataRequest> handleNetDataRequest
+            = new MsgProcessor.Handler<Download.DataRequest>(Download.DataRequest.class) {
 
                 @Override
-                public void handle(VodAddress src, Download.Request req) {
+                public void handle(VodAddress src, Download.DataRequest req) {
                     log.trace("{} handling network {}", new Object[]{config.getSelf(), req});
                     log.debug("{} requested unique pieces {}", pendingUploadReq.size());
 
@@ -400,10 +401,10 @@ public class ConnMngrComp extends ComponentDefinition {
                 }
             };
 
-    private Handler<Download.Response> handleLocalDownloadResponse = new Handler<Download.Response>() {
+    private Handler<Download.DataResponse> handleLocalDataResponse = new Handler<Download.DataResponse>() {
 
         @Override
-        public void handle(Download.Response resp) {
+        public void handle(Download.DataResponse resp) {
             log.trace("{} handle local {}", config.getSelf(), resp);
 
             Set<VodAddress> requesters = pendingUploadReq.get(resp.pieceId);
@@ -424,63 +425,101 @@ public class ConnMngrComp extends ComponentDefinition {
         }
     };
 
-    private MsgProcessor.Handler<Download.Response> handleNetDownloadResponse
-            = new MsgProcessor.Handler<Download.Response>(Download.Response.class) {
+    private MsgProcessor.Handler<Download.DataResponse> handleNetDataResponse
+            = new MsgProcessor.Handler<Download.DataResponse>(Download.DataResponse.class) {
 
                 @Override
-                public void handle(VodAddress src, Download.Response resp) {
+                public void handle(VodAddress src, Download.DataResponse resp) {
                     log.trace("{} handle net {}", new Object[]{config.getSelf(), resp});
                     UploaderVodDescriptor up = uploadersConn.get(src);
                     if (up != null) {
                         up.freeSlot();
                     }
-                    
-                    TimeoutId tid = pendingDownloads.get(src).remove(resp.pieceId);
-                    cancelDownloadReqTimeout(tid);
-                    
+
+                    Pair<Download.DataRequest, TimeoutId> req = pendingDataTraffic.get(src).remove(resp.id);
+                    cancelDownloadReqTimeout(req.getValue0().id, req.getValue1());
+
                     trigger(resp, myPort);
                 }
             };
 
-    private Handler<Download.ReqTimeout> handleDownloadTimeout = new Handler<Download.ReqTimeout>() {
+    private Handler<DownloadDataTimeout> handleDownloadDataTimeout = new Handler<DownloadDataTimeout>() {
 
         @Override
-        public void handle(Download.ReqTimeout event) {
-            log.trace("{} handle {}", config.getSelf(), event);
+        public void handle(DownloadDataTimeout timeout) {
+            log.trace("{} handle {}", config.getSelf(), timeout);
 
-            boolean found = false;
-            Iterator<Map.Entry<VodAddress, Map<Integer, TimeoutId>>> partnerIt = pendingDownloads.entrySet().iterator();
-            while (partnerIt.hasNext()) {
-                Map.Entry<VodAddress, Map<Integer, TimeoutId>> partner = partnerIt.next();
-                Iterator<Map.Entry<Integer, TimeoutId>> pieceIt = partner.getValue().entrySet().iterator();
-                while (pieceIt.hasNext()) {
-                    Map.Entry<Integer, TimeoutId> piece = pieceIt.next();
-                    if (piece.getValue().equals(event.getTimeoutId())) {
-                        found = true;
-                        pieceIt.remove();
-                        uploadersConn.get(partner.getKey()).freeSlot();
-                        break;
-                    }
-                }
-                if (found) {
-                    if (partner.getValue().isEmpty()) {
-                        partnerIt.remove();
-                        break;
-                    }
-                    trigger(event, myPort);
-                } else {
-                    log.warn("{} uncanceled timeout", config.getSelf());
-                }
+            Map<UUID, Pair<Download.DataRequest, TimeoutId>> targetDataTraffic = pendingDataTraffic.get(timeout.target);
+            if(targetDataTraffic == null) {
+                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
+                return;
+            }
+            Pair<Download.DataRequest, TimeoutId> req = targetDataTraffic.get(timeout.reqId);
+            if(req == null) {
+                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
+                return;
+            }
+            uploadersConn.get(timeout.target).freeSlot();
+            trigger(req.getValue0().timeout(), myPort);
+            
+            //cleaning
+            targetDataTraffic.remove(timeout.reqId);
+            if(targetDataTraffic.isEmpty()) {
+                pendingDataTraffic.remove(timeout.target);
+            }
+        }
+    };
+    
+    private Handler<DownloadHashTimeout> handleDownloadHashTimeout = new Handler<DownloadHashTimeout>() {
+
+        @Override
+        public void handle(DownloadHashTimeout timeout) {
+            log.trace("{} handle {}", config.getSelf(), timeout);
+
+            Map<UUID, Pair<Download.HashRequest, TimeoutId>> targetHashTraffic = pendingHashTraffic.get(timeout.target);
+            if(targetHashTraffic == null) {
+                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
+                return;
+            }
+            Pair<Download.HashRequest, TimeoutId> req = targetHashTraffic.get(timeout.reqId);
+            if(req == null) {
+                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
+                return;
+            }
+            uploadersConn.get(timeout.target).freeSlot();
+            trigger(req.getValue0().timeout(), myPort);
+            
+            //cleaning
+            targetHashTraffic.remove(timeout.reqId);
+            if(targetHashTraffic.isEmpty()) {
+                pendingDataTraffic.remove(timeout.target);
             }
         }
     };
 
-    private void cancelDownloadReqTimeout(TimeoutId tid) {
-        log.debug("{} canceling download req timeout {}", config.getSelf(), tid);
+    private TimeoutId scheduleConnectionUpdate() {
+        SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(config.updatePeriod, config.updatePeriod);
+        Timeout t = new ScheduleConnUpdate(spt);
+        spt.setTimeoutEvent(t);
+        trigger(spt, timer);
+        return t.getTimeoutId();
+    }
+
+    private TimeoutId scheduleDownloadRequestTimeout(VodAddress target, UUID reqId) {
+        ScheduleTimeout st = new ScheduleTimeout(config.reqTimeoutPeriod);
+        Timeout t = new DownloadDataTimeout(st, target, reqId);
+        st.setTimeoutEvent(t);
+        trigger(st, timer);
+        log.trace("{} schedule req:{} timeout:{}", new Object[]{config.getSelf(), reqId, t.getTimeoutId()});
+        return t.getTimeoutId();
+    }
+
+    private void cancelDownloadReqTimeout(UUID reqId, TimeoutId tid) {
+        log.trace("{} canceling timeout:{} for req:{}", new Object[]{config.getSelf(), tid, reqId});
         CancelTimeout ct = new CancelTimeout(tid);
         trigger(ct, timer);
     }
-    
+
     public static class ConnMngrInit extends Init<ConnMngrComp> {
 
         public final ConnMngrConfig config;

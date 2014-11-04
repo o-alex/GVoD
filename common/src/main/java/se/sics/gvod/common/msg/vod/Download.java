@@ -19,53 +19,61 @@
 
 package se.sics.gvod.common.msg.vod;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.timer.ScheduleTimeout;
-import se.sics.gvod.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class Download {
-    public static class Request extends GvodMsg.Request {
+    public static class DataRequest extends GvodMsg.Request {
         public final int overlayId;
         public final int pieceId;
         
-        public Request(UUID id, int overlayId, int pieceId) {
+        public DataRequest(UUID id, int overlayId, int pieceId) {
             super(id);
             this.overlayId = overlayId;
             this.pieceId = pieceId;
         }
         
         @Override
-        public Request copy() {
-            return new Request(id, overlayId, pieceId);
+        public DataRequest copy() {
+            return new DataRequest(id, overlayId, pieceId);
         }
         
         @Override
         public String toString() {
-            return "Download.Request<" + id + ">";
+            return "Download.DataRequest<" + id + ">";
         }
         
-        public Response success(byte[] piece) {
-            return new Response(id, ReqStatus.SUCCESS, overlayId, pieceId, piece);
+        public DataResponse success(byte[] piece) {
+            return new DataResponse(id, ReqStatus.SUCCESS, overlayId, pieceId, piece);
         }
         
-        public Response missingPiece() {
-            return new Response(id, ReqStatus.FAIL, overlayId, pieceId, null);
+        public DataResponse missingPiece() {
+            return new DataResponse(id, ReqStatus.MISSING, overlayId, pieceId, null);
         }
         
+        public DataResponse timeout() {
+            return new DataResponse(id, ReqStatus.TIMEOUT, overlayId, pieceId, null);
+        }
+        
+        public DataResponse busy() {
+             return new DataResponse(id, ReqStatus.BUSY, overlayId, pieceId, null);
+        } 
     }        
     
-    public static class Response extends GvodMsg.Response {
+    public static class DataResponse extends GvodMsg.Response {
         
         public final int overlayId;
         public final int pieceId;
         public final byte[] piece;
         
-        public Response(UUID id, ReqStatus status, int overlayId, int pieceId, byte[] piece) {
+        public DataResponse(UUID id, ReqStatus status, int overlayId, int pieceId, byte[] piece) {
             super(id, status);
             this.overlayId = overlayId;
             this.pieceId = pieceId;
@@ -73,28 +81,68 @@ public class Download {
         }
         
         @Override
-        public Response copy() {
-            return new Response(id, status, overlayId, pieceId, piece);
+        public DataResponse copy() {
+            return new DataResponse(id, status, overlayId, pieceId, piece);
         }
         
         @Override
         public String toString() {
-            return "Download.Response<" + id + ">";
+            return "Download.DataResponse<" + id + ">";
         }
         
     }
     
-    public static class ReqTimeout extends Timeout {
-        public final int pieceId;
+    public static class HashRequest extends GvodMsg.Request {
+        public final Set<Integer> pieces;
         
-        public ReqTimeout(ScheduleTimeout schedule, int pieceId) {
-            super(schedule);
-            this.pieceId = pieceId;
+        public HashRequest(UUID id, Set<Integer> pieces) {
+            super(id);
+            this.pieces = pieces;
+        }
+        
+        @Override
+        public HashRequest copy() {
+            return new HashRequest(id, pieces);
         }
         
         @Override
         public String toString() {
-            return "Download.Timeout<" + getTimeoutId() + ">";
+            return "Download.HashRequest<" + id + ">";
         }
+        
+        public HashResponse success(Map<Integer, byte[]> pieces, Set<Integer> missingPieces) {
+            return new HashResponse(id, ReqStatus.SUCCESS, pieces, missingPieces);
+        }
+        
+        public HashResponse timeout() {
+            return new HashResponse(id, ReqStatus.TIMEOUT, new HashMap<Integer, byte[]>(), pieces);
+        }
+        
+        public HashResponse busy() {
+            return new HashResponse(id, ReqStatus.BUSY, new HashMap<Integer, byte[]>(), pieces);
+        }
+    }        
+    
+    public static class HashResponse extends GvodMsg.Response {
+        
+        public final Map<Integer, byte[]> pieces;
+        public final Set<Integer> missingPieces;
+        
+        public HashResponse(UUID id, ReqStatus status, Map<Integer, byte[]> pieces, Set<Integer> missingPieces) {
+            super(id, status);
+            this.pieces = pieces;
+            this.missingPieces = missingPieces;
+        }
+        
+        @Override
+        public HashResponse copy() {
+            return new HashResponse(id, status, pieces, missingPieces);
+        }
+        
+        @Override
+        public String toString() {
+            return "Download.HashResponse<" + id + ">";
+        }
+        
     }
 }

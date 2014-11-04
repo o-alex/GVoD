@@ -47,11 +47,11 @@ public class DownloadBuilder {
         }
  
         @Override
-        public Download.Request finalise() throws GVoDMsgBuilder.IncompleteException {
+        public Download.DataRequest finalise() throws GVoDMsgBuilder.IncompleteException {
             if(!checkComplete()) {
                 throw new GVoDMsgBuilder.IncompleteException();
             }
-            return new Download.Request(id, overlayId, pieceId);
+            return new Download.DataRequest(id, overlayId, pieceId);
         }
         
     }
@@ -83,11 +83,11 @@ public class DownloadBuilder {
         }
         
         @Override 
-        public Download.Response finalise() throws GVoDMsgBuilder.IncompleteException {
+        public Download.DataResponse finalise() throws GVoDMsgBuilder.IncompleteException {
             if(!checkComplete()) {
                 throw new GVoDMsgBuilder.IncompleteException();
             }
-            return new Download.Response(id, status, overlayId, pieceId, piece);
+            return new Download.DataResponse(id, status, overlayId, pieceId, piece);
         }
     }
 }

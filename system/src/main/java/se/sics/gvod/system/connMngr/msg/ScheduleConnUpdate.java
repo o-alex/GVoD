@@ -16,36 +16,22 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.system.downloadMngr.msg;
+package se.sics.gvod.system.connMngr.msg;
 
-import java.util.UUID;
-import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.timer.ScheduleTimeout;
+import se.sics.gvod.timer.SchedulePeriodicTimeout;
 import se.sics.gvod.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class DownloadControl {
+public class ScheduleConnUpdate extends Timeout {
 
-    public static class ScheduledSpeedUp extends Timeout {
-
-        public ScheduledSpeedUp(ScheduleTimeout schedule) {
-            super(schedule);
-        }
+    public ScheduleConnUpdate(SchedulePeriodicTimeout schedule) {
+        super(schedule);
     }
-    
-    public static class SlowDown extends GvodMsg.OneWay {
-        public final int canceledPiece;
-        
-        public SlowDown(UUID id, int canceledPiece) {
-            super(id);
-            this.canceledPiece = canceledPiece;
-        }
-        
-        @Override
-        public SlowDown copy() {
-            return new SlowDown(id, canceledPiece);
-        }
+
+    @Override
+    public String toString() {
+        return "ScheduleConnUpdate<" + getTimeoutId() + ">";
     }
 }

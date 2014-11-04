@@ -17,26 +17,25 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.common.utility;
+package se.sics.gvod.system.connMngr.msg;
 
-import se.sics.kompics.KompicsEvent;
+import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.timer.ScheduleTimeout;
+import se.sics.gvod.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class UtilityUpdate implements KompicsEvent {
-    public final int overlayId;
-    public final boolean downloading;
-    public final int downloadPos;
+public class ConnectionTimeout extends Timeout {
+    public final VodAddress connEnd;
     
-    public UtilityUpdate(int overlayId, boolean downloading, int downloadPos) {
-        this.overlayId = overlayId;
-        this.downloading = downloading;
-        this.downloadPos = downloadPos;
+    public ConnectionTimeout(ScheduleTimeout schedule, VodAddress connEnd) {
+        super(schedule);
+        this.connEnd = connEnd;
     }
-    
+
     @Override
     public String toString() {
-        return "UtilityUpdate " + overlayId + " utility:" + downloadPos;
+        return "ConnectionTimeout<" + getTimeoutId() + ">";
     }
 }

@@ -23,5 +23,5 @@ package se.sics.gvod.common.msg;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public enum ReqStatus {
-    SUCCESS, FAIL;
+    SUCCESS, FAIL, MISSING, TIMEOUT, BUSY;
 }

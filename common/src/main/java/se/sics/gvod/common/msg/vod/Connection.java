@@ -98,19 +98,6 @@ public class Connection {
         
     }
 
-    public static class UpdateTimeout extends Timeout {
-
-        public UpdateTimeout(SchedulePeriodicTimeout schedule) {
-            super(schedule);
-        }
-        
-        @Override
-        public String toString() {
-            return "Connection.UpdateTimeout<" + getTimeoutId() + ">";
-        }
-        
-    }
-
     public static class Close extends GvodMsg.OneWay {
 
         public Close(UUID id) {

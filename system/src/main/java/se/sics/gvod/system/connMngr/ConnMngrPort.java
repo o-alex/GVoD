@@ -16,26 +16,28 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.system.connMngr;
 
 import se.sics.gvod.system.connMngr.msg.Ready;
 import se.sics.gvod.common.msg.vod.Download;
-import se.sics.gvod.system.downloadMngr.msg.DownloadControl;
 import se.sics.kompics.PortType;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class ConnMngrPort extends PortType {
-    {
-        request(Download.Request.class);
-        request(Download.Response.class);
 
+    {
         indication(Ready.class);
-        indication(Download.Request.class);
-        indication(Download.Response.class);
-        indication(Download.ReqTimeout.class);
-        indication(DownloadControl.SlowDown.class);
+
+        request(Download.HashRequest.class);
+        request(Download.HashResponse.class);
+        request(Download.DataRequest.class);
+        request(Download.DataResponse.class);
+
+        indication(Download.HashRequest.class);
+        indication(Download.HashResponse.class);
+        indication(Download.DataRequest.class);
+        indication(Download.DataResponse.class);
     }
 }
