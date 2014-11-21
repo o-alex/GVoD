@@ -59,7 +59,7 @@ public class NetMsg {
             //fix
 
             this.id = id;
-            this.header = new HashMap<String, HeaderField>();
+            this.header = header;
         }
 
         @Override
@@ -100,7 +100,7 @@ public class NetMsg {
             //fix
 
             this.id = id;
-            this.header = new HashMap<String, HeaderField>();
+            this.header = header;
         }
 
         @Override
@@ -135,7 +135,7 @@ public class NetMsg {
             super(src, dest);
 
             this.id = id;
-            this.header = new HashMap<String, HeaderField>();
+            this.header = header;
         }
 
         @Override

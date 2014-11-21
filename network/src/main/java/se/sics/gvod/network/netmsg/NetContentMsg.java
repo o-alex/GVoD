@@ -69,8 +69,8 @@ public class NetContentMsg {
             try {
                 int size = super.getSize();
                 size += 2 * Byte.SIZE / 8; //alias code + multiplex code
-                Serializer serializer = context.getSerializer(content.getClass());
-                size += serializer.getSize(context, content);
+                Serializer serializer = context.getSerializer(this.getClass());
+                size += serializer.getSize(context, this);
                 return size;
             } catch (SerializationContext.MissingException ex) {
                 throw new RuntimeException(ex);
@@ -118,7 +118,7 @@ public class NetContentMsg {
                 int size = super.getSize();
                 size += 2 * Byte.SIZE / 8; //alias code + multiplex code
                 Serializer serializer = context.getSerializer(this.getClass());
-                size += serializer.getSize(context, content);
+                size += serializer.getSize(context, this);
                 return size;
             } catch (SerializationContext.MissingException ex) {
                 throw new RuntimeException(ex);
@@ -165,7 +165,7 @@ public class NetContentMsg {
                 int size = super.getSize();
                 size += 2 * Byte.SIZE / 8; //alias code + multiplex code
                 Serializer serializer = context.getSerializer(this.getClass());
-                size += serializer.getSize(context, content);
+                size += serializer.getSize(context, this);
                 return size;
             } catch (SerializationContext.MissingException ex) {
                 throw new RuntimeException(ex);
