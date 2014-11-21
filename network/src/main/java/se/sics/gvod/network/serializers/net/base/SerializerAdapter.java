@@ -78,7 +78,7 @@ public class SerializerAdapter {
                 Byte aliasCode = buf.readByte();
                 Byte multiplexCode = buf.readByte();
                 
-                Serializer serializer = context.getSerializer(DirectMsgNetty.Request.class, aliasCode, multiplexCode);
+                Serializer serializer = context.getSerializer(DirectMsgNetty.Response.class, aliasCode, multiplexCode);
                 Object o = serializer.decode(context, buf);
                 if(!(o instanceof DirectMsg)) {
                     throw new MessageDecodingException();
@@ -108,7 +108,7 @@ public class SerializerAdapter {
                 Byte aliasCode = buf.readByte();
                 Byte multiplexCode = buf.readByte();
                 
-                Serializer serializer = context.getSerializer(DirectMsgNetty.Request.class, aliasCode, multiplexCode);
+                Serializer serializer = context.getSerializer(DirectMsgNetty.Oneway.class, aliasCode, multiplexCode);
                 Object o = serializer.decode(context, buf);
                 if(!(o instanceof DirectMsg)) {
                     throw new MessageDecodingException();

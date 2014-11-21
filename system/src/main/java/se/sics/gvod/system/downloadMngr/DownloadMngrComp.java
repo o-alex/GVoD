@@ -98,7 +98,8 @@ public class DownloadMngrComp extends ComponentDefinition {
             log.trace("{} starting...", config.getSelf());
 
             int downloadPos = fileMngr.contiguousStart();
-            log.info("{} download at piece: {}", config.getSelf(), downloadPos);
+            int hashPos = hashMngr.contiguousStart();
+            log.info("{} video pos:{}, hash pos:{}", new Object[]{config.getSelf(), downloadPos, hashPos});
             trigger(new UtilityUpdate(config.overlayId, downloading, downloadPos), utilityUpdate);
 
             subscribe(handleConnReady, connMngr);
@@ -270,7 +271,8 @@ public class DownloadMngrComp extends ComponentDefinition {
             log.trace("{} handle {}", config.getSelf(), event);
 
             int downloadPos = fileMngr.contiguousStart();
-            log.info("{} download at piece: {}", config.getSelf(), downloadPos);
+            int hashPos = hashMngr.contiguousStart();
+            log.info("{} video pos:{} hash pos:{}", new Object[]{config.getSelf(), downloadPos, hashPos});
             trigger(new UtilityUpdate(config.overlayId, downloading, downloadPos), utilityUpdate);
         }
     };

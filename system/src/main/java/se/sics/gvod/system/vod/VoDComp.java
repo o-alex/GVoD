@@ -237,13 +237,13 @@ public class VoDComp extends ComponentDefinition {
         String videoFilePath = config.libDir + File.separator + video;
         String hashFilePath = config.libDir + File.separator + videoName + ".hash";
 
-        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg) + 1;
+        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg);
         PieceTracker hashPieceTracker = new CompletePieceTracker(hashPieces);
         Storage hashStorage = StorageFactory.getExistingFile(hashFilePath, HashUtil.getHashSize(fileMeta.hashAlg));
         FileMngr hashMngr = new SimpleFileMngr(hashStorage, hashPieceTracker);
 
         Storage videoStorage = StorageFactory.getExistingFile(videoFilePath, config.pieceSize);
-        int filePieces = fileMeta.fileSize / fileMeta.pieceSize + 1;
+        int filePieces = fileMeta.fileSize / fileMeta.pieceSize + (fileMeta.fileSize % fileMeta.pieceSize == 0 ? 0 : 1);
         PieceTracker videoPieceTracker = new CompletePieceTracker(filePieces);
         FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
 
@@ -262,13 +262,13 @@ public class VoDComp extends ComponentDefinition {
             hashFile.delete();
         }
         
-        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg) + 1;
+        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg);
         PieceTracker hashPieceTracker = new SimplePieceTracker(hashPieces);
         Storage hashStorage = StorageFactory.getEmptyFile(hashFilePath, fileMeta.hashFileSize, HashUtil.getHashSize(fileMeta.hashAlg));
         FileMngr hashMngr = new SimpleFileMngr(hashStorage, hashPieceTracker);
 
         Storage videoStorage = StorageFactory.getEmptyFile(videoFilePath, fileMeta.fileSize, fileMeta.pieceSize);
-        int filePieces = fileMeta.fileSize / fileMeta.pieceSize + 1;
+        int filePieces = fileMeta.fileSize / fileMeta.pieceSize + (fileMeta.fileSize % fileMeta.pieceSize == 0 ? 0 : 1);
         PieceTracker videoPieceTracker = new SimplePieceTracker(filePieces);
         FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
 

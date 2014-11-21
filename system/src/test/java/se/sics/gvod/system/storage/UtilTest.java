@@ -23,6 +23,8 @@ import java.io.File;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
 import junit.framework.Assert;
 import org.junit.Test;
 
@@ -33,7 +35,14 @@ public class UtilTest {
 
     @Test
     public void test1() throws NoSuchAlgorithmException {
-         System.out.println("" + (byte)0x91);
-         System.out.println(File.separator);
+        Map<Integer, Integer> mp = new HashMap<Integer, Integer>(); 
+        mp.put(1,1);
+        mp.put(2,2);
+        mp.entrySet().iterator().next();
+        for(Map.Entry<Integer, Integer> e : mp.entrySet()) {
+            System.out.println(e.getValue());
+        }
+        System.out.println("" + (byte)0x91);
+         
     }
 }
