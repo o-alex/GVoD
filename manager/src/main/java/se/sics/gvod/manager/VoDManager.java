@@ -19,7 +19,6 @@
 package se.sics.gvod.manager;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -27,6 +26,8 @@ import java.util.Set;
 public interface VoDManager {
 
     public Map<String, FileStatus> getFiles();
+    
+    public void reloadLibrary();
     
     public boolean pendingUpload(String videoName);
     

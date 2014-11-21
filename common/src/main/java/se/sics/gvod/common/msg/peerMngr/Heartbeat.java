@@ -22,6 +22,7 @@ import com.google.common.base.Objects;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.Assert;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;
 import se.sics.gvod.timer.Timeout;
@@ -33,16 +34,17 @@ public class Heartbeat {
 
     public static class OneWay extends GvodMsg.OneWay {
 
-        public final Map<Integer, Integer> overlaysUtility;
+        public final Map<Integer, Integer> overlayUtilities;
 
         public OneWay(UUID id, Map<Integer, Integer> overlays) {
             super(id);
-            this.overlaysUtility = overlays;
+            Assert.assertNotNull(overlays);
+            this.overlayUtilities = overlays;
         }
 
         @Override
         public OneWay copy() {
-            return new OneWay(id, new HashMap<Integer, Integer>(overlaysUtility));
+            return new OneWay(id, new HashMap<Integer, Integer>(overlayUtilities));
         }
 
         @Override
@@ -53,7 +55,7 @@ public class Heartbeat {
         @Override
         public int hashCode() {
             int hash = 3;
-            hash = 89 * hash + Objects.hashCode(overlaysUtility);
+            hash = 89 * hash + Objects.hashCode(overlayUtilities);
             hash = 89 * hash + Objects.hashCode(this.id);
             return hash;
         }
@@ -70,7 +72,7 @@ public class Heartbeat {
             if(!Objects.equal(this.id, other.id)) {
                 return false;
             }
-            if (!Objects.equal(this.overlaysUtility, other.overlaysUtility)) {
+            if (!Objects.equal(this.overlayUtilities, other.overlayUtilities)) {
                 return false;
             }
             return true;

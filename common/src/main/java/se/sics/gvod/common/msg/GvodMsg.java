@@ -26,7 +26,7 @@ import se.sics.kompics.KompicsEvent;
  */
 public class GvodMsg {
     
-    public static abstract class Base implements KompicsEvent {
+    public static abstract class Base implements KompicsEvent, Content {
         public final UUID id;
         
         public Base(UUID id) {

@@ -18,6 +18,7 @@
  */
 package se.sics.gvod.bootstrap.server.operations;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.HashSet;
 import java.util.Map;
@@ -29,7 +30,8 @@ import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.Heartbeat;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.network.serializers.SerializationContext;
+import se.sics.gvod.network.serializers.Serializer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -37,13 +39,15 @@ import se.sics.gvod.network.Util;
 public class HeartbeatOp implements Operation {
 
     private final PeerOpManager opMngr;
+    private final SerializationContext context;
     private final Heartbeat.OneWay oneWay;
     private final VodAddress src;
 
     public final Set<UUID> pendingJoins;
 
-    public HeartbeatOp(PeerOpManager opMngr, Heartbeat.OneWay oneWay, VodAddress src) {
+    public HeartbeatOp(PeerOpManager opMngr, SerializationContext context, Heartbeat.OneWay oneWay, VodAddress src) {
         this.opMngr = opMngr;
+        this.context = context;
         this.src = src;
         this.oneWay = oneWay;
         this.pendingJoins = new HashSet<UUID>();
@@ -56,15 +60,21 @@ public class HeartbeatOp implements Operation {
 
     @Override
     public void start() {
-        PMJoinOverlay.Request joinSystem = new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array());
-        opMngr.sendPeerManagerReq(getId(), joinSystem);
-        pendingJoins.add(joinSystem.id);
-        
-        for (Map.Entry<Integer, Integer> e : oneWay.overlaysUtility.entrySet()) {
-            byte[] heartbeatEntry = Util.encodeHeartbeatEntry(Unpooled.buffer(), src, e.getValue()).array();
-            PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getPeerAddress().getId(), heartbeatEntry);
-            opMngr.sendPeerManagerReq(getId(), joinOverlay);
-            pendingJoins.add(joinOverlay.id);
+        try {
+            byte[] bytesSrc = context.getSerializer(VodAddress.class).encode(context, Unpooled.buffer(), src).array();
+            PMJoinOverlay.Request joinSystem = new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), bytesSrc);
+            opMngr.sendPeerManagerReq(getId(), joinSystem);
+            pendingJoins.add(joinSystem.id);
+            
+            for (Map.Entry<Integer, Integer> e : oneWay.overlayUtilities.entrySet()) {
+                PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getPeerAddress().getId(), encodeHeartbeatEntry(src, e.getValue()));
+                opMngr.sendPeerManagerReq(getId(), joinOverlay);
+                pendingJoins.add(joinOverlay.id);
+            }
+        } catch (Serializer.SerializerException ex) {
+            throw new RuntimeException(ex);
+        } catch (SerializationContext.MissingException ex) {
+            throw new RuntimeException(ex);
         }
     }
 
@@ -84,5 +94,11 @@ public class HeartbeatOp implements Operation {
             throw new RuntimeException("wrong phase");
         }
     }
-
+    
+    private byte[] encodeHeartbeatEntry(VodAddress src, int overlayUtility) throws Serializer.SerializerException, SerializationContext.MissingException {
+        ByteBuf buf = Unpooled.buffer();
+        context.getSerializer(VodAddress.class).encode(context, buf, src);
+        buf.writeInt(overlayUtility);
+        return buf.array();
+    }
 }

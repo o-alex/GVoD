@@ -93,16 +93,18 @@ public class Download {
     }
     
     public static class HashRequest extends GvodMsg.Request {
-        public final Set<Integer> pieces;
+        public final int targetPos;
+        public final Set<Integer> hashes;
         
-        public HashRequest(UUID id, Set<Integer> pieces) {
+        public HashRequest(UUID id, int targetPos, Set<Integer> hashes) {
             super(id);
-            this.pieces = pieces;
+            this.targetPos = targetPos;
+            this.hashes = hashes;
         }
         
         @Override
         public HashRequest copy() {
-            return new HashRequest(id, pieces);
+            return new HashRequest(id, targetPos, hashes);
         }
         
         @Override
@@ -111,32 +113,34 @@ public class Download {
         }
         
         public HashResponse success(Map<Integer, byte[]> pieces, Set<Integer> missingPieces) {
-            return new HashResponse(id, ReqStatus.SUCCESS, pieces, missingPieces);
+            return new HashResponse(id, ReqStatus.SUCCESS, targetPos, pieces, missingPieces);
         }
         
         public HashResponse timeout() {
-            return new HashResponse(id, ReqStatus.TIMEOUT, new HashMap<Integer, byte[]>(), pieces);
+            return new HashResponse(id, ReqStatus.TIMEOUT, targetPos, new HashMap<Integer, byte[]>(), hashes);
         }
         
         public HashResponse busy() {
-            return new HashResponse(id, ReqStatus.BUSY, new HashMap<Integer, byte[]>(), pieces);
+            return new HashResponse(id, ReqStatus.BUSY, targetPos, new HashMap<Integer, byte[]>(), hashes);
         }
     }        
     
     public static class HashResponse extends GvodMsg.Response {
         
-        public final Map<Integer, byte[]> pieces;
-        public final Set<Integer> missingPieces;
+        public final int targetPos;
+        public final Map<Integer, byte[]> hashes;
+        public final Set<Integer> missingHashes;
         
-        public HashResponse(UUID id, ReqStatus status, Map<Integer, byte[]> pieces, Set<Integer> missingPieces) {
+        public HashResponse(UUID id, ReqStatus status, int targetPos, Map<Integer, byte[]> hashes, Set<Integer> missingHashes) {
             super(id, status);
-            this.pieces = pieces;
-            this.missingPieces = missingPieces;
+            this.targetPos = targetPos;
+            this.hashes = hashes;
+            this.missingHashes = missingHashes;
         }
         
         @Override
         public HashResponse copy() {
-            return new HashResponse(id, status, pieces, missingPieces);
+            return new HashResponse(id, status, targetPos, hashes, missingHashes);
         }
         
         @Override

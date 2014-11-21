@@ -41,7 +41,15 @@ import se.sics.gvod.common.msg.peerMngr.JoinOverlay;
 import se.sics.gvod.common.msg.peerMngr.OverlaySample;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
-import se.sics.gvod.network.nettymsg.GvodNetMsg;
+import se.sics.gvod.network.GVoDNetFrameDecoder;
+import se.sics.gvod.network.GVoDNetworkSettings;
+import se.sics.gvod.network.netmsg.NetContentMsg;
+import se.sics.gvod.network.netmsg.bootstrap.NetAddOverlay;
+import se.sics.gvod.network.netmsg.bootstrap.NetBootstrapGlobal;
+import se.sics.gvod.network.netmsg.bootstrap.NetHeartbeat;
+import se.sics.gvod.network.netmsg.bootstrap.NetJoinOverlay;
+import se.sics.gvod.network.netmsg.bootstrap.NetOverlaySample;
+import se.sics.gvod.network.serializers.SerializationContext;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
@@ -58,6 +66,7 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
     private Positive<PeerManagerPort> peerManager = requires(PeerManagerPort.class);
 
     private final BootstrapServerConfig config;
+    private final SerializationContext context;
 
     private final Map<UUID, Operation> pendingOps;
     private final Map<UUID, UUID> pendingPeerReqs;
@@ -65,54 +74,69 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
     public BootstrapServerComp(BootstrapServerInit init) {
         log.debug("init");
         this.config = init.config;
+        this.context = init.context;
         this.pendingOps = new HashMap<UUID, Operation>();
         this.pendingPeerReqs = new HashMap<UUID, UUID>();
 
-        subscribe(handleNetRequest, network);
-        subscribe(handleNetOneWay, network);
+        subscribe(handleBootstrapGlobalRequest, network);
+        subscribe(handleAddOverlayRequest, network);
+        subscribe(handleJoinOverlayRequest, network);
+        subscribe(handleOverlaySampleRequest, network);
+        subscribe(handleHeartbeat, network);
         subscribe(handlePeerManagerResponse, peerManager);
     }
 
-    public Handler<GvodNetMsg.Request<GvodMsg.Request>> handleNetRequest = new Handler<GvodNetMsg.Request<GvodMsg.Request>>() {
+    public Handler<NetBootstrapGlobal.Request> handleBootstrapGlobalRequest = new Handler<NetBootstrapGlobal.Request>() {
 
         @Override
-        public void handle(GvodNetMsg.Request<GvodMsg.Request> netReq) {
-            log.debug("{} received {}", new Object[]{config.self, netReq});
-            Operation op = null;
-            
-            if (netReq.payload instanceof BootstrapGlobal.Request) {
-                BootstrapGlobal.Request gvodReq = (BootstrapGlobal.Request) netReq.payload;
-                op = new BootstrapGlobalOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
-            } else if (netReq.payload instanceof AddOverlay.Request) {
-                AddOverlay.Request gvodReq = (AddOverlay.Request) netReq.payload;
-                op = new AddOverlayOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
-            } else if (netReq.payload instanceof JoinOverlay.Request) {
-                JoinOverlay.Request gvodReq = (JoinOverlay.Request) netReq.payload;
-                op = new JoinOverlayOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
-            } else if (netReq.payload instanceof OverlaySample.Request) {
-                OverlaySample.Request gvodReq = (OverlaySample.Request) netReq.payload;
-                op = new OverlaySampleOp(BootstrapServerComp.this, gvodReq, netReq.getVodSource());
-            } else {
-                throw new RuntimeException("wrong message");
-            }
-            pendingOps.put(netReq.payload.id, op);
+        public void handle(NetBootstrapGlobal.Request req) {
+            log.debug("{} received {}", config.self, req);
+            Operation op = new BootstrapGlobalOp(BootstrapServerComp.this, context, req.content, req.getVodSource());
+            pendingOps.put(req.content.id, op);
             op.start();
         }
     };
 
-    public Handler<GvodNetMsg.OneWay<GvodMsg.OneWay>> handleNetOneWay = new Handler<GvodNetMsg.OneWay<GvodMsg.OneWay>>() {
+    public Handler<NetAddOverlay.Request> handleAddOverlayRequest = new Handler<NetAddOverlay.Request>() {
 
         @Override
-        public void handle(GvodNetMsg.OneWay<GvodMsg.OneWay> netOneWay) {
-            log.debug("{} received {}", new Object[]{config.self, netOneWay});
-            Operation op = null;
-            if (netOneWay.payload instanceof Heartbeat.OneWay) {
-                Heartbeat.OneWay gvodOneWay = (Heartbeat.OneWay) netOneWay.payload;
-                op = new HeartbeatOp(BootstrapServerComp.this, gvodOneWay, netOneWay.getVodSource());
-            } else {
-                throw new RuntimeException("wrong message");
-            }
-            pendingOps.put(netOneWay.payload.id, op);
+        public void handle(NetAddOverlay.Request req) {
+            log.debug("{} received{}", config.self, req);
+            Operation op = new AddOverlayOp(BootstrapServerComp.this, context, req.content, req.getVodSource());
+            pendingOps.put(req.content.id, op);
+            op.start();
+        }
+    };
+
+    public Handler<NetJoinOverlay.Request> handleJoinOverlayRequest = new Handler<NetJoinOverlay.Request>() {
+
+        @Override
+        public void handle(NetJoinOverlay.Request req) {
+            log.debug("{} received {}", config.self, req);
+            Operation op = new JoinOverlayOp(BootstrapServerComp.this, context, req.content, req.getVodSource());
+            pendingOps.put(req.content.id, op);
+            op.start();
+        }
+    };
+
+    public Handler<NetOverlaySample.Request> handleOverlaySampleRequest = new Handler<NetOverlaySample.Request>() {
+
+        @Override
+        public void handle(NetOverlaySample.Request req) {
+            log.debug("{} received {}", config.self, req);
+            Operation op = new OverlaySampleOp(BootstrapServerComp.this, context, req.content, req.getVodSource());
+            pendingOps.put(req.content.id, op);
+            op.start();
+        }
+    };
+
+    public Handler<NetHeartbeat.OneWay> handleHeartbeat = new Handler<NetHeartbeat.OneWay>() {
+
+        @Override
+        public void handle(NetHeartbeat.OneWay heartbeat) {
+            log.debug("{} received {}", new Object[]{config.self, heartbeat});
+            Operation op = new HeartbeatOp(BootstrapServerComp.this, context, heartbeat.content, heartbeat.getVodSource());
+            pendingOps.put(heartbeat.content.id, op);
             op.start();
         }
 
@@ -140,9 +164,24 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
         }
         cleanRequests(opId);
         log.debug("{} sending {}", new Object[]{config.self, resp});
-        trigger(new GvodNetMsg.Response<GvodMsg.Response>(config.self, src, resp), network);
+        if (resp instanceof BootstrapGlobal.Response) {
+            BootstrapGlobal.Response gvodResp = (BootstrapGlobal.Response) resp;
+            trigger(new NetBootstrapGlobal.Response(config.self, src, resp.id, gvodResp), network);
+        } else if (resp instanceof AddOverlay.Response) {
+            AddOverlay.Response gvodResp = (AddOverlay.Response) resp;
+            trigger(new NetAddOverlay.Response(config.self, src, resp.id, gvodResp), network);
+        } else if (resp instanceof JoinOverlay.Response) {
+            JoinOverlay.Response gvodResp = (JoinOverlay.Response) resp;
+            trigger(new NetJoinOverlay.Response(config.self, src, resp.id, gvodResp), network);
+        } else if (resp instanceof OverlaySample.Response) {
+            OverlaySample.Response gvodResp = (OverlaySample.Response) resp;
+            trigger(new NetOverlaySample.Response(config.self, src, resp.id, gvodResp), network);
+        } else {
+            throw new RuntimeException("wrong message");
+        }
+
     }
-    
+
     @Override
     public void finish(UUID opId) {
         if (pendingOps.remove(opId) == null) {
@@ -171,9 +210,11 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
     public static class BootstrapServerInit extends Init<BootstrapServerComp> {
 
         public final BootstrapServerConfig config;
+        public final SerializationContext context;
 
         public BootstrapServerInit(BootstrapServerConfig config) {
             this.config = config;
+            this.context = GVoDNetworkSettings.getContext();
         }
     }
 }

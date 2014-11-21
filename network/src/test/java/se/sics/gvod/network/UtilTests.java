@@ -21,39 +21,109 @@ package se.sics.gvod.network;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.net.InetAddress;
+import java.net.Inet4Address;
 import java.net.UnknownHostException;
-import java.util.UUID;
-import junit.framework.Assert;
+import java.util.Arrays;
+import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import se.sics.gvod.address.Address;
+import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.net.VodAddress;
+import se.sics.gvod.network.serializers.SerializationContext;
+import se.sics.gvod.network.serializers.Serializer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class UtilTests {
-
+    
+    private static SerializationContext context;
+    @BeforeClass
+    public static void setup() {
+        GVoDNetFrameDecoder.register();
+        GVoDNetworkSettings.checkPreCond();
+        GVoDNetworkSettings.registerSerializers();
+        context = GVoDNetworkSettings.getContext();
+    }
+    
     @Test
-    public void testUUID() {
-        UUID expected = UUID.randomUUID();
-        int expectedSize = Util.getUUIDEncodedSize();
-        ByteBuf buf = Unpooled.buffer();
-        Util.encodeUUID(buf, expected);
-        ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
-        UUID decoded = Util.decodeUUID(newBuf);
+    public void testReqStatus() throws SerializationContext.MissingException, Serializer.SerializerException, UnknownHostException, UnknownHostException, UnknownHostException {
+        Serializer<ReqStatus> serializer = context.getSerializer(ReqStatus.class);
+        Assert.assertNotNull(serializer);
+        ReqStatus expected, decoded;
+        ByteBuf buf, newBuf;
+        int expectedSize;
+        
+        expected = ReqStatus.SUCCESS;
+        expectedSize = serializer.getSize(context, expected);
+        buf = Unpooled.buffer();
+        serializer.encode(context, buf, expected);
+        newBuf = Unpooled.wrappedBuffer(buf.array());
+        decoded = serializer.decode(context, newBuf);
+        Assert.assertEquals(expected, decoded);
+        Assert.assertEquals(expectedSize, buf.readableBytes());
+        
+        expected = ReqStatus.FAIL;
+        expectedSize = serializer.getSize(context, expected);
+        buf = Unpooled.buffer();
+        serializer.encode(context, buf, expected);
+        newBuf = Unpooled.wrappedBuffer(buf.array());
+        decoded = serializer.decode(context, newBuf);
+        Assert.assertEquals(expected, decoded);
+        Assert.assertEquals(expectedSize, buf.readableBytes());
+        
+        expected = ReqStatus.BUSY;
+        expectedSize = serializer.getSize(context, expected);
+        buf = Unpooled.buffer();
+        serializer.encode(context, buf, expected);
+        newBuf = Unpooled.wrappedBuffer(buf.array());
+        decoded = serializer.decode(context, newBuf);
+        Assert.assertEquals(expected, decoded);
+        Assert.assertEquals(expectedSize, buf.readableBytes());
+        
+        expected = ReqStatus.MISSING;
+        expectedSize = serializer.getSize(context, expected);
+        buf = Unpooled.buffer();
+        serializer.encode(context, buf, expected);
+        newBuf = Unpooled.wrappedBuffer(buf.array());
+        decoded = serializer.decode(context, newBuf);
+        Assert.assertEquals(expected, decoded);
+        Assert.assertEquals(expectedSize, buf.readableBytes());
+        
+        expected = ReqStatus.TIMEOUT;
+        expectedSize = serializer.getSize(context, expected);
+        buf = Unpooled.buffer();
+        serializer.encode(context, buf, expected);
+        newBuf = Unpooled.wrappedBuffer(buf.array());
+        decoded = serializer.decode(context, newBuf);
         Assert.assertEquals(expected, decoded);
         Assert.assertEquals(expectedSize, buf.readableBytes());
     }
     
-    @Test 
-    public void testVodAddress() throws UnknownHostException {
-        VodAddress expected = new VodAddress(new Address(InetAddress.getLocalHost(), 1234, 1), -1);
-        int expectedSize = Util.getVodAddressEncodedSize(expected);
-        ByteBuf buf = Unpooled.buffer();
-        Util.encodeVodAddress(buf, expected);
-        ByteBuf newBuf = Unpooled.wrappedBuffer(buf.array());
-        VodAddress decoded = Util.decodeVodAddress(newBuf);
+     @Test
+    public void testVodAddress() throws SerializationContext.MissingException, Serializer.SerializerException, UnknownHostException {
+        Serializer<VodAddress> serializer = context.getSerializer(VodAddress.class);
+        Assert.assertNotNull(serializer);
+        VodAddress expected, decoded;
+        ByteBuf buf, newBuf;
+        int expectedSize;
+        
+        expected = new VodAddress(new Address(Inet4Address.getLocalHost(), 10000, 123), 10);
+        expectedSize = serializer.getSize(context, expected);
+        buf = Unpooled.buffer();
+        serializer.encode(context, buf, expected);
+        newBuf = Unpooled.wrappedBuffer(Arrays.copyOf(buf.array(), buf.array().length));
+        decoded = serializer.decode(context, newBuf);
+        Assert.assertEquals(expected, decoded);
+        Assert.assertEquals(expectedSize, buf.readableBytes());
+        
+        expected = new VodAddress(new Address(Inet4Address.getByName("localhost"), 10000, 123), 10);
+        expectedSize = serializer.getSize(context, expected);
+        buf = Unpooled.buffer();
+        serializer.encode(context, buf, expected);
+        newBuf = Unpooled.wrappedBuffer(Arrays.copyOf(buf.array(), buf.array().length));
+        decoded = serializer.decode(context, newBuf);
         Assert.assertEquals(expected, decoded);
         Assert.assertEquals(expectedSize, buf.readableBytes());
     }

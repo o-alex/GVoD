@@ -110,8 +110,9 @@ public class DownloadMngrComp extends ComponentDefinition {
         public void handle(Ready event) {
             if (downloading) {
                 log.info("{} starting video download", config.getSelf());
-
-                download();
+                for (int i = 0; i < config.startPieces; i++) {
+                    download();
+                }
                 scheduleSpeedUp(1);
                 subscribe(handleDownloadSpeedUp, timer);
 
@@ -137,7 +138,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
             Set<Integer> missingHashes = new HashSet<Integer>();
 
-            for (Integer hash : req.pieces) {
+            for (Integer hash : req.hashes) {
                 if (hashMngr.hasPiece(hash)) {
                     hashes.put(hash, hashMngr.readPiece(hash));
                 } else {
@@ -158,27 +159,27 @@ public class DownloadMngrComp extends ComponentDefinition {
 
             switch (resp.status) {
                 case SUCCESS:
-                    log.debug("{} {} {} hashes:{}", new Object[]{config.getSelf(), resp, resp.status, resp.pieces.keySet()});
+                    log.debug("{} {} {} hashes:{}", new Object[]{config.getSelf(), resp, resp.status, resp.hashes.keySet()});
 
-                    for (Map.Entry<Integer, byte[]> hash : resp.pieces.entrySet()) {
+                    for (Map.Entry<Integer, byte[]> hash : resp.hashes.entrySet()) {
                         hashMngr.writePiece(hash.getKey(), hash.getValue());
                     }
 
-                    pendingHashes.removeAll(resp.pieces.keySet());
-                    nextHashes.addAll(0, resp.missingPieces);
+                    pendingHashes.removeAll(resp.hashes.keySet());
+                    nextHashes.addAll(0, resp.missingHashes);
 
                     download();
                     return;
                 case TIMEOUT:
                     log.debug("{} {} {} ", new Object[]{config.getSelf(), resp, resp.status});
-                    pendingHashes.removeAll(resp.missingPieces);
-                    nextHashes.addAll(0, resp.missingPieces);
+                    pendingHashes.removeAll(resp.missingHashes);
+                    nextHashes.addAll(0, resp.missingHashes);
                     download();
                     return;
                 case BUSY:
                     log.debug("{} download slow down");
-                    pendingPieces.removeAll(resp.missingPieces);
-                    nextPieces.addAll(0, resp.missingPieces);
+                    pendingPieces.removeAll(resp.missingHashes);
+                    nextPieces.addAll(0, resp.missingHashes);
                     cancelSpeedUp();
                     scheduleSpeedUp(10);
                     return;
@@ -274,62 +275,73 @@ public class DownloadMngrComp extends ComponentDefinition {
         }
     };
 
-    private void download() {
-        if (nextHashes.size() < config.hashesPerMsg && nextPieces.isEmpty()) {
+    private boolean download() {
+        if (nextHashes.isEmpty() && nextPieces.isEmpty()) {
             if (fileMngr.isComplete()) {
                 finishDownload();
-                return;
+                return false;
             } else {
                 getNewPieces();
             }
         }
 
-        int i;
-        for (i = 0; i < config.startPieces; i++) {
-            if (!downloadHash()) {
-                break;
+        if (!downloadHash()) {
+            if (!downloadData()) {
+                return false;
             }
-
         }
-        for (; i < config.startPieces; i++) {
-            downloadData();
-        }
+        return true;
     }
 
     //TODO get a good way to get new pieces
     private void getNewPieces() {
-        int nrNewPieces = 2 * (config.startPieces + pendingPieces.size());
+        int filePos = fileMngr.contiguousStart();
+        int hashPos = hashMngr.contiguousStart();
+
+        int fileFactor, hashFactor;
+        if (filePos + 2 * config.startPieces < hashPos) {
+            fileFactor = 1;
+            hashFactor = 1;
+        } else {
+            fileFactor = 1;
+            hashFactor = 2;
+        }
+        int nrNewPieces = fileFactor * config.startPieces + pendingPieces.size();
         Set<Integer> newNextPieces = fileMngr.nextPiecesNeeded(nrNewPieces, 0);
         newNextPieces.removeAll(pendingPieces);
         nextPieces.addAll(newNextPieces);
 
-        int nrNewHashes = 4 * (config.startPieces + pendingHashes.size());
+        int nrNewHashes = hashFactor * config.startPieces + pendingHashes.size();
         Set<Integer> newNextHashes = hashMngr.nextPiecesNeeded(nrNewHashes, 0);
         newNextHashes.removeAll(pendingHashes);
-        newNextHashes.removeAll(nextHashes);
         nextHashes.addAll(newNextHashes);
 
     }
 
-    private void downloadData() {
+    private boolean downloadData() {
+        if (nextPieces.isEmpty()) {
+            return false;
+        }
         int nextPieceId = nextPieces.remove(0);
         log.debug("{} downloading piece {}", config.getSelf(), nextPieceId);
         trigger(new Download.DataRequest(UUID.randomUUID(), config.overlayId, nextPieceId), connMngr);
         pendingPieces.add(nextPieceId);
+        return true;
     }
 
     private boolean downloadHash() {
-        if (nextHashes.get(0) < nextPieces.get(0) + config.hashSpeed) {
-            Set<Integer> hashesToDownload = new HashSet<Integer>();
-            for (int i = 0; i < config.hashesPerMsg && !nextHashes.isEmpty(); i++) {
-                hashesToDownload.add(nextHashes.remove(0));
-            }
-            log.debug("{} downloading hashes {}", config.getSelf(), hashesToDownload);
-            trigger(new Download.HashRequest(UUID.randomUUID(), hashesToDownload), connMngr);
-            pendingHashes.addAll(hashesToDownload);
-            return true;
+        if (nextHashes.isEmpty()) {
+            return false;
         }
-        return false;
+        Set<Integer> hashesToDownload = new HashSet<Integer>();
+        int targetPos = nextHashes.get(0);
+        for (int i = 0; i < config.hashesPerMsg && !nextHashes.isEmpty(); i++) {
+            hashesToDownload.add(nextHashes.remove(0));
+        }
+        log.debug("{} downloading hashes {}", config.getSelf(), hashesToDownload);
+        trigger(new Download.HashRequest(UUID.randomUUID(), targetPos, hashesToDownload), connMngr);
+        pendingHashes.addAll(hashesToDownload);
+        return true;
     }
 
     private void scheduleSpeedUp(int periodFactor) {
@@ -374,6 +386,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         //cancel timeouts
         cancelSpeedUp();
         cancelUpdateSelf();
+
     }
 
     public static class DownloadMngrInit extends Init<DownloadMngrComp> {

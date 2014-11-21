@@ -22,6 +22,7 @@ import java.util.HashSet;
 import com.google.common.base.Objects;
 import java.util.Set;
 import java.util.UUID;
+import junit.framework.Assert;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.net.VodAddress;
@@ -42,7 +43,7 @@ public class BootstrapGlobal {
         }
 
         public Response fail() {
-            return new Response(id, ReqStatus.FAIL, null);
+            return new Response(id, ReqStatus.FAIL, new HashSet<VodAddress>());
         }
 
         @Override

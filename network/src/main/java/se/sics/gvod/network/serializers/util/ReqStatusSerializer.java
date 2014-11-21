@@ -16,7 +16,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.network.serializers.util;
 
 import io.netty.buffer.ByteBuf;
@@ -38,6 +37,15 @@ public class ReqStatusSerializer implements Serializer<ReqStatus> {
             case SUCCESS:
                 buf.writeByte(0x01);
                 break;
+            case MISSING:
+                buf.writeByte(0x02);
+                break;
+            case BUSY:
+                buf.writeByte(0x03);
+                break;
+            case TIMEOUT:
+                buf.writeByte(0x04);
+                break;
             default:
                 throw new SerializerException("no code for encoding status " + obj);
         }
@@ -52,6 +60,12 @@ public class ReqStatusSerializer implements Serializer<ReqStatus> {
                 return ReqStatus.FAIL;
             case 0x01:
                 return ReqStatus.SUCCESS;
+            case 0x02:
+                return ReqStatus.MISSING;
+            case 0x03:
+                return ReqStatus.BUSY;
+            case 0x04:
+                return ReqStatus.TIMEOUT;
             default:
                 throw new SerializerException("no code for decoding status byte " + status);
         }
@@ -59,7 +73,7 @@ public class ReqStatusSerializer implements Serializer<ReqStatus> {
 
     @Override
     public int getSize(SerializationContext context, ReqStatus obj) throws SerializerException, SerializationContext.MissingException {
-        return Byte.SIZE/8;
+        return Byte.SIZE / 8;
     }
-    
+
 }

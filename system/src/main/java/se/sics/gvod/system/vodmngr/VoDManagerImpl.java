@@ -16,7 +16,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.system.vodmngr;
 
 import java.io.File;
@@ -41,29 +40,31 @@ import se.sics.kompics.Positive;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
+
     private static final Logger log = LoggerFactory.getLogger(VoDManager.class);
 
     private final Positive<VoDPort> vodPort = requires(VoDPort.class);
     private final Positive<UtilityUpdatePort> utilityPort = requires(UtilityUpdatePort.class);
-    
+
     private final VoDManagerConfig config;
-    
+
     private final Map<String, FileStatus> videos;
-    
-    
+
     public VoDManagerImpl(VoDManagerInit init) {
         this.config = init.config;
         this.videos = new ConcurrentHashMap<String, FileStatus>();
+        reloadLibrary();
     }
-    
-    public void loadLibrary() {
+
+    @Override
+    public void reloadLibrary() {
         log.info("loading library folder:{}", config.libDir);
-        
+
         File dir = new File(config.libDir);
         if (!dir.isDirectory()) {
             throw new RuntimeException("bad library path");
         }
-        
+
         FileFilter mp4Filter = new FileFilter() {
             @Override
             public boolean accept(File file) {
@@ -73,34 +74,40 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
                 return file.getName().endsWith(".mp4");
             }
         };
-        
+
         for (File video : dir.listFiles(mp4Filter)) {
-            log.debug("reading video: {} info", video.getName());
-            videos.put(video.getName(), FileStatus.NONE);
+            log.info("library - loading video: {}", video.getName());
+            if (!videos.containsKey(video.getName())) {
+                videos.put(video.getName(), FileStatus.NONE);
+            }
         }
     }
-    
-     @Override
+
+    @Override
     public Map<String, FileStatus> getFiles() {
         return new HashMap<String, FileStatus>(videos);
     }
-    
+
     @Override
     public boolean pendingUpload(String videoName) {
         FileStatus videoStatus = videos.get(videoName);
-        if(videoStatus == null || !videoStatus.equals(FileStatus.NONE)) {
+        if (videoStatus == null || !videoStatus.equals(FileStatus.NONE)) {
+            log.warn("{} video {} not found in library {}", new Object[]{config.selfAddress, videoName, config.libDir});
             return false;
         }
+        log.info("{} video {} found - pending upload", config.selfAddress, videoName);
         videos.put(videoName, FileStatus.PENDING);
         return true;
     }
-    
+
     @Override
     public boolean uploadVideo(String videoName, int overlayId) {
         FileStatus videoStatus = videos.get(videoName);
-        if(videoStatus == null || !videoStatus.equals(FileStatus.PENDING)) {
+        if (videoStatus == null || !videoStatus.equals(FileStatus.PENDING)) {
+            log.warn("{} video not pending upload - cannot initiate upload", new Object[]{config.selfAddress, videoName, config.libDir});
             return false;
         }
+        log.info("{} video {} found - uploading", config.selfAddress, videoName);
         videos.put(videoName, FileStatus.UPLOADING);
         trigger(new UploadVideo.Request(videoName, overlayId), vodPort);
         return true;
@@ -109,17 +116,18 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     @Override
     public boolean downloadVideo(String videoName, int overlayId) {
         FileStatus videoStatus = videos.get(videoName);
-        if(videoStatus != null) {
+        if (videoStatus != null) {
             return false;
         }
         videos.put(videoName, FileStatus.DOWNLOADING);
         trigger(new DownloadVideo.Request(videoName, overlayId), vodPort);
         return true;
     }
-    
+
     public static class VoDManagerInit extends Init<VoDManagerImpl> {
+
         public final VoDManagerConfig config;
-        
+
         public VoDManagerInit(VoDManagerConfig config) {
             this.config = config;
         }

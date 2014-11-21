@@ -19,13 +19,17 @@
 
 package se.sics.gvod.system.vodmngr;
 
+import se.sics.gvod.net.VodAddress;
+
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class VoDManagerConfig {
     public final String libDir;
+    public final VodAddress selfAddress;
     
-    public VoDManagerConfig(String libDir) {
+    public VoDManagerConfig(VodAddress selfAddress, String libDir) {
+        this.selfAddress = selfAddress;
         this.libDir = libDir;
     }
 }

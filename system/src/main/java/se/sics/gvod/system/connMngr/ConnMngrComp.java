@@ -34,12 +34,13 @@ import se.sics.gvod.croupierfake.CroupierSample;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.common.util.VodDescriptor;
-import se.sics.gvod.network.nettymsg.OverlayNetMsg;
 import se.sics.gvod.common.msg.vod.Connection;
 import se.sics.gvod.system.connMngr.msg.Ready;
 import se.sics.gvod.common.msg.vod.Download;
 import se.sics.gvod.common.utility.UtilityUpdate;
 import se.sics.gvod.common.utility.UtilityUpdatePort;
+import se.sics.gvod.network.netmsg.vod.NetConnection;
+import se.sics.gvod.network.netmsg.vod.NetDownload;
 import se.sics.gvod.system.connMngr.msg.DownloadDataTimeout;
 import se.sics.gvod.system.connMngr.msg.DownloadHashTimeout;
 import se.sics.gvod.system.connMngr.msg.ScheduleConnUpdate;
@@ -69,7 +70,6 @@ public class ConnMngrComp extends ComponentDefinition {
     private Positive<UtilityUpdatePort> utilityUpdate = requires(UtilityUpdatePort.class);
 
     private final ConnMngrConfig config;
-    private final MsgProcessor msgProc;
 
     private LocalVodDescriptor selfDesc;
 
@@ -77,9 +77,10 @@ public class ConnMngrComp extends ComponentDefinition {
     private Map<VodAddress, VodDescriptor> pendingUploadersConn;
     private Map<VodAddress, UploaderVodDescriptor> uploadersConn;
 
-    private Map<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>> pendingDataTraffic; //<source, <reqId, <req, timeoutId>>>
-    private Map<VodAddress, Map<UUID, Pair<Download.HashRequest, TimeoutId>>> pendingHashTraffic;
-    private Map<Integer, Set<VodAddress>> pendingUploadReq;
+    private Map<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>> pendingDownloadingData; //<source, <reqId, <req, timeoutId>>>
+    private Map<VodAddress, Map<UUID, Pair<Download.HashRequest, TimeoutId>>> pendingDownloadingHash;
+    private Map<Integer, Set<VodAddress>> pendingUploadingData;
+    private Map<Integer, Set<VodAddress>> pendingUploadingHash;
 
     private TimeoutId connUpdateTId;
 
@@ -90,13 +91,13 @@ public class ConnMngrComp extends ComponentDefinition {
         log.info("{} creating...", config.getSelf());
 
         this.selfDesc = null;
-        this.msgProc = new MsgProcessor();
         this.downloadersConn = new HashMap<VodAddress, DownloaderVodDescriptor>();
         this.pendingUploadersConn = new HashMap<VodAddress, VodDescriptor>();
         this.uploadersConn = new HashMap<VodAddress, UploaderVodDescriptor>();
-        this.pendingDataTraffic = new HashMap<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>>();
-        this.pendingHashTraffic = new HashMap<VodAddress, Map<UUID, Pair<Download.HashRequest, TimeoutId>>>();
-        this.pendingUploadReq = new HashMap<Integer, Set<VodAddress>>();
+        this.pendingDownloadingData = new HashMap<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>>();
+        this.pendingDownloadingHash = new HashMap<VodAddress, Map<UUID, Pair<Download.HashRequest, TimeoutId>>>();
+        this.pendingUploadingData = new HashMap<Integer, Set<VodAddress>>();
+        this.pendingUploadingHash = new HashMap<Integer, Set<VodAddress>>();
         this.ready = false;
 
         subscribe(handleUpdateUtility, utilityUpdate);
@@ -117,17 +118,17 @@ public class ConnMngrComp extends ComponentDefinition {
                     log.debug("{} completed - closing download connections", config.getSelf());
                     for (VodAddress partner : uploadersConn.keySet()) {
                         Connection.Close cl = new Connection.Close(UUID.randomUUID());
-                        trigger(new OverlayNetMsg.OneWay(config.getSelf(), partner, config.overlayId, cl), network);
+                        trigger(new NetConnection.Close(config.getSelf(), partner, cl.id, config.overlayId, cl), network);
                     }
                     for (VodAddress partner : pendingUploadersConn.keySet()) {
                         Connection.Close cl = new Connection.Close(UUID.randomUUID());
-                        trigger(new OverlayNetMsg.OneWay(config.getSelf(), partner, config.overlayId, cl), network);
+                        trigger(new NetConnection.Close(config.getSelf(), partner, cl.id, config.overlayId, cl), network);
                     }
                     uploadersConn = new HashMap<VodAddress, UploaderVodDescriptor>();
                     pendingUploadersConn = new HashMap<VodAddress, VodDescriptor>();
 
                     log.debug("{} cleaning timeouts", config.getSelf());
-                    for (Map<UUID, Pair<Download.DataRequest, TimeoutId>> partnerTIds : pendingDataTraffic.values()) {
+                    for (Map<UUID, Pair<Download.DataRequest, TimeoutId>> partnerTIds : pendingDownloadingData.values()) {
                         for (Pair<Download.DataRequest, TimeoutId> downReq : partnerTIds.values()) {
                             CancelTimeout ct = new CancelTimeout(downReq.getValue1());
                             trigger(ct, timer);
@@ -137,7 +138,7 @@ public class ConnMngrComp extends ComponentDefinition {
                     CancelTimeout ct = new CancelTimeout(connUpdateTId);
                     trigger(ct, timer);
 
-                    pendingDataTraffic = null;
+                    pendingDownloadingData = null;
                 }
                 selfDesc = new LocalVodDescriptor(new VodDescriptor(event.downloadPos), event.downloading);
             }
@@ -154,58 +155,27 @@ public class ConnMngrComp extends ComponentDefinition {
             trigger(new Ready(UUID.randomUUID()), myPort);
         }
 
-        subscribe(handleNetRequest, network);
-        subscribe(handleNetResponse, network);
-        subscribe(handleNetOneWay, network);
-
         subscribe(handleScheduledConnectionUpdate, timer);
         subscribe(handleCroupierSample, croupier);
 
-        msgProc.subscribe(handleConnectionRequest);
-        msgProc.subscribe(handleConnectionResponse);
-        msgProc.subscribe(handleConnectionUpdate);
-        msgProc.subscribe(handleConnectionClose);
+        subscribe(handleConnectionRequest, network);
+        subscribe(handleConnectionResponse, network);
+        subscribe(handleConnectionUpdate, network);
+        subscribe(handleConnectionClose, network);
 
-//        subscribe(handleLocalHashRequest, myPort);
-//        subscribe(handleLocalHashResponse, myPort);
+        subscribe(handleLocalHashRequest, myPort);
+        subscribe(handleLocalHashResponse, myPort);
         subscribe(handleLocalDataRequest, myPort);
         subscribe(handleLocalDataResponse, myPort);
         subscribe(handleDownloadDataTimeout, timer);
         subscribe(handleDownloadHashTimeout, timer);
 
-//        msgProc.subscribe(handleNetHashRequest);
-//        msgProc.subscribe(handleNetHashResponse);
-        msgProc.subscribe(handleNetDataRequest);
-        msgProc.subscribe(handleNetDataResponse);
+        subscribe(handleNetHashRequest, network);
+        subscribe(handleNetHashResponse, network);
+        subscribe(handleNetDataRequest, network);
+        subscribe(handleNetDataResponse, network);
 
     }
-
-    private Handler<OverlayNetMsg.OneWay> handleNetOneWay = new Handler<OverlayNetMsg.OneWay>() {
-
-        @Override
-        public void handle(OverlayNetMsg.OneWay netReq) {
-            log.trace("{} received {}", config.getSelf(), netReq.toString());
-            msgProc.trigger(netReq.getVodSource(), netReq.payload);
-        }
-    };
-
-    private Handler<OverlayNetMsg.Request> handleNetRequest = new Handler<OverlayNetMsg.Request>() {
-
-        @Override
-        public void handle(OverlayNetMsg.Request netReq) {
-            log.trace("{} received {}", config.getSelf(), netReq.toString());
-            msgProc.trigger(netReq.getVodSource(), netReq.payload);
-        }
-    };
-
-    private Handler<OverlayNetMsg.Response> handleNetResponse = new Handler<OverlayNetMsg.Response>() {
-
-        @Override
-        public void handle(OverlayNetMsg.Response netResp) {
-            log.trace("{} received {}", config.getSelf(), netResp.toString());
-            msgProc.trigger(netResp.getVodSource(), netResp.payload);
-        }
-    };
 
     // CONNECTION MANAGEMENT
     private Handler<CroupierSample> handleCroupierSample = new Handler<CroupierSample>() {
@@ -224,7 +194,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 log.debug("{} opening connection to {}", config.getSelf(), e.getKey());
                 pendingUploadersConn.put(e.getKey(), e.getValue());
                 Connection.Request req = new Connection.Request(UUID.randomUUID(), selfDesc.vodDesc);
-                trigger(new OverlayNetMsg.Request(config.getSelf(), e.getKey(), config.overlayId, req), network);
+                trigger(new NetConnection.Request(config.getSelf(), e.getKey(), req.id, config.overlayId, req), network);
             }
         }
     };
@@ -236,90 +206,87 @@ public class ConnMngrComp extends ComponentDefinition {
             log.trace("{} handle {}", config.getSelf(), event);
             for (VodAddress partner : downloadersConn.keySet()) {
                 Connection.Update upd = new Connection.Update(UUID.randomUUID(), selfDesc.vodDesc);
-                trigger(new OverlayNetMsg.OneWay(config.getSelf(), partner, config.overlayId, upd), network);
+                trigger(new NetConnection.Update(config.getSelf(), partner, upd.id, config.overlayId, upd), network);
             }
 
             for (VodAddress partner : uploadersConn.keySet()) {
                 Connection.Update upd = new Connection.Update(UUID.randomUUID(), selfDesc.vodDesc);
-                trigger(new OverlayNetMsg.OneWay(config.getSelf(), partner, config.overlayId, upd), network);
+                trigger(new NetConnection.Update(config.getSelf(), partner, upd.id, config.overlayId, upd), network);
             }
         }
     };
 
-    private MsgProcessor.Handler<Connection.Request> handleConnectionRequest
-            = new MsgProcessor.Handler<Connection.Request>(Connection.Request.class) {
+    private Handler<NetConnection.Request> handleConnectionRequest = new Handler<NetConnection.Request>() {
+
+        @Override
+        public void handle(NetConnection.Request req) {
+            log.trace("{} handle {}", new Object[]{config.getSelf(), req});
+
+            if (downloadersConn.containsKey(req.getVodSource())) {
+                return;
+            }
+
+            log.debug("{} new connection to downloader {}", config.getSelf(), req.getVodSource());
+            downloadersConn.put(req.getVodSource(), new DownloaderVodDescriptor(req.content.desc, config.defaultMaxPipeline));
+            Connection.Response resp = req.content.accept();
+            trigger(new NetConnection.Response(config.getSelf(), req.getVodSource(), UUID.randomUUID(), config.overlayId, resp), network);
+        }
+    };
+
+    private Handler<NetConnection.Response> handleConnectionResponse = new Handler<NetConnection.Response>() {
+
+        @Override
+        public void handle(NetConnection.Response resp) {
+            log.trace("{} handle {}", new Object[]{config.getSelf(), resp.getVodSource()});
+
+            if (!resp.content.status.equals(ReqStatus.SUCCESS)) {
+                log.debug("{} connection req status {}", config.getSelf(), resp.content.status);
+                pendingUploadersConn.remove(resp.getVodSource());
+                return;
+            }
+
+            if (!pendingUploadersConn.containsKey(resp.getVodSource())) {
+                log.debug("{} closing connection to {}", config.getSelf(), resp.getVodSource());
+                Connection.Close close = new Connection.Close(UUID.randomUUID());
+                trigger(new NetConnection.Close(config.getSelf(), resp.getVodSource(), UUID.randomUUID(), config.overlayId, close), network);
+                return;
+            }
+
+            log.debug("{} new connection to uploader {}", config.getSelf(), resp.getVodSource());
+            uploadersConn.put(resp.getVodSource(), new UploaderVodDescriptor(pendingUploadersConn.remove(resp.getVodSource()), config.defaultMaxPipeline));
+
+            if (!ready) {
+                log.debug("{} first uploader connection, can start serving", config.getSelf());
+                ready = true;
+                trigger(new Ready(UUID.randomUUID()), myPort);
+            }
+        }
+    };
+
+    private Handler<NetConnection.Update> handleConnectionUpdate = new Handler<NetConnection.Update>() {
 
                 @Override
-                public void handle(VodAddress src, Connection.Request req) {
-                    log.trace("{} handle {}", new Object[]{config.getSelf(), req});
+                public void handle(NetConnection.Update event) {
+                    log.trace("{} handle {}", new Object[]{config.getSelf(), event.getVodSource()});
 
-                    if (downloadersConn.containsKey(src)) {
-                        return;
+                    if (downloadersConn.containsKey(event.getVodSource())) {
+                        downloadersConn.get(event.getVodSource()).updateDesc(event.content.desc);
                     }
 
-                    log.debug("{} new connection to downloader {}", config.getSelf(), src);
-                    downloadersConn.put(src, new DownloaderVodDescriptor(req.desc, config.defaultMaxPipeline));
-                    Connection.Response resp = req.accept();
-                    trigger(new OverlayNetMsg.Response(config.getSelf(), src, config.overlayId, resp), network);
+                    if (uploadersConn.containsKey(event.getVodSource())) {
+                        uploadersConn.get(event.getVodSource()).updateDesc(event.content.desc);
+                    }
                 }
             };
 
-    private MsgProcessor.Handler<Connection.Response> handleConnectionResponse
-            = new MsgProcessor.Handler<Connection.Response>(Connection.Response.class) {
+    private Handler<NetConnection.Close> handleConnectionClose = new Handler<NetConnection.Close>() {
 
                 @Override
-                public void handle(VodAddress src, Connection.Response resp) {
-                    log.trace("{} handle {}", new Object[]{config.getSelf(), resp});
-
-                    if (!resp.status.equals(ReqStatus.SUCCESS)) {
-                        log.debug("{} connection req status {}", config.getSelf(), resp.status);
-                        pendingUploadersConn.remove(src);
-                        return;
-                    }
-
-                    if (!pendingUploadersConn.containsKey(src)) {
-                        log.debug("{} closing connection to {}", config.getSelf(), src);
-                        trigger(new OverlayNetMsg.OneWay(config.getSelf(), src, config.overlayId, new Connection.Close(UUID.randomUUID())), network);
-                        return;
-                    }
-
-                    log.debug("{} new connection to uploader {}", config.getSelf(), src);
-                    uploadersConn.put(src, new UploaderVodDescriptor(pendingUploadersConn.remove(src), config.defaultMaxPipeline));
-
-                    if (!ready) {
-                        log.debug("{} first uploader connection, can start serving", config.getSelf());
-                        ready = true;
-                        trigger(new Ready(UUID.randomUUID()), myPort);
-                    }
-                }
-            };
-
-    private MsgProcessor.Handler<Connection.Update> handleConnectionUpdate
-            = new MsgProcessor.Handler<Connection.Update>(Connection.Update.class) {
-
-                @Override
-                public void handle(VodAddress src, Connection.Update event) {
-                    log.trace("{} handle {}", new Object[]{config.getSelf(), event});
-
-                    if (downloadersConn.containsKey(src)) {
-                        downloadersConn.get(src).updateDesc(event.desc);
-                    }
-
-                    if (uploadersConn.containsKey(src)) {
-                        uploadersConn.get(src).updateDesc(event.desc);
-                    }
-                }
-            };
-
-    private MsgProcessor.Handler<Connection.Close> handleConnectionClose
-            = new MsgProcessor.Handler<Connection.Close>(Connection.Close.class) {
-
-                @Override
-                public void handle(VodAddress src, Connection.Close event) {
+                public void handle(NetConnection.Close event) {
                     log.debug("{} handle {}", new Object[]{config.getSelf(), event});
-                    downloadersConn.remove(src);
-                    pendingUploadersConn.remove(src);
-                    uploadersConn.remove(src);
+                    downloadersConn.remove(event.getVodSource());
+                    pendingUploadersConn.remove(event.getVodSource());
+                    uploadersConn.remove(event.getVodSource());
                 }
             };
 
@@ -338,15 +305,233 @@ public class ConnMngrComp extends ComponentDefinition {
             }
             uploader.getValue().useSlot();
 
-            Map<UUID, Pair<Download.DataRequest, TimeoutId>> partnerReq = pendingDataTraffic.get(uploader.getKey());
+            Map<UUID, Pair<Download.DataRequest, TimeoutId>> partnerReq = pendingDownloadingData.get(uploader.getKey());
             if (partnerReq == null) {
                 partnerReq = new HashMap<UUID, Pair<Download.DataRequest, TimeoutId>>();
-                pendingDataTraffic.put(uploader.getKey(), partnerReq);
+                pendingDownloadingData.put(uploader.getKey(), partnerReq);
             }
             partnerReq.put(req.id, Pair.with(req, scheduleDownloadRequestTimeout(uploader.getKey(), req.id)));
-            trigger(new OverlayNetMsg.Request(config.getSelf(), uploader.getKey(), config.overlayId, req), network);
+            trigger(new NetDownload.DataRequest(config.getSelf(), uploader.getKey(), req.id, config.overlayId, req), network);
         }
 
+    };
+
+    private Handler<NetDownload.DataRequest> handleNetDataRequest = new Handler<NetDownload.DataRequest>() {
+
+                @Override
+                public void handle(NetDownload.DataRequest req) {
+                    log.trace("{} handling network {}", new Object[]{config.getSelf(), req});
+                    log.debug("{} requested unique pieces {}", pendingUploadingData.size());
+
+                    DownloaderVodDescriptor downDesc = downloadersConn.get(req.getVodSource());
+                    if (downDesc == null) {
+                        log.debug("{} no connection open, dropping req {} from {}", new Object[]{config.getSelf(), req, req.getVodSource()});
+                        return;
+                    }
+                    if (!downDesc.isViable()) {
+                        //TODO should not happen yet, but will need to be treated later, when downloader has no more slots available
+                        log.info("{} no more slots for peer:{}", config.getSelf(), req.getVodSource());
+                        return;
+                    }
+                    downDesc.useSlot();
+
+                    Set<VodAddress> requesters = pendingUploadingData.get(req.content.pieceId);
+                    if (requesters == null) {
+                        requesters = new HashSet<VodAddress>();
+                        pendingUploadingData.put(req.content.pieceId, requesters);
+                        trigger(req.content, myPort);
+                    }
+                    requesters.add(req.getVodSource());
+                }
+            };
+
+    private Handler<Download.DataResponse> handleLocalDataResponse = new Handler<Download.DataResponse>() {
+
+        @Override
+        public void handle(Download.DataResponse resp) {
+            log.trace("{} handle local {}", config.getSelf(), resp);
+
+            Set<VodAddress> requesters = pendingUploadingData.get(resp.pieceId);
+            if (requesters == null) {
+                log.debug("{} no requesters for piece {}", config.getSelf(), resp.pieceId);
+                return;
+            }
+
+            for (VodAddress src : requesters) {
+                DownloaderVodDescriptor down = downloadersConn.get(src);
+                if (down != null) {
+                    log.debug("{} sending piece {} to {}", new Object[]{config.getSelf(), resp.pieceId, src});
+                    trigger(new NetDownload.DataResponse(config.getSelf(), src, resp.id, config.overlayId, resp), network);
+                    down.freeSlot();
+                }
+            }
+            pendingUploadingData.remove(resp.pieceId);
+        }
+    };
+
+    private Handler<NetDownload.DataResponse> handleNetDataResponse = new Handler<NetDownload.DataResponse>() {
+
+                @Override
+                public void handle(NetDownload.DataResponse resp) {
+                    log.trace("{} handle net {}", new Object[]{config.getSelf(), resp});
+                    UploaderVodDescriptor up = uploadersConn.get(resp.getVodSource());
+                    if (up != null) {
+                        up.freeSlot();
+                    }
+
+                    Pair<Download.DataRequest, TimeoutId> req = pendingDownloadingData.get(resp.getVodSource()).remove(resp.content.id);
+                    cancelDownloadReqTimeout(req.getValue0().id, req.getValue1());
+
+                    trigger(resp.content, myPort);
+                }
+            };
+
+    private Handler<Download.HashRequest> handleLocalHashRequest = new Handler<Download.HashRequest>() {
+
+        @Override
+        public void handle(Download.HashRequest req) {
+            log.trace("{} handle local {}", config.getSelf(), req);
+
+            Map.Entry<VodAddress, UploaderVodDescriptor> uploader = getUploader(req.targetPos);
+            if (uploader == null) {
+                log.debug("{} no candidate for position {}", new Object[]{config.getSelf(), req.targetPos});
+                trigger(req.busy(), myPort);
+                return;
+            }
+            uploader.getValue().useSlot();
+
+            Map<UUID, Pair<Download.HashRequest, TimeoutId>> partnerReq = pendingDownloadingHash.get(uploader.getKey());
+            if (partnerReq == null) {
+                partnerReq = new HashMap<UUID, Pair<Download.HashRequest, TimeoutId>>();
+                pendingDownloadingHash.put(uploader.getKey(), partnerReq);
+            }
+            partnerReq.put(req.id, Pair.with(req, scheduleDownloadRequestTimeout(uploader.getKey(), req.id)));
+            trigger(new NetDownload.HashRequest(config.getSelf(), uploader.getKey(), req.id, config.overlayId, req), network);
+        }
+
+    };
+
+    private Handler<NetDownload.HashRequest> handleNetHashRequest = new Handler<NetDownload.HashRequest>() {
+
+                @Override
+                public void handle(NetDownload.HashRequest req) {
+                    log.trace("{} handling network {}", new Object[]{config.getSelf(), req});
+
+                    DownloaderVodDescriptor downDesc = downloadersConn.get(req.getVodSource());
+                    if (downDesc == null) {
+                        log.debug("{} no connection open, dropping req {} from {}", new Object[]{config.getSelf(), req, req.getVodSource()});
+                        return;
+                    }
+                    if (!downDesc.isViable()) {
+                        //TODO should not happen yet, but will need to be treated later, when downloader has no more slots available
+                        log.info("{} no more slots for peer:{}", config.getSelf(), req.getVodSource());
+                        return;
+                    }
+                    downDesc.useSlot();
+
+                    Set<VodAddress> requesters = pendingUploadingHash.get(req.content.targetPos);
+                    if (requesters == null) {
+                        requesters = new HashSet<VodAddress>();
+                        pendingUploadingHash.put(req.content.targetPos, requesters);
+                        trigger(req.content, myPort);
+                    }
+                    requesters.add(req.getVodSource());
+                }
+            };
+
+    private Handler<Download.HashResponse> handleLocalHashResponse = new Handler<Download.HashResponse>() {
+
+        @Override
+        public void handle(Download.HashResponse resp) {
+            log.trace("{} handle local {}", config.getSelf(), resp);
+
+            Set<VodAddress> requesters = pendingUploadingHash.get(resp.targetPos);
+            if (requesters == null) {
+                log.debug("{} no requesters for piece {}", config.getSelf(), resp.targetPos);
+                return;
+            }
+
+            for (VodAddress src : requesters) {
+                DownloaderVodDescriptor down = downloadersConn.get(src);
+                if (down != null) {
+                    log.debug("{} sending hash set {} to {}", new Object[]{config.getSelf(), resp.targetPos, src});
+                    trigger(new NetDownload.HashResponse(config.getSelf(), src, resp.id, config.overlayId, resp), network);
+                    down.freeSlot();
+                }
+            }
+            pendingUploadingHash.remove(resp.targetPos);
+        }
+    };
+
+    private Handler<NetDownload.HashResponse> handleNetHashResponse = new Handler<NetDownload.HashResponse>() {
+
+                @Override
+                public void handle(NetDownload.HashResponse resp) {
+                    log.trace("{} handle net {}", new Object[]{config.getSelf(), resp});
+                    UploaderVodDescriptor up = uploadersConn.get(resp.getVodSource());
+                    if (up != null) {
+                        up.freeSlot();
+                    }
+
+                    Pair<Download.HashRequest, TimeoutId> req = pendingDownloadingHash.get(resp.getVodSource()).remove(resp.content.id);
+                    cancelDownloadReqTimeout(req.getValue0().id, req.getValue1());
+
+                    trigger(resp.content, myPort);
+                }
+            };
+
+    private Handler<DownloadDataTimeout> handleDownloadDataTimeout = new Handler<DownloadDataTimeout>() {
+
+        @Override
+        public void handle(DownloadDataTimeout timeout) {
+            log.trace("{} handle {}", config.getSelf(), timeout);
+
+            Map<UUID, Pair<Download.DataRequest, TimeoutId>> targetDataTraffic = pendingDownloadingData.get(timeout.target);
+            if (targetDataTraffic == null) {
+                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
+                return;
+            }
+            Pair<Download.DataRequest, TimeoutId> req = targetDataTraffic.get(timeout.reqId);
+            if (req == null) {
+                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
+                return;
+            }
+            uploadersConn.get(timeout.target).freeSlot();
+            trigger(req.getValue0().timeout(), myPort);
+
+            //cleaning
+            targetDataTraffic.remove(timeout.reqId);
+            if (targetDataTraffic.isEmpty()) {
+                pendingDownloadingData.remove(timeout.target);
+            }
+        }
+    };
+
+    private Handler<DownloadHashTimeout> handleDownloadHashTimeout = new Handler<DownloadHashTimeout>() {
+
+        @Override
+        public void handle(DownloadHashTimeout timeout) {
+            log.trace("{} handle {}", config.getSelf(), timeout);
+
+            Map<UUID, Pair<Download.HashRequest, TimeoutId>> targetHashTraffic = pendingDownloadingHash.get(timeout.target);
+            if (targetHashTraffic == null) {
+                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
+                return;
+            }
+            Pair<Download.HashRequest, TimeoutId> req = targetHashTraffic.get(timeout.reqId);
+            if (req == null) {
+                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
+                return;
+            }
+            uploadersConn.get(timeout.target).freeSlot();
+            trigger(req.getValue0().timeout(), myPort);
+
+            //cleaning
+            targetHashTraffic.remove(timeout.reqId);
+            if (targetHashTraffic.isEmpty()) {
+                pendingDownloadingData.remove(timeout.target);
+            }
+        }
     };
 
     private Map.Entry<VodAddress, UploaderVodDescriptor> getUploader(int pieceId) {
@@ -370,132 +555,6 @@ public class ConnMngrComp extends ComponentDefinition {
 
         return candidate;
     }
-
-    private MsgProcessor.Handler<Download.DataRequest> handleNetDataRequest
-            = new MsgProcessor.Handler<Download.DataRequest>(Download.DataRequest.class) {
-
-                @Override
-                public void handle(VodAddress src, Download.DataRequest req) {
-                    log.trace("{} handling network {}", new Object[]{config.getSelf(), req});
-                    log.debug("{} requested unique pieces {}", pendingUploadReq.size());
-
-                    DownloaderVodDescriptor downDesc = downloadersConn.get(src);
-                    if (downDesc == null) {
-                        log.debug("{} no connection open, dropping req {} from {}", new Object[]{config.getSelf(), req, src});
-                        return;
-                    }
-                    if (!downDesc.isViable()) {
-                        //TODO should not happen yet, but will need to be treated later, when downloader has no more slots available
-                        log.info("{} no more slots for peer:{}", config.getSelf(), src);
-                        return;
-                    }
-                    downDesc.useSlot();
-
-                    Set<VodAddress> requesters = pendingUploadReq.get(req.pieceId);
-                    if (requesters == null) {
-                        requesters = new HashSet<VodAddress>();
-                        pendingUploadReq.put(req.pieceId, requesters);
-                        trigger(req, myPort);
-                    }
-                    requesters.add(src);
-                }
-            };
-
-    private Handler<Download.DataResponse> handleLocalDataResponse = new Handler<Download.DataResponse>() {
-
-        @Override
-        public void handle(Download.DataResponse resp) {
-            log.trace("{} handle local {}", config.getSelf(), resp);
-
-            Set<VodAddress> requesters = pendingUploadReq.get(resp.pieceId);
-            if (requesters == null) {
-                log.debug("{} no requesters for piece {}", config.getSelf(), resp.pieceId);
-                return;
-            }
-
-            for (VodAddress src : requesters) {
-                DownloaderVodDescriptor down = downloadersConn.get(src);
-                if (down != null) {
-                    log.debug("{} sending piece {} to {}", new Object[]{config.getSelf(), resp.pieceId, src});
-                    trigger(new OverlayNetMsg.Response(config.getSelf(), src, config.overlayId, resp), network);
-                    down.freeSlot();
-                }
-            }
-            pendingUploadReq.remove(resp.pieceId);
-        }
-    };
-
-    private MsgProcessor.Handler<Download.DataResponse> handleNetDataResponse
-            = new MsgProcessor.Handler<Download.DataResponse>(Download.DataResponse.class) {
-
-                @Override
-                public void handle(VodAddress src, Download.DataResponse resp) {
-                    log.trace("{} handle net {}", new Object[]{config.getSelf(), resp});
-                    UploaderVodDescriptor up = uploadersConn.get(src);
-                    if (up != null) {
-                        up.freeSlot();
-                    }
-
-                    Pair<Download.DataRequest, TimeoutId> req = pendingDataTraffic.get(src).remove(resp.id);
-                    cancelDownloadReqTimeout(req.getValue0().id, req.getValue1());
-
-                    trigger(resp, myPort);
-                }
-            };
-
-    private Handler<DownloadDataTimeout> handleDownloadDataTimeout = new Handler<DownloadDataTimeout>() {
-
-        @Override
-        public void handle(DownloadDataTimeout timeout) {
-            log.trace("{} handle {}", config.getSelf(), timeout);
-
-            Map<UUID, Pair<Download.DataRequest, TimeoutId>> targetDataTraffic = pendingDataTraffic.get(timeout.target);
-            if(targetDataTraffic == null) {
-                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
-                return;
-            }
-            Pair<Download.DataRequest, TimeoutId> req = targetDataTraffic.get(timeout.reqId);
-            if(req == null) {
-                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
-                return;
-            }
-            uploadersConn.get(timeout.target).freeSlot();
-            trigger(req.getValue0().timeout(), myPort);
-            
-            //cleaning
-            targetDataTraffic.remove(timeout.reqId);
-            if(targetDataTraffic.isEmpty()) {
-                pendingDataTraffic.remove(timeout.target);
-            }
-        }
-    };
-    
-    private Handler<DownloadHashTimeout> handleDownloadHashTimeout = new Handler<DownloadHashTimeout>() {
-
-        @Override
-        public void handle(DownloadHashTimeout timeout) {
-            log.trace("{} handle {}", config.getSelf(), timeout);
-
-            Map<UUID, Pair<Download.HashRequest, TimeoutId>> targetHashTraffic = pendingHashTraffic.get(timeout.target);
-            if(targetHashTraffic == null) {
-                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
-                return;
-            }
-            Pair<Download.HashRequest, TimeoutId> req = targetHashTraffic.get(timeout.reqId);
-            if(req == null) {
-                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
-                return;
-            }
-            uploadersConn.get(timeout.target).freeSlot();
-            trigger(req.getValue0().timeout(), myPort);
-            
-            //cleaning
-            targetHashTraffic.remove(timeout.reqId);
-            if(targetHashTraffic.isEmpty()) {
-                pendingDataTraffic.remove(timeout.target);
-            }
-        }
-    };
 
     private TimeoutId scheduleConnectionUpdate() {
         SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(config.updatePeriod, config.updatePeriod);

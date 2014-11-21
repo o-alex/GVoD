@@ -55,7 +55,7 @@ public class GetFileMetadataOp implements Operation<CaracalOp> {
     public void handle(CaracalOp caracalResp) {
         if (caracalResp instanceof GetResponse) {
             GetResponse phase1Resp = (GetResponse) caracalResp;
-            if (phase1Resp.code == ResponseCode.SUCCESS) {
+            if (phase1Resp.code == ResponseCode.SUCCESS && phase1Resp.data != null) {
                 opMngr.finish(req.success(phase1Resp.data));
             } else {
                 opMngr.finish(req.fail());

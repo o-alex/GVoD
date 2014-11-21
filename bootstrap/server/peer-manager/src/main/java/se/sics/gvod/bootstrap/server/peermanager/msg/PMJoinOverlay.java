@@ -30,13 +30,13 @@ public class PMJoinOverlay {
     public static class Request extends PeerManagerMsg.Request {
         public final int overlayId;
         public final int nodeId;
-        public final byte[] data;
+        public final byte[] nodeInfo;
         
-        public Request(UUID id, int overlayId, int nodeId, byte[] data) {
+        public Request(UUID id, int overlayId, int nodeId, byte[] nodeInfo) {
             super(id);
             this.overlayId = overlayId;
             this.nodeId = nodeId;
-            this.data = data;
+            this.nodeInfo = nodeInfo;
         }
         
         public Response success() {

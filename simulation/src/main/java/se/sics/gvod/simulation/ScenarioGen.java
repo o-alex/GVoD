@@ -183,7 +183,7 @@ public class ScenarioGen {
                 StochasticProcess downloadVideoProc = new StochasticProcess() {
                     {
                         eventInterArrivalTime(constant(1000));
-                        raise(5, downloadVideo, downloaderIdDist, videoIdDist);
+                        raise(9, downloadVideo, downloaderIdDist, videoIdDist);
                     }
                 };
 

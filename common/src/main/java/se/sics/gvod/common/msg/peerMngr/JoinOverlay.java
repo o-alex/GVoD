@@ -21,7 +21,6 @@ package se.sics.gvod.common.msg.peerMngr;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.util.BuilderException;
 import se.sics.gvod.common.util.FileMetadata;
 
 /**

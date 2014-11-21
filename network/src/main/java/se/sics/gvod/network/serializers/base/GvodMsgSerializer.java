@@ -19,13 +19,10 @@
 package se.sics.gvod.network.serializers.base;
 
 import io.netty.buffer.ByteBuf;
+import java.util.Map;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import se.sics.gvod.common.msg.builder.GVoDMsgBuilder;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.network.serializers.HierarhicSerializer;
 import se.sics.gvod.network.serializers.SerializationContext;
 import se.sics.gvod.network.serializers.Serializer;
 
@@ -33,14 +30,11 @@ import se.sics.gvod.network.serializers.Serializer;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class GvodMsgSerializer {
-
-    public static abstract class AbsBase<E extends GvodMsg.Base, F extends GVoDMsgBuilder.Base> implements HierarhicSerializer<E, F> {
-
-        @Override
-        public F decode(SerializationContext context, ByteBuf buf, F shellObj) throws SerializerException, SerializationContext.MissingException {
-            UUID id = context.getSerializer(UUID.class).decode(context, buf);
-            shellObj.setId(id);
-            return shellObj;
+    public static abstract class AbsBase<E extends GvodMsg.Base> implements Serializer<E> {
+        protected final static String ID_F = "id";
+        
+        protected void decodeParent(SerializationContext context, ByteBuf buf, Map<String, Object> shellObj) throws SerializerException, SerializationContext.MissingException {
+            shellObj.put(ID_F, context.getSerializer(UUID.class).decode(context, buf));
         }
 
         @Override
@@ -55,17 +49,16 @@ public class GvodMsgSerializer {
         }
     }
 
-    public static abstract class AbsRequest<E extends GvodMsg.Request, F extends GVoDMsgBuilder.Request> extends AbsBase<E, F> {
+    public static abstract class AbsRequest<E extends GvodMsg.Request> extends AbsBase<E> {
     }
 
-    public static abstract class AbsResponse<E extends GvodMsg.Response, F extends GVoDMsgBuilder.Response> extends AbsBase<E, F> {
-
+    public static abstract class AbsResponse<E extends GvodMsg.Response> extends AbsBase<E> {
+        protected final static String STATUS_F = "status";
+        
         @Override
-        public F decode(SerializationContext context, ByteBuf buf, F shellObj) throws SerializerException, SerializationContext.MissingException {
-            super.decode(context, buf, shellObj);
-            ReqStatus status = context.getSerializer(ReqStatus.class).decode(context, buf);
-            shellObj.setStatus(status);
-            return shellObj;
+        protected void decodeParent(SerializationContext context, ByteBuf buf, Map<String, Object> shellObj) throws SerializerException, SerializationContext.MissingException {
+            super.decodeParent(context, buf, shellObj);
+            shellObj.put(STATUS_F, context.getSerializer(ReqStatus.class).decode(context, buf));
         }
 
         @Override
@@ -83,6 +76,6 @@ public class GvodMsgSerializer {
         }
     }
 
-    public static abstract class AbsOneWay<E extends GvodMsg.OneWay, F extends GVoDMsgBuilder.OneWay> extends AbsBase<E, F> {
+    public static abstract class AbsOneWay<E extends GvodMsg.OneWay> extends AbsBase<E> {
     }
 }

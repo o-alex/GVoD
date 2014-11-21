@@ -19,40 +19,40 @@
 package se.sics.gvod.network.serializers;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.javatuples.Pair;
+import org.javatuples.Triplet;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-//Serializer name - String - Serializer relation
-//Message opcode - Byte - MessageClass relation
-//Serialized Class - Class - Serializer relation
 public class SerializationContextImpl implements SerializationContext {
 
     private final ReentrantReadWriteLock rwLock;
 
-    private final Map<String, Serializer<?>> serializers;
-    private final Map<Class<?>, Byte> classToMcode;
-    private final Map<Class<?>, Serializer<?>> classToSerializer;
+    private final Map<Class, Serializer> serializers; //serializedClass, classSerializer>
+    private final Map<String, Pair<Class, Byte>> aliases; //<aliasName, <aliasClass, aliasCode>>
+    private final Map<Class, Triplet<Class, Byte, Byte>> classToBCode; //<multiplexClass, <aliasClass, aliasCode, multiplexCode>>
+    private final Map<Triplet<Class, Byte, Byte>, Class> bcodeToClass; //<<aliasClass, aliasCode, multiplexCode>, multiplexClass>
 
     public SerializationContextImpl() {
         this.rwLock = new ReentrantReadWriteLock();
-
-        this.serializers = new HashMap<String, Serializer<?>>();
-        this.classToMcode = new HashMap<Class<?>, Byte>();
-        this.classToSerializer = new HashMap<Class<?>, Serializer<?>>();
+        this.serializers = new HashMap<Class, Serializer>();
+        this.aliases = new HashMap<String, Pair<Class, Byte>>();
+        this.classToBCode = new HashMap<Class, Triplet<Class, Byte, Byte>>();
+        this.bcodeToClass = new HashMap<Triplet<Class, Byte, Byte>, Class>();
     }
 
     @Override
-    public <E> SerializationContext registerSerializer(String serializerName, Serializer<E> serializer) throws DuplicateException {
+    public <E> SerializationContext registerSerializer(Class<E> serializedClass, Serializer<E> classSerializer) throws DuplicateException {
         rwLock.writeLock().lock();
         try {
-            if (serializers.containsKey(serializerName)) {
+            if (serializers.containsKey(serializedClass) || serializers.containsValue(classSerializer)) {
                 throw new DuplicateException();
             }
-            serializers.put(serializerName, serializer);
+            serializers.put(serializedClass, classSerializer);
             return this;
         } finally {
             rwLock.writeLock().unlock();
@@ -60,13 +60,14 @@ public class SerializationContextImpl implements SerializationContext {
     }
 
     @Override
-    public SerializationContext registerMessageCode(Class<?> messageClass, byte messageCode) throws DuplicateException {
+    public SerializationContext registerAlias(Class aliasedClass, String alias, Byte aliasCode) throws DuplicateException {
         rwLock.writeLock().lock();
         try {
-            if (classToMcode.containsKey(messageCode)) {
+            if (aliases.containsKey(alias)) {
                 throw new DuplicateException();
             }
-            classToMcode.put(messageClass, messageCode);
+
+            aliases.put(alias, Pair.with(aliasedClass, aliasCode));
             return this;
         } finally {
             rwLock.writeLock().unlock();
@@ -74,61 +75,85 @@ public class SerializationContextImpl implements SerializationContext {
     }
 
     @Override
-    public SerializationContext registerClass(String serializerName, Class<?> serializedClass) throws DuplicateException, MissingException {
+    public SerializationContext multiplexAlias(String alias, Class multiplexClass, Byte multiplexCode) throws DuplicateException, MissingException {
         rwLock.writeLock().lock();
         try {
-            if (!serializers.containsKey(serializerName)) {
+            Pair<Class, Byte> aliasInfo = aliases.get(alias);
+            if (aliasInfo == null) {
                 throw new MissingException();
             }
-            if (classToSerializer.containsKey(serializedClass)) {
+            if (classToBCode.containsKey(multiplexClass)) {
                 throw new DuplicateException();
             }
-            classToSerializer.put(serializedClass, serializers.get(serializerName));
+
+            classToBCode.put(multiplexClass, aliasInfo.add(multiplexCode));
+            bcodeToClass.put(aliasInfo.add(multiplexCode), multiplexClass);
             return this;
         } finally {
             rwLock.writeLock().unlock();
         }
     }
 
-    //TODO improve - the iterator will slow performance quite a bit
     @Override
-    public Class<?> getMessageClass(Byte mcode) throws MissingException {
-        rwLock.readLock().lock();
-        try {
-            Iterator<Map.Entry<Class<?>, Byte>> it = classToMcode.entrySet().iterator();
-            while (it.hasNext()) {
-                Map.Entry<Class<?>, Byte> e = it.next();
-                if (e.getValue().equals(mcode)) {
-                    return e.getKey();
-                }
-            }
-            throw new MissingException();
-        } finally {
-            rwLock.readLock().unlock();
-        }
-    }
-
-    @Override
-    public Byte getOpcode(Class<?> messageClass) throws MissingException {
-        rwLock.readLock().lock();
-        try {
-            if (!classToMcode.containsKey(messageClass)) {
-                throw new MissingException();
-            }
-            return classToMcode.get(messageClass);
-        } finally {
-            rwLock.readLock().unlock();
-        }
+    public boolean containsAliases(Set<String> subset) {
+        return aliases.keySet().containsAll(subset);
     }
 
     @Override
     public <E extends Object> Serializer<E> getSerializer(Class<E> serializedClass) throws MissingException {
         rwLock.readLock().lock();
         try {
-            if(!classToSerializer.containsKey(serializedClass)) {
+            Serializer serializer = serializers.get(serializedClass);
+            if (serializer == null) {
                 throw new MissingException();
             }
-            return (Serializer<E>) classToSerializer.get(serializedClass);
+            return (Serializer<E>) serializer;
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public Serializer getSerializer(Class aliasedClass, byte aliasCode, byte multiplexCode) throws MissingException {
+        rwLock.readLock().lock();
+        try {
+            Class multiplexClass = bcodeToClass.get(Triplet.with(aliasedClass, aliasCode, multiplexCode));
+            if (multiplexClass == null) {
+                throw new MissingException();
+            }
+            Serializer serializer = serializers.get(multiplexClass);
+            if (serializer == null) {
+                throw new MissingException();
+            }
+            return serializer;
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public Pair<Byte, Byte> getCode(Class serializedClass) throws MissingException {
+        rwLock.readLock().lock();
+        try {
+            Triplet<Class, Byte, Byte> multiplexInfo = classToBCode.get(serializedClass);
+            if (multiplexInfo == null) {
+                throw new MissingException();
+            }
+            return multiplexInfo.removeFrom0();
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public Byte getAliasCode(String alias) throws MissingException {
+        rwLock.readLock().lock();
+        try {
+            Pair<Class,Byte> aliasInfo = aliases.get(alias);
+            if (aliasInfo == null) {
+                throw new MissingException();
+            }
+            return aliasInfo.getValue1();
         } finally {
             rwLock.readLock().unlock();
         }

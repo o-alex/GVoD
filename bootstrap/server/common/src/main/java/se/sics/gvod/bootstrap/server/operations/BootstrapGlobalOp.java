@@ -29,7 +29,8 @@ import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.BootstrapGlobal;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.network.serializers.SerializationContext;
+import se.sics.gvod.network.serializers.Serializer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -42,13 +43,15 @@ public class BootstrapGlobalOp implements Operation {
     }
 
     private final PeerOpManager opMngr;
+    private final SerializationContext context;
     private final BootstrapGlobal.Request req;
     private final VodAddress src;
     private Phase phase;
     private BootstrapGlobal.Response resp;
 
-    public BootstrapGlobalOp(PeerOpManager opMngr, BootstrapGlobal.Request req, VodAddress src) {
+    public BootstrapGlobalOp(PeerOpManager opMngr, SerializationContext context, BootstrapGlobal.Request req, VodAddress src) {
         this.opMngr = opMngr;
+        this.context = context;
         this.req = req;
         this.src = src;
     }
@@ -69,8 +72,16 @@ public class BootstrapGlobalOp implements Operation {
         if (phase == Phase.GET_SYSTEM_SAMPLE && peerResp instanceof PMGetOverlaySample.Response) {
             PMGetOverlaySample.Response phase1Resp = (PMGetOverlaySample.Response) peerResp;
             if (phase1Resp.status == ReqStatus.SUCCESS) {
-                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
-                resp = req.success(processOverlaySample(phase1Resp.overlaySample));
+                byte[] bytes;
+                try {
+                    bytes = context.getSerializer(VodAddress.class).encode(context, Unpooled.buffer(), src).array();
+                    opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), bytes));
+                    resp = req.success(processOverlaySample(phase1Resp.overlaySample));
+                } catch (Serializer.SerializerException ex) {
+                    throw new RuntimeException(ex);
+                } catch (SerializationContext.MissingException ex) {
+                    throw new RuntimeException(ex);
+                }
                 opMngr.finish(getId(), src, resp);
             } else {
                 opMngr.finish(getId(), src, req.fail());
@@ -80,10 +91,10 @@ public class BootstrapGlobalOp implements Operation {
         }
     }
 
-    private Set<VodAddress> processOverlaySample(Set<byte[]> boverlaySample) {
+    private Set<VodAddress> processOverlaySample(Set<byte[]> boverlaySample) throws Serializer.SerializerException, SerializationContext.MissingException {
         Set<VodAddress> overlaySample = new HashSet<VodAddress>();
         for (byte[] peer : boverlaySample) {
-            overlaySample.add(Util.decodeVodAddress(Unpooled.wrappedBuffer(peer)));
+            overlaySample.add(context.getSerializer(VodAddress.class).decode(context, Unpooled.wrappedBuffer(peer)));
         }
         return overlaySample;
     }

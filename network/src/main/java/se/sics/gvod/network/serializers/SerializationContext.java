@@ -18,18 +18,23 @@
  */
 package se.sics.gvod.network.serializers;
 
+import java.util.Set;
+import org.javatuples.Pair;
+
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public interface SerializationContext {
-    public <E extends Object> SerializationContext registerSerializer(String serializerName, Serializer<E> serializer) throws DuplicateException;
-    public SerializationContext registerMessageCode(Class<?> messageClass, byte messageCode) throws DuplicateException;
-    public SerializationContext registerClass(String serializerName, Class<?> serializedClass) throws DuplicateException, MissingException;
+    public <E extends Object> SerializationContext registerSerializer(Class<E> serializedClass, Serializer<E> classSerializer) throws DuplicateException;
+    public SerializationContext registerAlias(Class aliasedClass, String alias, Byte aliasCode) throws DuplicateException;
+    public SerializationContext multiplexAlias(String alias, Class multiplexClass, Byte multiplexCode) throws DuplicateException, MissingException;
     
+    public boolean containsAliases(Set<String> aliases);
+    public Byte getAliasCode(String alias) throws MissingException;
     public <E extends Object> Serializer<E> getSerializer(Class<E> serializedClass) throws MissingException;
-    public Class<?> getMessageClass(Byte mcode) throws MissingException;
-    public Byte getOpcode(Class<?> messageClass) throws MissingException;
-    
+    public Serializer getSerializer(Class aliasedClass, byte aliasCode, byte multiplexCode) throws MissingException;
+    public Pair<Byte, Byte> getCode(Class serializedClass) throws MissingException;
+            
     public static class DuplicateException extends Exception {
         public DuplicateException() {
             super();

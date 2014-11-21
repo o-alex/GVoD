@@ -24,11 +24,12 @@ import se.sics.gvod.bootstrap.server.PeerOpManager;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMAddFileMetadata;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
-import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.AddOverlay;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.network.serializers.SerializationContext;
+import se.sics.gvod.network.serializers.Serializer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -40,12 +41,16 @@ public class AddOverlayOp implements Operation {
     }
 
     private final PeerOpManager opMngr;
+    private final SerializationContext context;
     private final AddOverlay.Request req;
     private final VodAddress src;
+    
     private Phase phase;
+    
 
-    public AddOverlayOp(PeerOpManager opMngr, AddOverlay.Request req, VodAddress src) {
+    public AddOverlayOp(PeerOpManager opMngr, SerializationContext context, AddOverlay.Request req, VodAddress src) {
         this.opMngr = opMngr;
+        this.context = context;
         this.req = req;
         this.src = src;
     }
@@ -67,7 +72,15 @@ public class AddOverlayOp implements Operation {
             PMGetOverlaySample.Response phase1Resp = (PMGetOverlaySample.Response) peerResp;
             if (phase1Resp.status == ReqStatus.SUCCESS) {
                 phase = Phase.ADD_FILE_METADATA;
-                opMngr.sendPeerManagerReq(getId(), new PMAddFileMetadata.Request(UUID.randomUUID(), req.overlayId, Util.encodeFileMeta(Unpooled.buffer(), req.fileMeta).array()));
+                byte[] bytes;
+                try {
+                    bytes = context.getSerializer(FileMetadata.class).encode(context, Unpooled.buffer(), req.fileMeta).array();
+                } catch (Serializer.SerializerException ex) {
+                    throw new RuntimeException(ex);
+                } catch (SerializationContext.MissingException ex) {
+                    throw new RuntimeException(ex);
+                }
+                opMngr.sendPeerManagerReq(getId(), new PMAddFileMetadata.Request(UUID.randomUUID(), req.overlayId, bytes));
             } else {
                 opMngr.finish(getId(), src, req.fail());
             }

@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.InetAddress;
-import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
@@ -40,6 +39,7 @@ import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.net.events.PortBindRequest;
 import se.sics.gvod.net.events.PortBindResponse;
 import se.sics.gvod.network.GVoDNetFrameDecoder;
+import se.sics.gvod.network.GVoDNetworkSettings;
 import se.sics.gvod.system.vodmngr.VoDManagerImpl;
 import se.sics.gvod.timer.Timer;
 import se.sics.gvod.timer.java.JavaTimer;
@@ -77,6 +77,10 @@ public class Launcher extends ComponentDefinition {
         log.info("init");
         subscribe(handleStart, control);
 
+        GVoDNetFrameDecoder.register();
+        GVoDNetworkSettings.checkPreCond();
+        GVoDNetworkSettings.registerSerializers();
+        
         config = new HostConfiguration.ExecBuilder();
 
         phase1();
@@ -149,7 +153,7 @@ public class Launcher extends ComponentDefinition {
             }
             writer.flush();
             writer.close();
-            ((VoDManagerImpl)vodManager).loadLibrary();
+//            ((VoDManagerImpl)vodManager).loadLibrary();
             if(!vodManager.pendingUpload(videoName)) {
                 throw new RuntimeException();
             }
@@ -164,7 +168,7 @@ public class Launcher extends ComponentDefinition {
     private void downloadVideo() {
         int overlayId = 10;
         String videoName = "video2.mp4";
-        ((VoDManagerImpl)vodManager).loadLibrary();
+//        ((VoDManagerImpl)vodManager).loadLibrary();
         if(!vodManager.downloadVideo(videoName, overlayId)) {
             throw new RuntimeException();
         }

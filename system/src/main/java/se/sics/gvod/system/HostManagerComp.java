@@ -66,7 +66,7 @@ public class HostManagerComp extends ComponentDefinition {
         this.config = init.config;
 
         try {
-            this.vodMngr = create(VoDManagerImpl.class,new VoDManagerImpl.VoDManagerInit(new VoDManagerConfig(config.libDir)));
+            this.vodMngr = create(VoDManagerImpl.class,new VoDManagerImpl.VoDManagerInit(new VoDManagerConfig(config.self, config.libDir)));
             this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration().finalise()));
             this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig().finalise()));
 

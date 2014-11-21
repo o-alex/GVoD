@@ -19,7 +19,7 @@
 package se.sics.gvod.network.filters;
 
 import se.sics.gvod.net.msgs.DirectMsg;
-import se.sics.gvod.network.nettymsg.OverlayNetMsg;
+import se.sics.gvod.network.netmsg.OverlayMsgI;
 import se.sics.kompics.ChannelFilter;
 
 /**
@@ -34,15 +34,9 @@ public class OverlayFilter extends ChannelFilter<DirectMsg, Integer> {
 
     @Override
     public Integer getValue(DirectMsg msg) {
-        if (msg instanceof OverlayNetMsg.Request) {
-            OverlayNetMsg.Request req = (OverlayNetMsg.Request) msg;
-            return req.overlayId;
-        } else if (msg instanceof OverlayNetMsg.Response) {
-            OverlayNetMsg.Response resp = (OverlayNetMsg.Response) msg;
-            return resp.overlayId;
-        } else if (msg instanceof OverlayNetMsg.OneWay) {
-            OverlayNetMsg.OneWay oneWay =  (OverlayNetMsg.OneWay) msg;
-            return oneWay.overlayId;
+        if (msg instanceof OverlayMsgI) {
+            OverlayMsgI overlayMsg =  (OverlayMsgI) msg;
+            return overlayMsg.getOverlay();
         } else {
             return -1;
         }

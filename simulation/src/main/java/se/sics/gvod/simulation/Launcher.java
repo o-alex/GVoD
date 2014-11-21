@@ -19,6 +19,8 @@
 package se.sics.gvod.simulation;
 
 import se.sics.gvod.net.VodNetwork;
+import se.sics.gvod.network.GVoDNetFrameDecoder;
+import se.sics.gvod.network.GVoDNetworkSettings;
 import se.sics.gvod.simulation.core.P2pSimulator;
 import se.sics.gvod.simulation.core.P2pSimulatorInit;
 import se.sics.gvod.simulation.core.network.UniformRandomModel;
@@ -32,6 +34,10 @@ import se.sics.kompics.ComponentDefinition;
 public class Launcher extends ComponentDefinition {
 
     {
+        GVoDNetFrameDecoder.register();
+        GVoDNetworkSettings.checkPreCond();
+        GVoDNetworkSettings.registerSerializers();
+        
         P2pSimulator.setSimulationPortType(VodExperiment.class);
         Component simulator = create(P2pSimulator.class,
                 new P2pSimulatorInit(Main.scheduler, Main.scenario, new UniformRandomModel(1, 10)));

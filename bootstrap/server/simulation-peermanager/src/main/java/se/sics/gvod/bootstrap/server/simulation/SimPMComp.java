@@ -21,6 +21,7 @@ package se.sics.gvod.bootstrap.server.simulation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -49,14 +50,14 @@ public class SimPMComp extends ComponentDefinition {
     private final SimPMConfig config;
     
     private final Random rand;
-    private final Map<Integer, List<byte[]>> overlays;
+    private final Map<Integer, Map<Integer, byte[]>> overlays;
     private final Map<Integer, byte[]> files;
 
     public SimPMComp(SimPMInit init) {
             log.debug("init");
             this.config = init.config;
-            this.overlays = new HashMap<Integer, List<byte[]>>();
-            this.overlays.put(0, new ArrayList<byte[]>());
+            this.overlays = new HashMap<Integer, Map<Integer, byte[]>>();
+            this.overlays.put(0, new HashMap<Integer, byte[]>());
             this.files = new HashMap<Integer, byte[]>();
             this.rand = new Random(config.intSeed);
             
@@ -70,13 +71,14 @@ public class SimPMComp extends ComponentDefinition {
 
         @Override
         public void handle(PMJoinOverlay.Request req) {
-            log.debug("{} received {}", new Object[]{config.selfAddress, req});
-            List<byte[]> overlayIds = overlays.get(req.overlayId);
-            if(overlayIds == null) {
-                overlayIds = new ArrayList<byte[]>();
-                overlays.put(req.overlayId, overlayIds);
+            log.trace("{} received {}", new Object[]{config.selfAddress, req});
+            log.debug("{} overlay:{} joined peer:{}", new Object[]{config.selfAddress, req.overlayId, req.nodeId});
+            Map<Integer, byte[]> overlayPeers = overlays.get(req.overlayId);
+            if(overlayPeers == null) {
+                overlayPeers = new HashMap<Integer, byte[]>();
+                overlays.put(req.overlayId, overlayPeers);
             }
-            overlayIds.add(req.data);
+            overlayPeers.put(req.nodeId, req.nodeInfo);
             trigger(req.success(), peerManager);
         }
     };
@@ -86,7 +88,7 @@ public class SimPMComp extends ComponentDefinition {
         @Override
         public void handle(PMGetOverlaySample.Request req) {
             log.debug("{} received {}", new Object[]{config.selfAddress, req});
-            List<byte[]> overlayIds = overlays.get(req.overlayId);
+            Map<Integer, byte[]> overlayIds = overlays.get(req.overlayId);
             if(overlayIds == null) {
                 trigger(req.success(new HashSet<byte[]>()), peerManager);
             } else {
@@ -100,8 +102,7 @@ public class SimPMComp extends ComponentDefinition {
         @Override
         public void handle(PMAddFileMetadata.Request req) {
             log.debug("{} received {}", new Object[]{config.selfAddress, req});
-            List<byte[]> overlayIds = overlays.get(req.overlayId);
-            if(overlayIds == null) {
+            if(files.containsKey(req.overlayId)) {
                 trigger(req.fail(), peerManager);
             } else {
                 files.put(req.overlayId, req.fileMetadata);
@@ -115,26 +116,26 @@ public class SimPMComp extends ComponentDefinition {
         @Override
         public void handle(PMGetFileMetadata.Request req) {
             log.debug("{} received {}", new Object[]{config.selfAddress, req});
-            List<byte[]> overlayIds = overlays.get(req.overlayId);
-            if(overlayIds == null) {
-                trigger(req.fail(), peerManager);
-            } else {
+            if(files.containsKey(req.overlayId)) {
                 trigger(req.success(files.get(req.overlayId)), peerManager);
+            } else {
+                trigger(req.fail(), peerManager);
             }
         }
     };
     
     private Set<byte[]> getOverlaySample(int overlayId) {
         Set<byte[]> result = new HashSet<byte[]>();
-        List<byte[]> overlayIds = overlays.get(overlayId);
-        if(overlayIds == null) {
+        Map<Integer, byte[]> overlayPeers = overlays.get(overlayId);
+        if(overlayPeers == null) {
             throw new RuntimeException("no overlay");
         }
-        if(overlayIds.size() <= config.sampleSize) {
-            result.addAll(overlayIds);
+        if(overlayPeers.size() <= config.sampleSize) {
+            result.addAll(overlayPeers.values());
         } else {
-            while(result.size() < config.sampleSize) {
-                result.add(overlayIds.get(rand.nextInt(overlayIds.size())));
+            Iterator<byte[]> it = overlayPeers.values().iterator();
+            while(result.size() < config.sampleSize && it.hasNext()) {
+                result.add(it.next());
             }
         }
         return result;

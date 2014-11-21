@@ -88,8 +88,8 @@ public class VoDComp extends ComponentDefinition {
     private final Map<UUID, Pair<String, Integer>> pendingDownloads;
     
     public VoDComp(VoDInit init) {
-        log.debug("init");
         this.config = init.config;
+        log.info("{} lib folder: {}", config.selfAddress, config.libDir);
         this.videoComps = new HashMap<Integer, Triplet<Component, Component, Component>>();
         this.videoStoreMngrs = new HashMap<Integer, FileMngr>();
         this.pendingDownloads = new HashMap<UUID, Pair<String, Integer>>();
@@ -165,6 +165,8 @@ public class VoDComp extends ComponentDefinition {
                 } catch (GVoDConfigException.Missing ex) {
                     throw new RuntimeException(ex);
                 }
+            } else {
+                throw new RuntimeException();
             }
         }
     };
@@ -188,6 +190,8 @@ public class VoDComp extends ComponentDefinition {
                 } catch (GVoDConfigException.Missing ex) {
                     throw new RuntimeException(ex);
                 }
+            } else {
+                throw new RuntimeException();
             }
         }
     };
@@ -233,11 +237,10 @@ public class VoDComp extends ComponentDefinition {
         String videoFilePath = config.libDir + File.separator + video;
         String hashFilePath = config.libDir + File.separator + videoName + ".hash";
 
-//        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg) + 1;
-//        PieceTracker hashPieceTracker = new CompletePieceTracker(hashPieces);
-//        Storage hashStorage = StorageFactory.getExistingFile(hashFilePath, HashUtil.getHashSize(fileMeta.hashAlg));
-//        FileMngr hashMngr = new SimpleFileMngr(hashStorage, hashPieceTracker);
-        FileMngr hashMngr = null;
+        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg) + 1;
+        PieceTracker hashPieceTracker = new CompletePieceTracker(hashPieces);
+        Storage hashStorage = StorageFactory.getExistingFile(hashFilePath, HashUtil.getHashSize(fileMeta.hashAlg));
+        FileMngr hashMngr = new SimpleFileMngr(hashStorage, hashPieceTracker);
 
         Storage videoStorage = StorageFactory.getExistingFile(videoFilePath, config.pieceSize);
         int filePieces = fileMeta.fileSize / fileMeta.pieceSize + 1;
@@ -259,11 +262,10 @@ public class VoDComp extends ComponentDefinition {
             hashFile.delete();
         }
         
-//        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg) + 1;
-//        PieceTracker hashPieceTracker = new SimplePieceTracker(hashPieces);
-//        Storage hashStorage = StorageFactory.getEmptyFile(hashFilePath, fileMeta.hashFileSize, HashUtil.getHashSize(fileMeta.hashAlg));
-//        FileMngr hashMngr = new SimpleFileMngr(hashStorage, hashPieceTracker);
-        FileMngr hashMngr = null;
+        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg) + 1;
+        PieceTracker hashPieceTracker = new SimplePieceTracker(hashPieces);
+        Storage hashStorage = StorageFactory.getEmptyFile(hashFilePath, fileMeta.hashFileSize, HashUtil.getHashSize(fileMeta.hashAlg));
+        FileMngr hashMngr = new SimpleFileMngr(hashStorage, hashPieceTracker);
 
         Storage videoStorage = StorageFactory.getEmptyFile(videoFilePath, fileMeta.fileSize, fileMeta.pieceSize);
         int filePieces = fileMeta.fileSize / fileMeta.pieceSize + 1;
@@ -271,5 +273,9 @@ public class VoDComp extends ComponentDefinition {
         FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
 
         return Pair.with(fileMngr, hashMngr);
+    }
+    
+    private void hashVideo(String video) {
+        
     }
 }

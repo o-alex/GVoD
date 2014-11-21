@@ -48,7 +48,7 @@ public class AddOverlayPeerOp implements Operation<CaracalOp> {
 
     @Override
     public void start() {
-        opMngr.sendCaracalReq(req.id, CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId), new PutRequest(UUID.randomUUID(), CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId), req.data));
+        opMngr.sendCaracalReq(req.id, CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId), new PutRequest(UUID.randomUUID(), CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId), req.nodeInfo));
     }
 
     @Override

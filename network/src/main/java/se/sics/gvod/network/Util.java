@@ -35,120 +35,122 @@ import se.sics.gvod.net.util.UserTypesEncoderFactory;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class Util {
-
-    public static ByteBuf encodeUUID(ByteBuf buffer, UUID id) {
-        buffer.writeLong(id.getMostSignificantBits());
-        buffer.writeLong(id.getLeastSignificantBits());
-        return buffer;
-    }
-
-    public static UUID decodeUUID(ByteBuf buffer) {
-        Long uuidMSB = buffer.readLong();
-        Long uuidLSB = buffer.readLong();
-        return new UUID(uuidMSB, uuidLSB);
-    }
-
-    public static int getUUIDEncodedSize() {
-        return 8 + 8; //2 longs
-    }
-
-    public static ByteBuf encodeVodAddress(ByteBuf buffer, VodAddress address) {
-        try {
-            UserTypesEncoderFactory.writeVodAddress(buffer, address);
-            return buffer;
-        } catch (MessageEncodingException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public static VodAddress decodeVodAddress(ByteBuf buffer) {
-        try {
-            return UserTypesDecoderFactory.readVodAddress(buffer);
-        } catch (MessageDecodingException ex) {
-            throw new RuntimeException(ex);
-        }
-    }
-
-    public static int getVodAddressEncodedSize(VodAddress address) {
-        int size = 0;
-        size += UserTypesEncoderFactory.ADDRESS_LEN; // address
-        size += 4; // overlayId
-        size += 1; //natPolicy
-        size += (address.getParents().size() == 0 ? 2 : 2 + address.getParents().size() * UserTypesEncoderFactory.ADDRESS_LEN);
-        return size;
-    }
-
-    public static ByteBuf encodeReqStatus(ByteBuf buffer, ReqStatus status) {
-        switch (status) {
-            case FAIL:
-                buffer.writeByte(0);
-                break;
-            case SUCCESS:
-                buffer.writeByte(1);
-                break;
-            default:
-                throw new RuntimeException("no code for encoding status " + status);
-        }
-        return buffer;
-    }
-
-    public static ReqStatus decodeReqStatus(ByteBuf buffer) {
-        byte statusB = buffer.readByte();
-        switch (statusB) {
-            case 0x00:
-                return ReqStatus.FAIL;
-            case 0x01:
-                return ReqStatus.SUCCESS;
-            default:
-                throw new RuntimeException("no code for decoding status byte " + statusB);
-        }
-    }
-
-    public static int getReqStatusEncodedSize() {
-        return 1;
-    }
-
-    public static ByteBuf encodeFileMeta(ByteBuf buffer, FileMetadata fileMeta) {
-        buffer.writeInt(fileMeta.fileSize);
-        buffer.writeInt(fileMeta.pieceSize);
-        buffer.writeByte(HashUtil.getAlgId(fileMeta.hashAlg));
-        buffer.writeInt(fileMeta.hashFileSize);
-        return buffer;
-    }
-
-    public static FileMetadata decodeFileMeta(ByteBuf buffer) {
-        int fileSize = buffer.readInt();
-        int pieceSize = buffer.readInt();
-        String hashAlg = HashUtil.getAlgName(buffer.readByte());
-        int hashFileSize = buffer.readInt();
-        return new FileMetadata(fileSize, pieceSize, hashAlg, hashFileSize);
-    }
-
-    public static int getFileMetaEncodedSize() {
-        int size = 0;
-        size += 4; //fileSize
-        size += 4; //pieceSize
-        size += 1; //hashAlgId
-        size += 4; //hashFileSize
-        return size;
-    }
+//
+//    public static ByteBuf encodeUUID(ByteBuf buffer, UUID id) {
+//        buffer.writeLong(id.getMostSignificantBits());
+//        buffer.writeLong(id.getLeastSignificantBits());
+//        return buffer;
+//    }
+//
+//    public static UUID decodeUUID(ByteBuf buffer) {
+//        Long uuidMSB = buffer.readLong();
+//        Long uuidLSB = buffer.readLong();
+//        return new UUID(uuidMSB, uuidLSB);
+//    }
+//
+//    public static int getUUIDEncodedSize() {
+//        return 8 + 8; //2 longs
+//    }
+//
+//    public static ByteBuf encodeVodAddress(ByteBuf buffer, VodAddress address) {
+//        try {
+//            UserTypesEncoderFactory.writeVodAddress(buffer, address);
+//            return buffer;
+//        } catch (MessageEncodingException ex) {
+//            throw new RuntimeException(ex);
+//        }
+//    }
+//
+//    public static VodAddress decodeVodAddress(ByteBuf buffer) {
+//        try {
+//            return UserTypesDecoderFactory.readVodAddress(buffer);
+//        } catch (MessageDecodingException ex) {
+//            throw new RuntimeException(ex);
+//        }
+//    }
+//
+//    public static int getVodAddressEncodedSize(VodAddress address) {
+//        int size = 0;
+//        size += UserTypesEncoderFactory.ADDRESS_LEN; // address
+//        size += 4; // overlayId
+//        size += 1; //natPolicy
+//        size += (address.getParents().size() == 0 ? 2 : 2 + address.getParents().size() * UserTypesEncoderFactory.ADDRESS_LEN);
+//        return size;
+//    }
+//
+//    public static ByteBuf encodeReqStatus(ByteBuf buffer, ReqStatus status) {
+//        switch (status) {
+//            case FAIL:
+//                buffer.writeByte(0);
+//                break;
+//            case SUCCESS:
+//                buffer.writeByte(1);
+//                break;
+//            default:
+//                throw new RuntimeException("no code for encoding status " + status);
+//        }
+//        return buffer;
+//    }
+//
+//    public static ReqStatus decodeReqStatus(ByteBuf buffer) {
+//        byte statusB = buffer.readByte();
+//        switch (statusB) {
+//            case 0x00:
+//                return ReqStatus.FAIL;
+//            case 0x01:
+//                return ReqStatus.SUCCESS;
+//            default:
+//                throw new RuntimeException("no code for decoding status byte " + statusB);
+//        }
+//    }
+//
+//    public static int getReqStatusEncodedSize() {
+//        return 1;
+//    }
+//
+//    public static ByteBuf encodeFileMeta(ByteBuf buffer, FileMetadata fileMeta) {
+//        buffer.writeInt(fileMeta.fileSize);
+//        buffer.writeInt(fileMeta.pieceSize);
+//        buffer.writeByte(HashUtil.getAlgId(fileMeta.hashAlg));
+//        buffer.writeInt(fileMeta.hashFileSize);
+//        return buffer;
+//    }
+//
+//    public static FileMetadata decodeFileMeta(ByteBuf buffer) {
+//        int fileSize = buffer.readInt();
+//        int pieceSize = buffer.readInt();
+//        String hashAlg = HashUtil.getAlgName(buffer.readByte());
+//        int hashFileSize = buffer.readInt();
+//        return new FileMetadata(fileSize, pieceSize, hashAlg, hashFileSize);
+//    }
+//
+//    public static int getFileMetaEncodedSize() {
+//        int size = 0;
+//        size += 4; //fileSize
+//        size += 4; //pieceSize
+//        size += 1; //hashAlgId
+//        size += 4; //hashFileSize
+//        return size;
+//    }
+//    
+//    public static ByteBuf encodeHeartbeatEntry(ByteBuf buffer, VodAddress peer, int utility) {
+//        encodeVodAddress(buffer, peer);
+//        buffer.writeInt(utility);
+//        return buffer;
+//    }
+//    
+//    public static Pair<VodAddress, Integer> decodeHeartbeatEntry(ByteBuf buffer) {
+//        VodAddress peer = decodeVodAddress(buffer);
+//        int utility = buffer.readInt();
+//        return Pair.with(peer, utility);
+//    }
+//    
+//    public static int getHeartbeatEntryEncodedSize(VodAddress peer) {
+//        int size = 0;
+//        size += getVodAddressEncodedSize(peer);
+//        size += 4; //utility
+//        return size;
+//    }
     
-    public static ByteBuf encodeHeartbeatEntry(ByteBuf buffer, VodAddress peer, int utility) {
-        encodeVodAddress(buffer, peer);
-        buffer.writeInt(utility);
-        return buffer;
-    }
     
-    public static Pair<VodAddress, Integer> decodeHeartbeatEntry(ByteBuf buffer) {
-        VodAddress peer = decodeVodAddress(buffer);
-        int utility = buffer.readInt();
-        return Pair.with(peer, utility);
-    }
-    
-    public static int getHeartbeatEntryEncodedSize(VodAddress peer) {
-        int size = 0;
-        size += getVodAddressEncodedSize(peer);
-        size += 4; //utility
-        return size;
-    }
 }

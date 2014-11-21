@@ -19,21 +19,16 @@
 package se.sics.gvod.bootstrap.server.operations;
 
 import io.netty.buffer.Unpooled;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import org.javatuples.Pair;
 import se.sics.gvod.bootstrap.server.PeerOpManager;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetFileMetadata;
-import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
-import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.JoinOverlay;
-import se.sics.gvod.common.util.BuilderException;
+import se.sics.gvod.common.util.FileMetadata;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.network.serializers.SerializationContext;
+import se.sics.gvod.network.serializers.Serializer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -41,11 +36,13 @@ import se.sics.gvod.network.Util;
 public class JoinOverlayOp implements Operation {
 
     private final PeerOpManager opMngr;
+    private final SerializationContext context;
     private final JoinOverlay.Request req;
     private final VodAddress src;
 
-    public JoinOverlayOp(PeerOpManager opMngr, JoinOverlay.Request req, VodAddress src) {
+    public JoinOverlayOp(PeerOpManager opMngr, SerializationContext context, JoinOverlay.Request req, VodAddress src) {
         this.opMngr = opMngr;
+        this.context = context;
         this.req = req;
         this.src = src;
     }
@@ -65,7 +62,13 @@ public class JoinOverlayOp implements Operation {
         if (peerResp instanceof PMGetFileMetadata.Response) {
             PMGetFileMetadata.Response fileResp = (PMGetFileMetadata.Response) peerResp;
             if (fileResp.status == ReqStatus.SUCCESS) {
-                opMngr.finish(getId(), src, req.success(Util.decodeFileMeta(Unpooled.wrappedBuffer(fileResp.fileMetadata))));
+                try {
+                    opMngr.finish(getId(), src, req.success(context.getSerializer(FileMetadata.class).decode(context, Unpooled.wrappedBuffer(fileResp.fileMetadata))));
+                } catch (Serializer.SerializerException ex) {
+                    throw new RuntimeException(ex);
+                } catch (SerializationContext.MissingException ex) {
+                    throw new RuntimeException(ex);
+                }
             } else {
                 opMngr.finish(getId(), src, req.fail());
             }
