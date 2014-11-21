@@ -33,7 +33,7 @@ public class UtilTest {
 
     @Test
     public void test1() throws NoSuchAlgorithmException {
-         System.out.println(File.pathSeparator);
+         System.out.println("" + (byte)0x91);
          System.out.println(File.separator);
     }
 }

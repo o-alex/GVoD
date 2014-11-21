@@ -20,6 +20,7 @@ package se.sics.gvod.bootstrap.cclient;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import se.sics.gvod.common.util.GVoDConfigException;
@@ -68,7 +69,7 @@ public class CaracalPeerStoreConfig {
             Address caracalServer;
             try {
                 caracalServer = new Address(
-                        InetAddress.getByName(config.getString("caracal.address.ip")),
+                        Inet4Address.getByName(config.getString("caracal.address.ip")),
                         config.getInt("caracal.address.port"),
                         null);
                 sampleSize = config.getInt("bootstrap.sampleSize");

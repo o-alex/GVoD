@@ -21,6 +21,7 @@ package se.sics.gvod.system;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
@@ -102,12 +103,12 @@ public class HostConfiguration {
                     throw new GVoDConfigException.Missing("id");
                 }
                 Address self = new Address(
-                        InetAddress.getLocalHost(),
+                        Inet4Address.getLocalHost(),
                         config.getInt("vod.address.port"),
                         id);
 
                 Address server = new Address(
-                        InetAddress.getLocalHost(),
+                        Inet4Address.getLocalHost(),
                         config.getInt("bootstrap.server.address.port"),
                         config.getInt("bootstrap.server.address.id")
                 );
@@ -168,7 +169,7 @@ public class HostConfiguration {
                 }
 
                 Address serverAddress = new Address(
-                        InetAddress.getByName(config.getString("bootstrap.server.address.ip")),
+                        Inet4Address.getByName(config.getString("bootstrap.server.address.ip")),
                         config.getInt("bootstrap.server.address.port"),
                         config.getInt("bootstrap.server.address.id")
                 );

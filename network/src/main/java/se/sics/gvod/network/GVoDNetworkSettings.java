@@ -49,6 +49,7 @@ import se.sics.gvod.network.serializers.bootstrap.BootstrapGlobalSerializer;
 import se.sics.gvod.network.serializers.bootstrap.HeartbeatSerializer;
 import se.sics.gvod.network.serializers.bootstrap.JoinOverlaySerializer;
 import se.sics.gvod.network.serializers.bootstrap.OverlaySampleSerializer;
+import se.sics.gvod.network.serializers.net.base.SerializerAdapter;
 import se.sics.gvod.network.serializers.net.vod.NetConnectionSerializer;
 import se.sics.gvod.network.serializers.net.vod.NetDownloadSerializer;
 import se.sics.gvod.network.serializers.net.bootstrap.NetAddOverlaySerializer;
@@ -90,6 +91,7 @@ public class GVoDNetworkSettings {
 
     public static void registerSerializers() {
         NetMsg.setContext(context);
+        SerializerAdapter.setContext(context);
 
         registerNetworkMsg();
         registerOthers();
