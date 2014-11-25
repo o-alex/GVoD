@@ -75,15 +75,15 @@ public class CaracalKeyFactory {
     private static int sizeofOverlayKeyPrefix() {
         int size = 0;
         size += prefix.length;
-        size += Integer.BYTES; //overlayId;
-        size += Byte.BYTES; //key type = overlay peer key
+        size += Integer.SIZE/8; //overlayId;
+        size += Byte.SIZE/8; //key type = overlay peer key
         return size;
     }
 
     private static int sizeofOverlayPeerKey() {
         int size = 0;
         size += sizeofOverlayKeyPrefix();
-        size += Integer.BYTES; //nodeId;
+        size += Integer.SIZE/8; //nodeId;
         return size;
     }
 
