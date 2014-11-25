@@ -68,11 +68,16 @@ public class Launcher extends ComponentDefinition {
     private Component resolveIp;
     private Component network;
     private Component manager;
-    private VoDManager vodManager;
+    private static VoDManager vodManager = null;
 
     private Address selfAddress;
     private final HostConfiguration.ExecBuilder config;
 
+    
+    public static VoDManager getInstance() {
+        return vodManager;
+    }
+    
     public Launcher() {
         log.info("init");
         subscribe(handleStart, control);
@@ -129,8 +134,8 @@ public class Launcher extends ComponentDefinition {
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
             }
-            uploadVideo();
-//            downloadVideo();
+//            uploadVideo();
+            downloadVideo();
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }

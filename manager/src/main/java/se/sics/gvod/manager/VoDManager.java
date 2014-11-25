@@ -24,7 +24,7 @@ import java.util.Map;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public interface VoDManager {
-
+    
     public Map<String, FileStatus> getFiles();
     
     public void reloadLibrary();

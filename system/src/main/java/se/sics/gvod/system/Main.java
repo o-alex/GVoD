@@ -26,6 +26,17 @@ import se.sics.kompics.Kompics;
  */
 
 public class Main {
+    public static void runMain() {
+        (new Thread(new RunMain())).start();
+    }
+    
+    public static class RunMain implements Runnable {
+
+        @Override
+        public void run() {
+            main(new String[0]);
+        }
+    }
     
     public static void main(String[] args) {
         start();
