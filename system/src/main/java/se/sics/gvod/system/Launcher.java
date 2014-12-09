@@ -67,11 +67,10 @@ public class Launcher extends ComponentDefinition {
     private Address selfAddress;
     private final HostConfiguration.ExecBuilder config;
 
-    
     public static VoDManager getInstance() {
         return vodManager;
     }
-    
+
     public Launcher() {
         try {
             Thread.sleep(2000);
@@ -84,7 +83,7 @@ public class Launcher extends ComponentDefinition {
         GVoDNetFrameDecoder.register();
         GVoDNetworkSettings.checkPreCond();
         GVoDNetworkSettings.registerSerializers();
-        
+
         config = new HostConfiguration.ExecBuilder();
 
         phase1();
@@ -122,20 +121,13 @@ public class Launcher extends ComponentDefinition {
             //should create and start only on open nodes
             Component peerManager = create(CaracalPSManagerComp.class, new CaracalPSManagerComp.CaracalPSManagerInit(hostConfig.getCaracalPSManagerConfig()));
             manager = create(HostManagerComp.class, new HostManagerComp.HostManagerInit(hostConfig, peerManager));
+            vodManager = ((HostManagerComp) manager.getComponent()).getVoDManager();
             connect(manager.getNegative(VodNetwork.class), network.getPositive(VodNetwork.class));
             connect(manager.getNegative(Timer.class), timer.getPositive(Timer.class));
 
             trigger(Start.event, peerManager.control());
             trigger(Start.event, manager.control());
-            
-            while(vodManager == null) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ex) {
-                    throw new RuntimeException(ex);
-                }
-                vodManager = ((HostManagerComp) manager.getComponent()).getVoDManager();
-            }        } catch (GVoDConfigException.Missing ex) {
+        } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
     }
@@ -177,7 +169,6 @@ public class Launcher extends ComponentDefinition {
 //            throw new RuntimeException();
 //        }
 //    }
-
     public Handler<Start> handleStart = new Handler<Start>() {
 
         @Override
