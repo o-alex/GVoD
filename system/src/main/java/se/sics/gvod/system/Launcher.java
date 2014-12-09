@@ -18,13 +18,8 @@
  */
 package se.sics.gvod.system;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.net.InetAddress;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
@@ -40,7 +35,6 @@ import se.sics.gvod.net.events.PortBindRequest;
 import se.sics.gvod.net.events.PortBindResponse;
 import se.sics.gvod.network.GVoDNetFrameDecoder;
 import se.sics.gvod.network.GVoDNetworkSettings;
-import se.sics.gvod.system.vodmngr.VoDManagerImpl;
 import se.sics.gvod.timer.Timer;
 import se.sics.gvod.timer.java.JavaTimer;
 import se.sics.kompics.Component;
@@ -79,6 +73,11 @@ public class Launcher extends ComponentDefinition {
     }
     
     public Launcher() {
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
         log.info("init");
         subscribe(handleStart, control);
 

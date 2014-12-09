@@ -19,6 +19,7 @@
 
 package se.sics.gvod.system;
 
+import se.sics.gvod.system.Launcher;
 import se.sics.kompics.Kompics;
 
 /**
