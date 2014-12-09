@@ -64,6 +64,8 @@ public class Launcher extends ComponentDefinition {
     private Component manager;
     private static VoDManager vodManager = null;
 
+    public static CMD firstCmd = null;
+
     private Address selfAddress;
     private final HostConfiguration.ExecBuilder config;
 
@@ -127,6 +129,21 @@ public class Launcher extends ComponentDefinition {
 
             trigger(Start.event, peerManager.control());
             trigger(Start.event, manager.control());
+
+            if (firstCmd != null) {
+                if (firstCmd.download) {
+                    if (!vodManager.downloadVideo(firstCmd.fileName, firstCmd.overlayId)) {
+                        throw new RuntimeException("bad first command cannot download");
+                    }
+                } else {
+                    if (!vodManager.pendingUpload(firstCmd.fileName)) {
+                        throw new RuntimeException("bad first command cannot cannot upload");
+                    }
+                    if (!vodManager.uploadVideo(firstCmd.fileName, firstCmd.overlayId)) {
+                        throw new RuntimeException("bad first command cannot cannot upload");
+                    }
+                }
+            }
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
@@ -226,4 +243,18 @@ public class Launcher extends ComponentDefinition {
             }
         }
     }
+
+    public static class CMD {
+
+        public final boolean download;
+        public final String fileName;
+        public final int overlayId;
+
+        public CMD(boolean download, String fileName, int overlayId) {
+            this.download = download;
+            this.fileName = fileName;
+            this.overlayId = overlayId;
+        }
+    }
+
 }

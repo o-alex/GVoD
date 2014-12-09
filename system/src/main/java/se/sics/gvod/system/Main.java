@@ -40,6 +40,12 @@ public class Main {
     }
     
     public static void main(String[] args) {
+        if(args.length == 3) {
+            boolean download = (args[0].equals("download") ? true : false);
+            String fileName = args[1];
+            int overlayId = Integer.parseInt(args[2]);
+            Launcher.firstCmd = new Launcher.CMD(download, fileName, overlayId);
+        }
         start();
         try {
             Kompics.waitForTermination();
