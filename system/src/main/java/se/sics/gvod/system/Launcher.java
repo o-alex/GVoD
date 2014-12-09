@@ -122,20 +122,20 @@ public class Launcher extends ComponentDefinition {
             //should create and start only on open nodes
             Component peerManager = create(CaracalPSManagerComp.class, new CaracalPSManagerComp.CaracalPSManagerInit(hostConfig.getCaracalPSManagerConfig()));
             manager = create(HostManagerComp.class, new HostManagerComp.HostManagerInit(hostConfig, peerManager));
-            vodManager = ((HostManagerComp) manager.getComponent()).getVoDManager();
             connect(manager.getNegative(VodNetwork.class), network.getPositive(VodNetwork.class));
             connect(manager.getNegative(Timer.class), timer.getPositive(Timer.class));
 
             trigger(Start.event, peerManager.control());
             trigger(Start.event, manager.control());
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-//            uploadVideo();
-//            downloadVideo();
-        } catch (GVoDConfigException.Missing ex) {
+            
+            while(vodManager == null) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+                vodManager = ((HostManagerComp) manager.getComponent()).getVoDManager();
+            }        } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
     }
