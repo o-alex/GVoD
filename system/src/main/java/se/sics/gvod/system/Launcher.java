@@ -131,6 +131,11 @@ public class Launcher extends ComponentDefinition {
             trigger(Start.event, manager.control());
 
             if (firstCmd != null) {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
                 if (firstCmd.download) {
                     if (!vodManager.downloadVideo(firstCmd.fileName, firstCmd.overlayId)) {
                         throw new RuntimeException("bad first command cannot download");
