@@ -14,6 +14,8 @@
         <module>manager</module>
         <module>network</module>
     <module>croupier-fake</module>
+    <module>core</module>
+    <module>video-plugin</module>
   </modules>
     
     <properties>

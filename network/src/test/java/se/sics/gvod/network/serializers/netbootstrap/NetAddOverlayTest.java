@@ -58,7 +58,7 @@ public class NetAddOverlayTest {
         Address adr = new Address(Inet4Address.getLocalHost(), 10000, 123);
         Serializer<NetAddOverlay.Request> serializer = context.getSerializer(NetAddOverlay.Request.class);
         Assert.assertNotNull(serializer);
-        AddOverlay.Request req = new AddOverlay.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024, "SHA", 100));
+        AddOverlay.Request req = new AddOverlay.Request(UUID.randomUUID(), 1, new FileMetadata("file.mp4", 10000, 1024, "SHA", 100));
         NetAddOverlay.Request expected = new NetAddOverlay.Request(new VodAddress(adr, -1), new VodAddress(adr, -1), UUID.randomUUID(), req);
         int expectedSize = serializer.getSize(context, expected);
         ByteBuf buf = Unpooled.buffer();

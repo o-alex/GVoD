@@ -18,3 +18,6 @@
 /bootstrap/server/peer-manager/target/
 /bootstrap/server/simulation-peermanager/target/
 /croupier-fake/target/
+/core/core-api/target/
+/core/core-impl/target/
+/video-plugin/target/

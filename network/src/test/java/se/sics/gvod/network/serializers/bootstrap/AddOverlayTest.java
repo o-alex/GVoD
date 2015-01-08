@@ -52,7 +52,7 @@ public class AddOverlayTest {
     public void testRequest() throws SerializationContext.MissingException, Serializer.SerializerException {
         Serializer<AddOverlay.Request> serializer = context.getSerializer(AddOverlay.Request.class);
         Assert.assertNotNull(serializer);
-        AddOverlay.Request expected = new AddOverlay.Request(UUID.randomUUID(), 1, new FileMetadata(10000, 1024, "SHA", 100));
+        AddOverlay.Request expected = new AddOverlay.Request(UUID.randomUUID(), 1, new FileMetadata("file.mp4", 10000, 1024, "SHA", 100));
         int expectedSize = serializer.getSize(context, expected);
         ByteBuf buf = Unpooled.buffer();
         serializer.encode(context, buf, expected);

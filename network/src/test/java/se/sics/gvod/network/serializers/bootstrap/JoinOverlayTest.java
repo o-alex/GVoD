@@ -68,7 +68,7 @@ public class JoinOverlayTest {
         Serializer<JoinOverlay.Response> serializer = context.getSerializer(JoinOverlay.Response.class);
         Assert.assertNotNull(serializer);
         
-        JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1, new FileMetadata(10000, 1024, "SHA", 100));
+        JoinOverlay.Response expected = new JoinOverlay.Response(UUID.randomUUID(), ReqStatus.SUCCESS, 1, new FileMetadata("file.mp4", 10000, 1024, "SHA", 100));
         int expectedSize = serializer.getSize(context, expected);
         ByteBuf buf = Unpooled.buffer();
         serializer.encode(context, buf, expected);

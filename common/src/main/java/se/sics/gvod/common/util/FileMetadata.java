@@ -23,12 +23,14 @@ package se.sics.gvod.common.util;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class FileMetadata {
+    public final String fileName;
     public final int fileSize; 
     public final int pieceSize; 
     public final String hashAlg;
     public final int hashFileSize;
     
-    public FileMetadata(int fileSize, int pieceSize, String hashAlg, int hashFileSize) {
+    public FileMetadata(String fileName, int fileSize, int pieceSize, String hashAlg, int hashFileSize) {
+        this.fileName = fileName;
         this.fileSize = fileSize;
         this.pieceSize = pieceSize;
         this.hashAlg = hashAlg;

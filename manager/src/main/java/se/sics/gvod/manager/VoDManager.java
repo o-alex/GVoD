@@ -18,6 +18,7 @@
  */
 package se.sics.gvod.manager;
 
+import se.sics.gvod.manager.util.FileStatus;
 import java.util.Map;
 
 /**
@@ -34,4 +35,8 @@ public interface VoDManager {
     public boolean uploadVideo(String videoName, int overlayId);
 
     public boolean downloadVideo(String videoName, int overlayId);
+    
+    public boolean isInitialized();
+
+    public String downloadVideoFromUrl(String torrentUrl);
 }

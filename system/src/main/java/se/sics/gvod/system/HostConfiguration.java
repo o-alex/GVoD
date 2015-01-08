@@ -22,7 +22,6 @@ import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.bootstrap.cclient.CaracalPSManagerConfig;
@@ -30,7 +29,7 @@ import se.sics.gvod.bootstrap.client.BootstrapClientConfig;
 import se.sics.gvod.bootstrap.server.BootstrapServerConfig;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.system.vod.VoDConfig;
+import se.sics.gvod.core.VoDConfig;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -42,6 +41,8 @@ public class HostConfiguration {
     public final VodAddress server;
     public final byte[] seed;
     public final String libDir;
+    public final int controlPort = 58024;
+    public final int mediaPort = 58026;
 
     private HostConfiguration(Config config, VodAddress self, VodAddress server, byte[] seed, String libDir) {
         this.config = config;

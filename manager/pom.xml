@@ -14,6 +14,18 @@
     
     <dependencies>
         <dependency>
+            <groupId>se.sics.gvod</groupId>
+            <artifactId>core-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    
+        <dependency>
+            <groupId>se.sics.net</groupId>
+            <artifactId>netty</artifactId>
+            <version>${nattraverser.version}</version>
+        </dependency>
+        
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.2.4</version>

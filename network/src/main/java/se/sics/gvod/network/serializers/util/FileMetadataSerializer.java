@@ -31,6 +31,9 @@ public class FileMetadataSerializer implements Serializer<FileMetadata> {
 
     @Override
     public ByteBuf encode(SerializationContext context, ByteBuf buf, FileMetadata obj) throws SerializerException, SerializationContext.MissingException {
+        byte[] bFileName = obj.fileName.getBytes();
+        buf.writeInt(bFileName.length);
+        buf.writeBytes(bFileName);
         buf.writeInt(obj.fileSize);
         buf.writeInt(obj.pieceSize);
         buf.writeInt(obj.hashFileSize);
@@ -42,18 +45,23 @@ public class FileMetadataSerializer implements Serializer<FileMetadata> {
 
     @Override
     public FileMetadata decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
+        int bFileNameSize = buf.readInt();
+        byte[] bFileName = new byte[bFileNameSize];
+        buf.readBytes(bFileName);
         int fileSize = buf.readInt();
         int pieceSize = buf.readInt();
         int hashFileSize = buf.readInt();
         int hashAlgSize = buf.readInt();
         byte[] hashAlg = new byte[hashAlgSize];
         buf.readBytes(hashAlg);
-        return new FileMetadata(fileSize, pieceSize, new String(hashAlg), hashFileSize);
+        return new FileMetadata(new String(bFileName), fileSize, pieceSize, new String(hashAlg), hashFileSize);
     }
 
     @Override
     public int getSize(SerializationContext context, FileMetadata obj) throws SerializerException, SerializationContext.MissingException {
         int size = 0;
+        size += Integer.SIZE / 8; //fileNameSize
+        size += obj.fileName.getBytes().length * (Byte.SIZE / 8); //fileName
         size += Integer.SIZE / 8; // fileSize
         size += Integer.SIZE / 8; // pieceSize
         size += Integer.SIZE / 8; // hashFileSize
