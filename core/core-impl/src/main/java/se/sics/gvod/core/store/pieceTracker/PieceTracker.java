@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.core.storage;
+package se.sics.gvod.core.store.pieceTracker;
 
 import java.util.Set;
 
@@ -26,9 +26,10 @@ import java.util.Set;
  */
 public interface PieceTracker {
 
-    public boolean isComplete();
-    public Set<Integer> nextPiecesNeeded(int n, int startPos);
+    public boolean isComplete(int from);
+    public int contiguous(int from);
+    public Set<Integer> nextPiecesNeeded(int n, int startPos, Set<Integer> except);
+    public Integer nextPieceNeeded(int startPos, Set<Integer> except);
     public boolean hasPiece(int piecePos);
     public void addPiece(int piecePos);
-    public int contiguousStart();
 }

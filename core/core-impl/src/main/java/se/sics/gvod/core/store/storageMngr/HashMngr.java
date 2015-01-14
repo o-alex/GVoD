@@ -16,45 +16,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.core.storage;
+
+package se.sics.gvod.core.store.storageMngr;
 
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class CompletePieceTracker implements PieceTracker {
-
-    private final int nrPieces;
-
-    public CompletePieceTracker(int nrPieces) {
-        this.nrPieces = nrPieces;
-    }
-
-    @Override
-    public boolean isComplete() {
-        return true;
-    }
-    
-    @Override
-    public boolean hasPiece(int piecePos) {
-        return true;
-    }
-
-    @Override
-    public Set<Integer> nextPiecesNeeded(int n, int startPos) {
-        return new TreeSet<Integer>();
-    }
-
-    @Override
-    public void addPiece(int piecePos) {
-        //already have, do nothing
-    }
-
-    @Override
-    public int contiguousStart() {
-        return nrPieces - 1;
-    }
-
+public interface HashMngr {
+    public boolean hasHash(int hashNr);
+    public byte[] readHash(int hashNr);
+    public int writeHash(int hashNr, byte[] hash);
+    public boolean isComplete(int hashNr);
+    public int contiguous(int hashNr);
+    public Set<Integer> nextHashes(int n, int pos, Set<Integer> exclude);
 }

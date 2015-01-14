@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.core.storage;
+package se.sics.gvod.core.store.storage;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,55 +29,44 @@ import java.nio.channels.FileChannel;
  */
 public class RMemMapFile implements Storage {
 
-    private final String fileName;
-    private final long fileLength;
-    private final int pieceSize;
-    private final int lastPiece;
-
+    private final long length;
     private final MappedByteBuffer mbb;
 
-    RMemMapFile(File file, int pieceSize) throws IOException {
-        this.fileName = file.getName();
-        this.fileLength = file.length();
-        this.pieceSize = pieceSize;
-        this.lastPiece = (fileLength % pieceSize == 0) ? (int) (fileLength / pieceSize) - 1 : (int) (fileLength / pieceSize);
-
+    RMemMapFile(File file) throws IOException {
+        this.length = file.length();
         RandomAccessFile raf = new RandomAccessFile(file, "r");
-        mbb = raf.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, fileLength);
+        mbb = raf.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, length);
         raf.close();
     }
-
+    
     @Override
-    public int nrPieces() {
-        return lastPiece + 1;
-    }
-
-    @Override
-    public byte[] readPiece(int piecePos) {
-        byte[] result;
-        if (lastPiece == piecePos) {
-            if (fileLength % pieceSize == 0) {
-                result = new byte[pieceSize];
-            } else {
-                result = new byte[(int) (fileLength % pieceSize)];
-            }
-        } else {
-            result = new byte[pieceSize];
+    public byte[] read(long readPos, long readLength) {
+        if(readPos > Integer.MAX_VALUE || readLength > Integer.MAX_VALUE) {
+            throw new RuntimeException("out of bounds");
         }
-        int readStart = piecePos * pieceSize;
-        mbb.position(readStart);
+        if(readPos > length) {
+            return new byte[0];
+        }
+        if(readPos + readLength > length) {
+            readLength = length - readPos;
+        }
+        return read((int)readPos, (int)readLength);
+    }
+    
+    private byte[] read(int readPos, int readLength) {
+        byte[] result = new byte[readLength];
+        mbb.position(readPos);
         mbb.get(result, 0, result.length);
-
         return result;
     }
 
     @Override
-    public void writePiece(int piecePos, byte[] piece) {
-        //already have all, don't do anything
+    public int write(long writePos, byte[] bytes) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public String toString() {
-        return fileName;
+    public long length() {
+        return length;
     }
 }

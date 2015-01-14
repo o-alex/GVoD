@@ -33,14 +33,16 @@ public class VoDConfig {
     private final Config config;
     public final VodAddress selfAddress;
     public final int pieceSize;
+    public final int piecesPerBlock;
     public final String libDir;
     public final String hashAlg;
     public final int mediaPort;
 
-    private VoDConfig(Config config, VodAddress selfAddress, int pieceSize, String libDir, String hashAlg, int mediaPort) {
+    private VoDConfig(Config config, VodAddress selfAddress, int piecesPerBlock, int pieceSize, String libDir, String hashAlg, int mediaPort) {
         this.config = config;
         this.selfAddress = selfAddress;
         this.pieceSize = pieceSize;
+        this.piecesPerBlock = piecesPerBlock;
         this.libDir = libDir;
         this.hashAlg = hashAlg;
         this.mediaPort = mediaPort;
@@ -69,9 +71,10 @@ public class VoDConfig {
         public VoDConfig finalise() throws GVoDConfigException.Missing {
             try {
                 int pieceSize = config.getInt("vod.video.pieceSize");
+                int piecesPerBlock = config.getInt("vod.video.piecesPerBlock");
                 String hashAlg = config.getString("vod.hashAlg");
                 int mediaPort = config.getInt("vod.video.mediaPort");
-                return new VoDConfig(config, selfAddress, pieceSize, libDir, hashAlg, mediaPort);
+                return new VoDConfig(config, selfAddress, piecesPerBlock, pieceSize, libDir, hashAlg, mediaPort);
             } catch (ConfigException.Missing ex) {
                 throw new GVoDConfigException.Missing(ex);
             }

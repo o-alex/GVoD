@@ -16,57 +16,49 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.core.storage;
+package se.sics.gvod.core.store.pieceTracker;
 
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class SimpleFileMngr implements FileMngr {
+public class CompletePieceTracker implements PieceTracker {
 
-    private final Storage file;
-    private final PieceTracker pieceTracker;
-    
-    
-    public SimpleFileMngr(Storage file, PieceTracker pieces) {
-        this.file = file;
-        this.pieceTracker = pieces;
+    private final int nrPieces;
+
+    public CompletePieceTracker(int nrPieces) {
+        this.nrPieces = nrPieces;
     }
 
     @Override
-    public boolean isComplete() {
-        return pieceTracker.isComplete();
+    public boolean isComplete(int from) {
+        return true;
     }
-
+    
     @Override
-    public Set<Integer> nextPiecesNeeded(int n, int startPos) {
-        return pieceTracker.nextPiecesNeeded(n, startPos);
+    public int contiguous(int from) {
+        return nrPieces;
     }
     
     @Override
     public boolean hasPiece(int piecePos) {
-        return pieceTracker.hasPiece(piecePos);
+        return true;
     }
 
     @Override
-    public byte[] readPiece(int piecePos) {
-        return file.readPiece(piecePos);
+    public Set<Integer> nextPiecesNeeded(int n, int startPos, Set<Integer> except) {
+        return new TreeSet<Integer>();
     }
 
     @Override
-    public void writePiece(int piecePos, byte[] piece) {
-        pieceTracker.addPiece(piecePos);
-        file.writePiece(piecePos, piece);
+    public Integer nextPieceNeeded(int startPos, Set<Integer> except) {
+        return null;
     }
 
     @Override
-    public int contiguousStart() {
-        return pieceTracker.contiguousStart();
-    }
-    
-    @Override
-    public String toString() {
-        return file.toString();
+    public void addPiece(int piecePos) {
+        //already have, do nothing
     }
 }

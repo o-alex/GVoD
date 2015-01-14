@@ -17,18 +17,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.core.storage;
-
-import java.util.Set;
+package se.sics.gvod.core.store.storage;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface FileMngr {
-    public boolean isComplete();
-    public Set<Integer> nextPiecesNeeded(int n, int startPos);
-    public boolean hasPiece(int piecePos);
-    public byte[] readPiece(int piecePos);
-    public void writePiece(int piecePos, byte[] piece);
-    public int contiguousStart();
+public interface Storage {
+    public byte[] read(long readPos, long readLength);
+    public int write(long writePos, byte[] bytes);
+    public long length();
 }

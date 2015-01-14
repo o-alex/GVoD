@@ -17,13 +17,15 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.core.storage;
+package se.sics.gvod.core.store.storageMngr;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface Storage {
+public interface BlockMngr {
+    public boolean hasPiece(int pieceNr);
+    public int writePiece(int pieceNr, byte[] piece);
+    public boolean isComplete();
+    public byte[] getBlock();
     public int nrPieces();
-    public byte[] readPiece(int piecePos);
-    public void writePiece(int piecePos, byte[] piece);
 }

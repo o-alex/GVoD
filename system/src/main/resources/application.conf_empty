@@ -3,6 +3,9 @@ vod {
         port=
         id=
     }
+    video {
+        mediaPort=
+    }
     libDir=
 }
 bootstrap {

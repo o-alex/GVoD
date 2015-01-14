@@ -18,23 +18,20 @@
  */
 package se.sics.gvod.system.storage;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.Random;
-import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
-import se.sics.gvod.core.storage.CompletePieceTracker;
-import se.sics.gvod.core.storage.FileMngr;
-import se.sics.gvod.core.storage.PieceTracker;
-import se.sics.gvod.core.storage.SimpleFileMngr;
-import se.sics.gvod.core.storage.SimplePieceTracker;
-import se.sics.gvod.core.storage.Storage;
-import se.sics.gvod.core.storage.StorageFactory;
+import se.sics.gvod.core.store.storageMngr.BlockMngr;
+import se.sics.gvod.core.store.storageMngr.FileMngr;
+import se.sics.gvod.core.store.storageMngr.StorageMngrFactory;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -42,76 +39,71 @@ import se.sics.gvod.core.storage.StorageFactory;
 public class FileTest {
 
     //TODO Alex testEquality of MemMapFiles.. will be expensive - check temp File
-    
     private String uploadPath;
     private String downloadPath;
+    private int nrLines = 100000;
     private int fileLength;
+    private int blockSize;
     private int pieceSize;
     
     @Test
     public void testSuccess() throws IOException {
-        fileLength = 10000;
+        blockSize = 10*1024;
         pieceSize = 1024;
         prepareFiles();
         System.out.println(uploadPath);
+        System.out.println(fileLength);
         System.out.println(downloadPath);
         
-        Storage upload = StorageFactory.getExistingFile(uploadPath, pieceSize);
-        Storage download = StorageFactory.getEmptyFile(downloadPath, fileLength, pieceSize);
-        FileMngr uploadMngr = new SimpleFileMngr(upload, new CompletePieceTracker(fileLength/pieceSize + 1));
-        FileMngr downloadMngr = new SimpleFileMngr(download, new SimplePieceTracker(fileLength/pieceSize + 1));
-        while(!downloadMngr.isComplete()) {
-            Set<Integer> nextPieces = downloadMngr.nextPiecesNeeded(5, 0);
-            for(Integer pieceId : nextPieces) {
-//                System.out.println(pieceId);
-                downloadMngr.writePiece(pieceId, upload.readPiece(pieceId));
+        FileMngr uploadMngr = StorageMngrFactory.getCompleteFileMngr(uploadPath, fileLength, blockSize, pieceSize);
+        FileMngr downloadMngr = StorageMngrFactory.getIncompleteFileMngr(downloadPath, fileLength, blockSize, pieceSize);
+        int blockNr = 0;
+        while(!downloadMngr.isComplete(0)) {
+//            System.out.println("block:" + blockNr);
+            BlockMngr blockMngr = StorageMngrFactory.getSimpleBlockMngr(downloadMngr.blockSize(blockNr), pieceSize);
+            int pieceNr = 0;
+            while(!blockMngr.isComplete()) {
+//                System.out.println("piece:" + pieceNr);
+                blockMngr.writePiece(pieceNr, uploadMngr.read(blockNr * blockSize + pieceNr * pieceSize, pieceSize));
+                pieceNr++;
             }
+            downloadMngr.writeBlock(blockNr, blockMngr.getBlock());
+            blockNr++;
         }
+        System.out.println("blocks:" + blockNr);
         
-        Assert.assertTrue(downloadMngr.isComplete());
+        Assert.assertTrue(downloadMngr.isComplete(0));
+        checkFiles();
     }
     
-    @Test
-    public void testSuccessRandomFailingPackages() throws IOException {
-        pieceSize = 1024;
-        prepareFiles();
-        System.out.println(uploadPath);
-        System.out.println(downloadPath);
-
-        Random rand = new Random(1234);
-        int failingRate = 2; //1 in 2 failing rate
-        
-        Storage upload = StorageFactory.getExistingFile(uploadPath, pieceSize);
-        Storage download = StorageFactory.getEmptyFile(downloadPath, fileLength, pieceSize);
-        FileMngr uploadMngr = new SimpleFileMngr(upload, new CompletePieceTracker(fileLength/pieceSize + 1));
-        FileMngr downloadMngr = new SimpleFileMngr(download, new SimplePieceTracker(fileLength/pieceSize + 1));
-        while(!downloadMngr.isComplete()) {
-            Set<Integer> nextPieces = downloadMngr.nextPiecesNeeded(5, 0);
-            for(Integer pieceId : nextPieces) {
-                if(rand.nextInt(failingRate) == 0) {
-                    continue;
-                }
-//                System.out.println(pieceId);
-                downloadMngr.writePiece(pieceId, upload.readPiece(pieceId));
-            }
-        }
-        
-        Assert.assertTrue(downloadMngr.isComplete());
-    }
-        
     private void prepareFiles() throws IOException {
-        File uploadFile = File.createTempFile("memMapTest", "upload");
-        uploadPath = uploadFile.getPath();
         File downloadFile = File.createTempFile("memMapTest", "download");
         downloadPath = downloadFile.getPath();
         downloadFile.delete();
-        
+
+        File uploadFile = File.createTempFile("memMapTest", "upload");
+        uploadPath = uploadFile.getPath();
         Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(uploadFile.getPath())));
-        for(int i = 0; i < 10000; i++) {
+        for(int i = 0; i < nrLines; i++) {
             writer.write("abc" + i + "\n");
         }
         writer.flush();
         writer.close();
         fileLength = (int)uploadFile.length();
+    }
+    
+    private void checkFiles() throws FileNotFoundException, IOException {
+        BufferedReader downloadReader = new BufferedReader(new FileReader(downloadPath));
+        BufferedReader uploadReader = new BufferedReader(new FileReader(uploadPath));
+        
+        String downloadLine = downloadReader.readLine();
+        String uploadLine = uploadReader.readLine();
+        int line = 1;
+        while(uploadLine != null) {
+            Assert.assertEquals("line" + line, uploadLine, downloadLine);
+            downloadLine = downloadReader.readLine();
+            uploadLine = uploadReader.readLine();
+            line++;
+        }
     }
 }

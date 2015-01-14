@@ -46,15 +46,15 @@ import se.sics.gvod.core.downloadMngr.DownloadMngrComp;
 import se.sics.gvod.core.downloadMngr.DownloadMngrConfig;
 import se.sics.gvod.core.connMngr.ConnMngrConfig;
 import se.sics.gvod.core.connMngr.ConnMngrPort;
-import se.sics.gvod.core.storage.CompletePieceTracker;
-import se.sics.gvod.core.storage.FileMngr;
-import se.sics.gvod.core.storage.PieceTracker;
-import se.sics.gvod.core.storage.SimpleFileMngr;
-import se.sics.gvod.core.storage.SimplePieceTracker;
-import se.sics.gvod.core.storage.Storage;
-import se.sics.gvod.core.storage.StorageFactory;
+import se.sics.gvod.core.store.pieceTracker.CompletePieceTracker;
 import se.sics.gvod.core.msg.DownloadVideo;
 import se.sics.gvod.core.msg.UploadVideo;
+import se.sics.gvod.core.store.pieceTracker.PieceTracker;
+import se.sics.gvod.core.store.storage.Storage;
+import se.sics.gvod.core.store.storage.StorageFactory;
+import se.sics.gvod.core.store.storageMngr.FileMngr;
+import se.sics.gvod.core.store.storageMngr.HashMngr;
+import se.sics.gvod.core.store.storageMngr.StorageMngrFactory;
 import se.sics.gvod.timer.Timer;
 import se.sics.gvod.videoplugin.VideoPlayer;
 import se.sics.gvod.videoplugin.VideoPlayerComp;
@@ -128,7 +128,8 @@ public class VoDComp extends ComponentDefinition {
             }
             try {
                 hashFile.createNewFile();
-                HashUtil.makeHashes(videoFilePath, hashFilePath, config.hashAlg, config.pieceSize);
+                int blockSize = config.piecesPerBlock * config.pieceSize;
+                HashUtil.makeHashes(videoFilePath, hashFilePath, config.hashAlg, blockSize);
             } catch (HashUtil.HashBuilderException ex) {
                 throw new RuntimeException(ex);
             } catch (IOException ex) {
@@ -159,7 +160,7 @@ public class VoDComp extends ComponentDefinition {
             if (resp.status == ReqStatus.SUCCESS) {
                 try {
                     Pair<Pair<String, Integer>, FileMetadata> fileInfo = pendingUploads.remove(resp.id);
-                    Pair<FileMngr, FileMngr> videoMngrs = getUploadVideoMngrs(fileInfo.getValue0().getValue0(), fileInfo.getValue1());
+                    Pair<FileMngr, HashMngr> videoMngrs = getUploadVideoMngrs(fileInfo.getValue0().getValue0(), fileInfo.getValue1());
                     startVideoComp(resp.overlayId, fileInfo.getValue1(), videoMngrs, false);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
@@ -183,7 +184,7 @@ public class VoDComp extends ComponentDefinition {
             if (resp.status == ReqStatus.SUCCESS) {
                 try {
                     Pair<String, Integer> fileInfo = pendingDownloads.remove(resp.id);
-                    Pair<FileMngr, FileMngr> videoMngrs = getDownloadVideoMngrs(fileInfo.getValue0(), resp.fileMeta);
+                    Pair<FileMngr, HashMngr> videoMngrs = getDownloadVideoMngrs(fileInfo.getValue0(), resp.fileMeta);
                     startVideoComp(resp.overlayId, resp.fileMeta, videoMngrs, true);
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
@@ -198,7 +199,7 @@ public class VoDComp extends ComponentDefinition {
         }
     };
 
-    private void startVideoComp(int overlayId, FileMetadata fileMeta, Pair<FileMngr, FileMngr> hashedFileMngr, boolean download) {
+    private void startVideoComp(int overlayId, FileMetadata fileMeta, Pair<FileMngr, HashMngr> hashedFileMngr, boolean download) {
         DownloadMngrConfig downloadMngrConfig;
         ConnMngrConfig connMngrConfig;
 
@@ -235,27 +236,30 @@ public class VoDComp extends ComponentDefinition {
         setupPlayerHttpConnection((VideoPlayer) playMngr.getComponent(), fileMeta.fileName, config.mediaPort);
     }
 
-    private Pair<FileMngr, FileMngr> getUploadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
+    private Pair<FileMngr, HashMngr> getUploadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
 
         String videoName = video.substring(0, video.indexOf("."));
         String videoExt = video.substring(video.indexOf("."));
         String videoFilePath = config.libDir + File.separator + video;
         String hashFilePath = config.libDir + File.separator + videoName + ".hash";
 
-        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg);
-        PieceTracker hashPieceTracker = new CompletePieceTracker(hashPieces);
-        Storage hashStorage = StorageFactory.getExistingFile(hashFilePath, HashUtil.getHashSize(fileMeta.hashAlg));
-        FileMngr hashMngr = new SimpleFileMngr(hashStorage, hashPieceTracker);
+//        int nrHashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg);
+//        PieceTracker hashPieceTracker = new CompletePieceTracker(nrHashPieces);
+//        Storage hashStorage = StorageFactory.getExistingFile(hashFilePath);
+//        HashMngr hashMngr = new CompleteFileMngr(hashStorage, hashPieceTracker);
+        HashMngr hashMngr = StorageMngrFactory.getCompleteHashMngr(hashFilePath, fileMeta.hashAlg, fileMeta.hashFileSize, HashUtil.getHashSize(fileMeta.hashAlg));
 
-        Storage videoStorage = StorageFactory.getExistingFile(videoFilePath, config.pieceSize);
-        int filePieces = fileMeta.fileSize / fileMeta.pieceSize + (fileMeta.fileSize % fileMeta.pieceSize == 0 ? 0 : 1);
-        PieceTracker videoPieceTracker = new CompletePieceTracker(filePieces);
-        FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
+//        int filePieces = fileMeta.fileSize / fileMeta.pieceSize + (fileMeta.fileSize % fileMeta.pieceSize == 0 ? 0 : 1);
+//        Storage videoStorage = StorageFactory.getExistingFile(videoFilePath, config.pieceSize);
+//        PieceTracker videoPieceTracker = new CompletePieceTracker(filePieces);
+//        FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
+        int blockSize = config.piecesPerBlock * config.pieceSize;
+        FileMngr fileMngr = StorageMngrFactory.getCompleteFileMngr(videoFilePath, fileMeta.fileSize, blockSize, config.pieceSize);
 
         return Pair.with(fileMngr, hashMngr);
     }
 
-    private Pair<FileMngr, FileMngr> getDownloadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
+    private Pair<FileMngr, HashMngr> getDownloadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
         log.info("{} lib directory {}", config.selfAddress, config.libDir);
         String videoName = video.substring(0, video.indexOf("."));
         String videoExt = video.substring(video.indexOf("."));
@@ -267,15 +271,18 @@ public class VoDComp extends ComponentDefinition {
             hashFile.delete();
         }
 
-        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg);
-        PieceTracker hashPieceTracker = new SimplePieceTracker(hashPieces);
-        Storage hashStorage = StorageFactory.getEmptyFile(hashFilePath, fileMeta.hashFileSize, HashUtil.getHashSize(fileMeta.hashAlg));
-        FileMngr hashMngr = new SimpleFileMngr(hashStorage, hashPieceTracker);
+//        int hashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg);
+//        PieceTracker hashPieceTracker = new SimplePieceTracker(hashPieces);
+//        Storage hashStorage = StorageFactory.getEmptyFile(hashFilePath, fileMeta.hashFileSize, HashUtil.getHashSize(fileMeta.hashAlg));
+//        FileMngr hashMngr = new SimpleFileMngr(hashStorage, hashPieceTracker);
+        HashMngr hashMngr = StorageMngrFactory.getIncompleteHashMngr(hashFilePath, fileMeta.hashAlg, fileMeta.hashFileSize, HashUtil.getHashSize(fileMeta.hashAlg));
 
-        Storage videoStorage = StorageFactory.getEmptyFile(videoFilePath, fileMeta.fileSize, fileMeta.pieceSize);
-        int filePieces = fileMeta.fileSize / fileMeta.pieceSize + (fileMeta.fileSize % fileMeta.pieceSize == 0 ? 0 : 1);
-        PieceTracker videoPieceTracker = new SimplePieceTracker(filePieces);
-        FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
+//        Storage videoStorage = StorageFactory.getEmptyFile(videoFilePath, fileMeta.fileSize, fileMeta.pieceSize);
+//        int filePieces = fileMeta.fileSize / fileMeta.pieceSize + (fileMeta.fileSize % fileMeta.pieceSize == 0 ? 0 : 1);
+//        PieceTracker videoPieceTracker = new SimplePieceTracker(filePieces);
+//        FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
+        int blockSize = config.piecesPerBlock * config.pieceSize;
+        FileMngr fileMngr = StorageMngrFactory.getIncompleteFileMngr(videoFilePath, fileMeta.fileSize, blockSize, config.pieceSize);
 
         return Pair.with(fileMngr, hashMngr);
     }

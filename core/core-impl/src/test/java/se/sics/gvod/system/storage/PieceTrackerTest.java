@@ -18,10 +18,11 @@
  */
 package se.sics.gvod.system.storage;
 
+import java.util.HashSet;
 import java.util.TreeSet;
 import org.junit.Assert;
 import org.junit.Test;
-import se.sics.gvod.core.storage.SimplePieceTracker;
+import se.sics.gvod.core.store.pieceTracker.IncompletePieceTracker;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -30,45 +31,44 @@ public class PieceTrackerTest {
 
     @Test
     public void test() {
-        SimplePieceTracker pt = new SimplePieceTracker(10);
+        IncompletePieceTracker pt = new IncompletePieceTracker(10);
         TreeSet<Integer> expected;
 
-        Assert.assertFalse(pt.isComplete());
+        Assert.assertFalse(pt.isComplete(0));
 
         expected = new TreeSet<Integer>();
         expected.add(0);
         expected.add(1);
         expected.add(2);
-        Assert.assertEquals(expected, pt.nextPiecesNeeded(3, 0));
-        Assert.assertEquals(0, pt.contiguousStart());
+        Assert.assertEquals(expected, pt.nextPiecesNeeded(3, 0, new HashSet<Integer>()));
+        Assert.assertEquals(0, pt.contiguous(0));
 
         pt.addPiece(0);
         pt.addPiece(1);
         pt.addPiece(3);
         pt.addPiece(4);
         pt.addPiece(6);
-        Assert.assertFalse(pt.isComplete());
-        Assert.assertEquals(2, pt.contiguousStart());
+        Assert.assertFalse(pt.isComplete(0));
+        Assert.assertEquals(2, pt.contiguous(0));
 
         expected = new TreeSet<Integer>();
         expected.add(2);
         expected.add(5);
         expected.add(7);
-        Assert.assertEquals(expected, pt.nextPiecesNeeded(3, 0));
+        Assert.assertEquals(expected, pt.nextPiecesNeeded(3, 0, new HashSet<Integer>()));
 
         expected = new TreeSet<Integer>();
         expected.add(8);
         expected.add(9);
-        Assert.assertEquals(expected, pt.nextPiecesNeeded(3, 8));
+        Assert.assertEquals(expected, pt.nextPiecesNeeded(3, 8, new HashSet<Integer>()));
 
         pt.addPiece(2);
         pt.addPiece(5);
-        Assert.assertEquals(7, pt.contiguousStart());
+        Assert.assertEquals(7, pt.contiguous(0));
         pt.addPiece(7);
         pt.addPiece(8);
         pt.addPiece(9);
-        Assert.assertEquals(10, pt.contiguousStart());
-        Assert.assertTrue(pt.isComplete());
-        
+        Assert.assertEquals(10, pt.contiguous(0));
+        Assert.assertTrue(pt.isComplete(0));
     }
 }

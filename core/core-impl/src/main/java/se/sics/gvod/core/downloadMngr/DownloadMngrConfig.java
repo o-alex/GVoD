@@ -34,17 +34,21 @@ public class DownloadMngrConfig {
     public final int startPieces;
     public final long descriptorUpdate;
     
+    public final int pieceSize;
+    public final int piecesPerBlock;
     public final int hashesPerMsg = 10;
-    public final int hashSpeed = 20; //if piece = 5 and hash = 20, you download hash, if hash is 25, you download piece
+    public final int minHashAhead = 20; //if piece = 5 and hash = 20, you download hash, if hash is 25, you download piece
     public final String hashAlg = "SHA";
     public final long speedupPeriod = 2000;
 
-    private DownloadMngrConfig(Config config, VodAddress selfAddress, int overlayId, int startPieces, long descriptorUpdate) {
+    private DownloadMngrConfig(Config config, VodAddress selfAddress, int overlayId, int startPieces, long descriptorUpdate, int pieceSize, int piecesPerBlock) {
         this.config = config;
         this.selfAddress = selfAddress;
         this.overlayId = overlayId;
         this.startPieces = startPieces;
         this.descriptorUpdate = descriptorUpdate;
+        this.pieceSize = pieceSize;
+        this.piecesPerBlock = piecesPerBlock;
     }
 
     public VodAddress getSelf() {
@@ -66,7 +70,9 @@ public class DownloadMngrConfig {
         public DownloadMngrConfig finalise() throws GVoDConfigException.Missing {
             int startPieces = config.getInt("vod.video.startPieces");
             long descriptorUpdate = config.getLong("vod.video.descriptorUpdate");
-            return new DownloadMngrConfig(config, selfAddress, overlayId, startPieces, descriptorUpdate);
+            int pieceSize = config.getInt("vod.video.pieceSize");
+            int piecesPerBlock = config.getInt("vod.video.piecesPerBlock");
+            return new DownloadMngrConfig(config, selfAddress, overlayId, startPieces, descriptorUpdate, pieceSize, piecesPerBlock);
         }
     }
 }
