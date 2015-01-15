@@ -39,11 +39,11 @@ public class UploaderVodDescriptor {
     
     /**
      * @param candidate not null
-     * @param pieceId
+     * @param blockPos
      * @return 
      */
-    public boolean betterCandidate(UploaderVodDescriptor candidate, int pieceId) {
-        if(!isViable(pieceId)) {
+    public boolean betterCandidate(UploaderVodDescriptor candidate, int blockPos) {
+        if(!isViable(blockPos)) {
             return false;
         }
         
@@ -53,11 +53,11 @@ public class UploaderVodDescriptor {
         return true;
     }
     
-    public boolean isViable(int pieceId) {
+    public boolean isViable(int blockPos) {
         if(freeSlots == 0) {
             return false;
         }
-        if(desc.downloadPos < pieceId) {
+        if(desc.downloadPos < blockPos) {
             return false;
         }
         return true;

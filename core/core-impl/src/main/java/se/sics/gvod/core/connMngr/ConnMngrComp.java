@@ -378,9 +378,19 @@ public class ConnMngrComp extends ComponentDefinition {
                         up.freeSlot();
                     }
 
-                    Pair<Download.DataRequest, TimeoutId> req = pendingDownloadingData.get(resp.getVodSource()).remove(resp.content.id);
+                    Map<UUID, Pair<Download.DataRequest, TimeoutId>> aux = pendingDownloadingData.get(resp.getVodSource());
+                    if(aux == null) {
+                        log.debug("{} data posibly late", config.getSelf());
+                        //TODO Alex fix this;
+                        return;
+                    }
+                    Pair<Download.DataRequest, TimeoutId> req = aux.remove(resp.content.id);
+                    if(req == null) {
+                        log.debug("{} data posibly late", config.getSelf());
+                        //TODO Alex fix this;
+                        return;
+                    }
                     cancelDownloadReqTimeout(req.getValue0().id, req.getValue1());
-
                     trigger(resp.content, myPort);
                 }
             };
@@ -539,7 +549,8 @@ public class ConnMngrComp extends ComponentDefinition {
         //get first viable candidate
         while (it.hasNext()) {
             candidate = it.next();
-            if (candidate.getValue().isViable(pieceId)) {
+            int blockPos = pieceId / config.piecesPerBlock;
+            if (candidate.getValue().isViable(blockPos)) {
                 break;
             }
             candidate = null;
@@ -547,7 +558,8 @@ public class ConnMngrComp extends ComponentDefinition {
         //get best candidate
         while (it.hasNext()) {
             Map.Entry<VodAddress, UploaderVodDescriptor> nextC = it.next();
-            if (nextC.getValue().betterCandidate(candidate.getValue(), pieceId)) {
+            int blockPos = pieceId / config.piecesPerBlock;
+            if (nextC.getValue().betterCandidate(candidate.getValue(), blockPos)) {
                 candidate = nextC;
             }
         }

@@ -67,10 +67,15 @@ public class RWByteBuffer implements Storage {
     }
     
     private int write(int writePos, byte[] bytes) {
+        int auxWriterIndex = buf.writerIndex();
         buf.writerIndex(writePos);
         int rest = length - writePos;
         int writeBytes = (bytes.length < rest ? bytes.length : rest);
         buf.writeBytes(bytes, 0, writeBytes);
+        int auxWriterIndex2 = buf.writerIndex();
+        if(auxWriterIndex2 < auxWriterIndex) {
+            buf.writerIndex(auxWriterIndex);
+        }
         return writeBytes;
     }
 

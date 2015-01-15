@@ -230,7 +230,7 @@ public class DownloadMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(Download.DataResponse resp) {
-            log.trace("{} handle {}", config.getSelf(), resp);
+            log.trace("{} handle {} {}", new Object[]{config.getSelf(), resp, resp.status});
 
             switch (resp.status) {
                 case SUCCESS:
@@ -239,13 +239,10 @@ public class DownloadMngrComp extends ComponentDefinition {
                     Pair<Integer, Integer> pieceIdToBlockNr = pieceIdToBlockNrPieceNr(resp.pieceId);
                     BlockMngr block = queuedBlocks.get(pieceIdToBlockNr.getValue0());
                     if (block == null) {
-                        throw new RuntimeException();
+                        throw new RuntimeException("block is null");
                     }
                     block.writePiece(pieceIdToBlockNr.getValue1(), resp.piece);
-                    checkCompleteBlocks();
-
                     pendingPieces.remove(resp.pieceId);
-
                     download();
                     return;
                 case TIMEOUT:
@@ -272,17 +269,20 @@ public class DownloadMngrComp extends ComponentDefinition {
     private void checkCompleteBlocks() {
         for (Map.Entry<Integer, BlockMngr> block : queuedBlocks.entrySet()) {
             int blockNr = block.getKey();
-            byte[] blockBytes = block.getValue().getBlock();
+            if(!block.getValue().isComplete()) {
+                continue;
+            }
             if (!hashMngr.hasHash(blockNr)) {
                 continue;
             }
+            byte[] blockBytes = block.getValue().getBlock();
             byte[] blockHash = hashMngr.readHash(blockNr);
-            if (hashMngr.hasHash(blockNr) && HashUtil.checkHash(config.hashAlg, blockBytes, blockHash)) {
+            if (HashUtil.checkHash(config.hashAlg, blockBytes, blockHash)) {
                 fileMngr.writeBlock(blockNr, blockBytes);
             } else {
                 //TODO Alex - might need to re-download hash as well
                 log.debug("{} piece:{} - hash problem, dropping block:{}", config.getSelf(), blockNr);
-                
+
                 int blockSize = fileMngr.blockSize(blockNr);
                 BlockMngr blankBlock = StorageMngrFactory.getSimpleBlockMngr(blockSize, config.pieceSize);
                 queuedBlocks.put(blockNr, blankBlock);
@@ -295,15 +295,9 @@ public class DownloadMngrComp extends ComponentDefinition {
     }
 
     private Pair<Integer, Integer> pieceIdToBlockNrPieceNr(int pieceId) {
-        if (pieceId % config.piecesPerBlock == 0) {
-            int blockNr = pieceId / config.piecesPerBlock + 1;
-            int inBlockNr = 0;
-            return Pair.with(blockNr, inBlockNr);
-        } else {
-            int blockNr = pieceId / config.piecesPerBlock;
-            int inBlockNr = pieceId % config.piecesPerBlock;
-            return Pair.with(blockNr, inBlockNr);
-        }
+        int blockNr = pieceId / config.piecesPerBlock;
+        int inBlockNr = pieceId % config.piecesPerBlock;
+        return Pair.with(blockNr, inBlockNr);
     }
 
     private Handler<ScheduledSpeedUp> handleDownloadSpeedUp = new Handler<ScheduledSpeedUp>() {
@@ -327,10 +321,15 @@ public class DownloadMngrComp extends ComponentDefinition {
         @Override
         public void handle(ScheduledUtilityUpdate event) {
             log.trace("{} handle {}", config.getSelf(), event);
+            log.trace("{} hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}", 
+                    new Object[]{config.getSelf(), hashMngr.isComplete(0), fileMngr.isComplete(0), pendingPieces.size(), nextPieces.size(), pendingHashes.size(), nextHashes.size()});
+
 
             int downloadPos = fileMngr.contiguous(0);
             int hashPos = hashMngr.contiguous(0);
             log.info("{} video pos:{} hash pos:{}", new Object[]{config.getSelf(), downloadPos, hashPos});
+            //TODO Alex might need to move it to its own timeout
+            checkCompleteBlocks();
             trigger(new UtilityUpdate(config.overlayId, downloading, downloadPos), utilityUpdate);
         }
     };
@@ -341,10 +340,13 @@ public class DownloadMngrComp extends ComponentDefinition {
                 finishDownload();
                 return false;
             } else {
-                getNewPieces();
+                if(!getNewPieces()) {
+                    log.debug("{} no new pieces", config.getSelf());
+                    return false;
+                }
             }
         }
-
+        
         if (!downloadHash()) {
             if (!downloadData()) {
                 return false;
@@ -353,13 +355,13 @@ public class DownloadMngrComp extends ComponentDefinition {
         return true;
     }
 
-    private void getNewPieces() {
+    private boolean getNewPieces() {
         int filePos = fileMngr.contiguous(0);
         int hashPos = hashMngr.contiguous(0);
 
         Integer nextBlockNr = fileMngr.nextBlock(0, queuedBlocks.keySet());
         if (nextBlockNr == null) {
-            throw new RuntimeException();
+            return false;
         }
         //last block might have less nr of pieces than default
         int blockSize = fileMngr.blockSize(nextBlockNr);
@@ -369,13 +371,14 @@ public class DownloadMngrComp extends ComponentDefinition {
             int pieceId = nextBlockNr * config.piecesPerBlock + i;
             nextPieces.add(pieceId);
         }
-        if (filePos + config.minHashAhead < hashPos) {
+        if (filePos + config.minHashAhead > hashPos) {
             Set<Integer> except = new HashSet<Integer>();
             except.addAll(pendingHashes);
             except.addAll(nextHashes);
             Set<Integer> newNextHashes = hashMngr.nextHashes(config.hashesPerMsg, 0, except);
             nextHashes.addAll(newNextHashes);
         }
+        return true;
     }
 
     private boolean downloadData() {
@@ -447,7 +450,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         cancelSpeedUp();
         cancelUpdateSelf();
         unsubscribe(handleUpdateSelf, timer);
-        unsubscribe(handleDownloadSpeedUp, control);
+        unsubscribe(handleDownloadSpeedUp, timer);
     }
 
     public static class DownloadMngrInit extends Init<DownloadMngrComp> {

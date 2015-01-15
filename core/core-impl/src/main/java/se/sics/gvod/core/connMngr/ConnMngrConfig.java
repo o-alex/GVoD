@@ -34,14 +34,16 @@ public class ConnMngrConfig {
     public final long updatePeriod;
     public final long reqTimeoutPeriod;
     public final int overlayId;
+    public final int piecesPerBlock;
     
-    private ConnMngrConfig(Config config, VodAddress selfAddress, int overlayId, int defaulMaxPipeline, long updatePeriod, long reqTimeoutPeriod) {
+    private ConnMngrConfig(Config config, VodAddress selfAddress, int overlayId, int defaulMaxPipeline, long updatePeriod, long reqTimeoutPeriod, int piecesPerBlock) {
         this.config = config;
         this.selfAddress = selfAddress;
         this.overlayId =  overlayId;
         this.defaultMaxPipeline = defaulMaxPipeline;
         this.updatePeriod = updatePeriod;
         this.reqTimeoutPeriod = reqTimeoutPeriod;
+        this.piecesPerBlock = piecesPerBlock;
     }
     
     public VodAddress getSelf() {
@@ -64,8 +66,8 @@ public class ConnMngrConfig {
                 int defaultMaxPipeline = config.getInt("vod.connection.maxPipeline");
                 long updatePeriod = config.getLong("vod.connection.updatePeriod");
                 long reqTimeoutPeriod = config.getLong("vod.connection.reqTimeoutPeriod");
-                
-                return new ConnMngrConfig(config, selfAddress, overlayId, defaultMaxPipeline, updatePeriod, reqTimeoutPeriod);
+                int piecesPerBlock = config.getInt("vod.video.piecesPerBlock");
+                return new ConnMngrConfig(config, selfAddress, overlayId, defaultMaxPipeline, updatePeriod, reqTimeoutPeriod, piecesPerBlock);
             } catch(ConfigException.Missing ex) {
                 throw new GVoDConfigException.Missing(ex);
             }
