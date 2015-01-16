@@ -233,7 +233,7 @@ public class Mp4Handler extends BaseHandler {
                     }
                     String cwd = System.getProperty("user.dir");
                     logger.debug("New input stream using file: "
-                            + playMngr.getName()
+                            + playMngr.getVideoName()
                             + " in cwd " + cwd);
 //                    InputStream is = new RandomAccessFileInputStream(playMngr.getLibPath() + File.separator + playMngr.getName());
 //                    mp4file = new DataInputStream(is);

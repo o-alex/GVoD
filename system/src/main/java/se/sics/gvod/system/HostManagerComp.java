@@ -18,7 +18,6 @@
  */
 package se.sics.gvod.system;
 
-import java.io.IOException;
 import se.sics.gvod.manager.VoDManagerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,7 +36,6 @@ import se.sics.gvod.core.VoDInit;
 import se.sics.gvod.core.VoDPort;
 import se.sics.gvod.manager.VoDManagerConfig;
 import se.sics.gvod.timer.Timer;
-import se.sics.gvod.videoplugin.control.ControlServer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Init;
@@ -60,7 +58,6 @@ public class HostManagerComp extends ComponentDefinition {
     private Component peerManager;
     private Component globalCroupier;
 
-    private ControlServer cs;
     private final HostConfiguration config;
 
     public HostManagerComp(HostManagerInit init) {
@@ -95,14 +92,6 @@ public class HostManagerComp extends ComponentDefinition {
             connect(bootstrapClient.getNegative(UtilityUpdatePort.class), vod.getPositive(UtilityUpdatePort.class));
             connect(vodMngr.getNegative(UtilityUpdatePort.class), vod.getPositive(UtilityUpdatePort.class));
         } catch (GVoDConfigException.Missing ex) {
-            throw new RuntimeException(ex);
-        }
-        
-        try {
-            cs = new ControlServer(getVoDManager(), config.controlPort);
-            cs.start();
-        } catch (IOException ex) {
-            log.warn("Problem binding to control server port :" + config.controlPort);
             throw new RuntimeException(ex);
         }
     }

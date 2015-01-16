@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>se.sics.gvod</groupId>
-        <artifactId>GVoD</artifactId>
+        <artifactId>videoplugin</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <groupId>se.sics.gvod</groupId>
-    <artifactId>video-plugin</artifactId>
+    <artifactId>videoplugin-impl</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>Video Plugin</name>
+    <name>Video Plugin Impl</name>
     <url>http://maven.apache.org</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -18,12 +18,12 @@
     <dependencies>
         <dependency>
             <groupId>se.sics.gvod</groupId>
-            <artifactId>core-api</artifactId>
+            <artifactId>videoplugin-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>se.sics.gvod</groupId>
-            <artifactId>manager</artifactId>
+            <artifactId>core-api</artifactId>
             <version>${project.version}</version>
         </dependency>
         

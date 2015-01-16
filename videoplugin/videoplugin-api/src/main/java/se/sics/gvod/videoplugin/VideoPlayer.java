@@ -16,17 +16,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 package se.sics.gvod.videoplugin;
 
-import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-//SwingMain methods
-public interface VodMain {
-
-    public boolean isInitialized();
-
-    public String downloadTorrentAndCreatePeer(String torrentUrl) throws IOException;
+public interface VideoPlayer {
+    public long getLength();
+    public void stop();
+    public String getVideoName();
+    public void play(long readPos, OutputStream responseBody);
 }

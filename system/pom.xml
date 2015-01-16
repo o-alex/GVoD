@@ -57,11 +57,6 @@
             <artifactId>core-impl</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>se.sics.gvod</groupId>
-            <artifactId>video-plugin</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         
         <dependency>
             <groupId>se.sics.kompics</groupId>

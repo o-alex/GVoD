@@ -21,3 +21,5 @@
 /core/core-api/target/
 /core/core-impl/target/
 /video-plugin/target/
+/videoplugin/videoplugin-api/target/
+/videoplugin/videoplugin-impl/target/

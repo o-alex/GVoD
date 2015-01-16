@@ -46,21 +46,15 @@ import se.sics.gvod.core.downloadMngr.DownloadMngrComp;
 import se.sics.gvod.core.downloadMngr.DownloadMngrConfig;
 import se.sics.gvod.core.connMngr.ConnMngrConfig;
 import se.sics.gvod.core.connMngr.ConnMngrPort;
-import se.sics.gvod.core.store.pieceTracker.CompletePieceTracker;
 import se.sics.gvod.core.msg.DownloadVideo;
+import se.sics.gvod.core.msg.PlayReady;
 import se.sics.gvod.core.msg.UploadVideo;
-import se.sics.gvod.core.store.pieceTracker.PieceTracker;
-import se.sics.gvod.core.store.storage.Storage;
-import se.sics.gvod.core.store.storage.StorageFactory;
 import se.sics.gvod.core.store.storageMngr.FileMngr;
 import se.sics.gvod.core.store.storageMngr.HashMngr;
 import se.sics.gvod.core.store.storageMngr.StorageMngrFactory;
 import se.sics.gvod.timer.Timer;
 import se.sics.gvod.videoplugin.VideoPlayer;
 import se.sics.gvod.videoplugin.VideoPlayerComp;
-import se.sics.gvod.videoplugin.jwplayer.BaseHandler;
-import se.sics.gvod.videoplugin.jwplayer.JwHttpServer;
-import se.sics.gvod.videoplugin.jwplayer.Mp4Handler;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -232,8 +226,8 @@ public class VoDComp extends ComponentDefinition {
         trigger(Start.event, downloadMngr.control());
         trigger(Start.event, connMngr.control());
         trigger(Start.event, croupier.control());
-
-        setupPlayerHttpConnection((VideoPlayer) playMngr.getComponent(), fileMeta.fileName, config.mediaPort);
+        
+        trigger(new PlayReady(UUID.randomUUID(), (VideoPlayerComp)playMngr.getComponent()), myPort);
     }
 
     private Pair<FileMngr, HashMngr> getUploadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
@@ -285,16 +279,5 @@ public class VoDComp extends ComponentDefinition {
         FileMngr fileMngr = StorageMngrFactory.getIncompleteFileMngr(videoFilePath, fileMeta.fileSize, blockSize, config.pieceSize);
 
         return Pair.with(fileMngr, hashMngr);
-    }
-
-    private void setupPlayerHttpConnection(VideoPlayer playMngr, String videoName, int mediaPort) {
-        log.info("{} starting player http connection http://{}:{}/{}/", new Object[]{config.selfAddress, config.selfAddress.getIp(), mediaPort, videoName});
-        String httpPath = "/" + videoName + "/";
-        BaseHandler handler = new Mp4Handler(playMngr);
-        try {
-            JwHttpServer.startOrUpdate(new InetSocketAddress(mediaPort), httpPath, handler);
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
     }
 }

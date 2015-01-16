@@ -31,5 +31,6 @@ public class VoDPort extends PortType {
     {
         request(UploadVideo.Request.class);
         request(DownloadVideo.Request.class);
+//        indication(PlayReady.class);
     }
 }

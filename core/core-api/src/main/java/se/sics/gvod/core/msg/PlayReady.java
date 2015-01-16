@@ -17,16 +17,26 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.videoplugin;
+package se.sics.gvod.core.msg;
 
-import java.io.OutputStream;
+import java.util.UUID;
+import se.sics.gvod.common.msg.GvodMsg;
+import se.sics.gvod.videoplugin.VideoPlayer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface VideoPlayer {
-    public long getLength();
-    public void stop();
-    public String getName();
-    public void play(long readPos, OutputStream responseBody);
+public class PlayReady extends GvodMsg.OneWay {
+    public final VideoPlayer videoPlayer;
+    
+    public PlayReady(UUID id, VideoPlayer videoPlayer) {
+        super(id);
+        this.videoPlayer = videoPlayer;
+    }
+    
+    @Override
+    public PlayReady copy() {
+        return new PlayReady(id, videoPlayer);
+    }
+    
 }

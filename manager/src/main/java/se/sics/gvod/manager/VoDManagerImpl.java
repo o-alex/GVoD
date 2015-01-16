@@ -20,8 +20,13 @@ package se.sics.gvod.manager;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import org.javatuples.Pair;
 import org.slf4j.Logger;
@@ -30,8 +35,14 @@ import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.manager.util.FileStatus;
 import se.sics.gvod.core.VoDPort;
 import se.sics.gvod.core.msg.DownloadVideo;
+import se.sics.gvod.core.msg.PlayReady;
 import se.sics.gvod.core.msg.UploadVideo;
+import se.sics.gvod.videoplugin.VideoPlayer;
+import se.sics.gvod.videoplugin.jwplayer.BaseHandler;
+import se.sics.gvod.videoplugin.jwplayer.JwHttpServer;
+import se.sics.gvod.videoplugin.jwplayer.Mp4Handler;
 import se.sics.kompics.ComponentDefinition;
+import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
 import se.sics.kompics.Positive;
 
@@ -47,14 +58,30 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     private final Positive<UtilityUpdatePort> utilityPort = requires(UtilityUpdatePort.class);
 
     private final VoDManagerConfig config;
+    private final Random rand = new Random();
 
     private final Map<String, FileStatus> videos;
+    private final Map<String, VideoPlayer> videoPlayers;
+    private final Map<String, Integer> videoPorts;
 
     public VoDManagerImpl(VoDManagerInit init) {
         this.config = init.config;
         this.videos = new ConcurrentHashMap<String, FileStatus>();
+        this.videoPlayers = new ConcurrentHashMap<String, VideoPlayer>();
+        this.videoPorts = new ConcurrentHashMap<String, Integer>();
         reloadLibrary();
+
+        subscribe(handlePlayReady, vodPort);
     }
+
+    private Handler<PlayReady> handlePlayReady = new Handler<PlayReady>() {
+
+        @Override
+        public void handle(PlayReady event) {
+            log.info("video: ready to play", event.videoPlayer.getVideoName());
+            videoPlayers.put(event.videoPlayer.getVideoName(), event.videoPlayer);
+        }
+    };
 
     @Override
     public void reloadLibrary() {
@@ -125,6 +152,63 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     }
 
     @Override
+    public Integer playVideo(String videoName) {
+        VideoPlayer videoPlayer = videoPlayers.get(videoName);
+        if (videoPlayer == null) {
+            log.info("player for video:{} is not ready yet", videoName);
+            return null;
+        }
+        
+        int mediaPort = 0;
+        do {
+            mediaPort = tryPort(10000 + rand.nextInt(40000));
+        } while (mediaPort == -1);
+        setupPlayerHttpConnection(videoPlayer, videoName, mediaPort);
+        videoPorts.put(videoName, mediaPort);
+        return mediaPort;
+    }
+
+    private void setupPlayerHttpConnection(VideoPlayer playMngr, String videoName, int mediaPort) {
+
+        log.info("{} starting player http connection http://{}:{}/{}/", new Object[]{config.selfAddress, config.selfAddress.getIp(), mediaPort, videoName});
+        String httpPath = "/" + videoName + "/";
+        BaseHandler handler = new Mp4Handler(playMngr);
+    
+        try {
+            JwHttpServer.startOrUpdate(new InetSocketAddress(mediaPort), httpPath, handler);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private int tryPort(int port) {
+        ServerSocket ss = null;
+        DatagramSocket ds = null;
+        try {
+            ss = new ServerSocket(port);
+            ss.setReuseAddress(true);
+            ds = new DatagramSocket(port);
+            ds.setReuseAddress(true);
+        } catch (IOException e) {
+            return -1;
+        } finally {
+            if (ds != null) {
+                ds.close();
+            }
+
+            if (ss != null) {
+                try {
+                    ss.close();
+                } catch (IOException e) {
+                    /* should not be thrown */
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return port;
+    }
+
+    @Override
     public boolean isInitialized() {
         return true;
     }
@@ -149,6 +233,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         String videoName = parts[parts.length - 1];
         Integer videoId = Integer.parseInt(parts[parts.length - 2]);
         return Pair.with(videoName, videoId);
+
     }
 
     public static class VoDManagerInit extends Init<VoDManagerImpl> {

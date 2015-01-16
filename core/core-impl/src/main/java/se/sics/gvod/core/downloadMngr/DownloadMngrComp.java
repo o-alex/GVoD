@@ -29,6 +29,7 @@ import java.util.UUID;
 import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.core.connMngr.ConnMngrPort;
 import se.sics.gvod.core.connMngr.msg.Ready;
 import se.sics.gvod.common.msg.vod.Download;
@@ -121,7 +122,15 @@ public class DownloadMngrComp extends ComponentDefinition {
         @Override
         public void handle(Data.DRequest req) {
             log.debug("{} received local data request", config.getSelf());
-
+            
+            if(!fileMngr.has(req.readPos, req.readBlockSize)) {
+                log.debug("{} data missing - readPos:{} , readSize:{}", new Object[]{config.getSelf(), req.readPos, req.readBlockSize});
+                trigger(new Data.DResponse(req, ReqStatus.MISSING, null), dataPort);
+                return;
+            }
+            log.debug("{} sending data - readPos:{} , readSize:{}", new Object[]{config.getSelf(), req.readPos, req.readBlockSize});
+            byte data[] = fileMngr.read(req.readPos, req.readBlockSize);
+            trigger(new Data.DResponse(req, ReqStatus.SUCCESS, data), dataPort);
         }
 
     };

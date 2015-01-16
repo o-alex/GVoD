@@ -24,7 +24,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.vod.Download;
 import se.sics.gvod.core.downloadMngr.Data;
 import se.sics.gvod.core.downloadMngr.DownloadMngrPort;
 import se.sics.gvod.timer.ScheduleTimeout;
@@ -122,7 +121,7 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
     }
 
     @Override
-    public String getName() {
+    public String getVideoName() {
         return config.videoName;
     }
 

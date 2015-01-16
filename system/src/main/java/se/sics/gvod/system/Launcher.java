@@ -140,6 +140,16 @@ public class Launcher extends ComponentDefinition {
                     if (!vodManager.downloadVideo(firstCmd.fileName, firstCmd.overlayId)) {
                         throw new RuntimeException("bad first command cannot download");
                     }
+                    Integer videoPort = null;
+                    do {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ex) {
+                            throw new RuntimeException(ex);
+                        }
+                        videoPort = vodManager.playVideo(firstCmd.fileName);
+                    } while (videoPort != null);
+                    log.info("can play video:{} on port:{}", firstCmd.fileName, videoPort);
                 } else {
                     if (!vodManager.pendingUpload(firstCmd.fileName)) {
                         throw new RuntimeException("bad first command cannot cannot upload");

@@ -36,6 +36,8 @@ public interface VoDManager {
 
     public boolean downloadVideo(String videoName, int overlayId);
     
+    public Integer playVideo(String videoName);
+    
     public boolean isInitialized();
 
     public String downloadVideoFromUrl(String torrentUrl);
