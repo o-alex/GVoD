@@ -46,6 +46,7 @@ import se.sics.gvod.core.downloadMngr.DownloadMngrComp;
 import se.sics.gvod.core.downloadMngr.DownloadMngrConfig;
 import se.sics.gvod.core.connMngr.ConnMngrConfig;
 import se.sics.gvod.core.connMngr.ConnMngrPort;
+import se.sics.gvod.core.downloadMngr.DownloadMngrPort;
 import se.sics.gvod.core.msg.DownloadVideo;
 import se.sics.gvod.core.msg.PlayReady;
 import se.sics.gvod.core.msg.UploadVideo;
@@ -53,7 +54,6 @@ import se.sics.gvod.core.store.storageMngr.FileMngr;
 import se.sics.gvod.core.store.storageMngr.HashMngr;
 import se.sics.gvod.core.store.storageMngr.StorageMngrFactory;
 import se.sics.gvod.timer.Timer;
-import se.sics.gvod.videoplugin.VideoPlayer;
 import se.sics.gvod.videoplugin.VideoPlayerComp;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
@@ -222,10 +222,14 @@ public class VoDComp extends ComponentDefinition {
 
         connect(connMngr.getNegative(UtilityUpdatePort.class), downloadMngr.getPositive(UtilityUpdatePort.class));
         connect(utilityUpdate, downloadMngr.getPositive(UtilityUpdatePort.class));
+        
+        connect(playMngr.getNegative(Timer.class), timer);
+        connect(playMngr.getNegative(DownloadMngrPort.class), downloadMngr.getPositive(DownloadMngrPort.class));
 
-        trigger(Start.event, downloadMngr.control());
-        trigger(Start.event, connMngr.control());
         trigger(Start.event, croupier.control());
+        trigger(Start.event, connMngr.control());
+        trigger(Start.event, downloadMngr.control());
+        trigger(Start.event, playMngr.control());
         
         trigger(new PlayReady(UUID.randomUUID(), (VideoPlayerComp)playMngr.getComponent()), myPort);
     }
