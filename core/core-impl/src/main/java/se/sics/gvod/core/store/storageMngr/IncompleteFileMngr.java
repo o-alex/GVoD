@@ -56,7 +56,7 @@ public class IncompleteFileMngr implements FileMngr {
     @Override
     public boolean has(long readPos, int length) {
         while (length > 0) {
-            int blockNr = (readPos % blockSize == 0) ? (int) (readPos / blockSize) - 1 : (int) (readPos / blockSize);
+            int blockNr = (int) readPos / blockSize;
             if (!pieceTracker.hasPiece(blockNr)) {
                 return false;
             }

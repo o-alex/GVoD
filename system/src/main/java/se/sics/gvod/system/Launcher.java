@@ -19,7 +19,6 @@
 package se.sics.gvod.system;
 
 import java.net.InetAddress;
-import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
@@ -148,7 +147,7 @@ public class Launcher extends ComponentDefinition {
                             throw new RuntimeException(ex);
                         }
                         videoPort = vodManager.playVideo(firstCmd.fileName);
-                    } while (videoPort != null);
+                    } while (videoPort == null);
                     log.info("can play video:{} on port:{}", firstCmd.fileName, videoPort);
                 } else {
                     if (!vodManager.pendingUpload(firstCmd.fileName)) {

@@ -121,7 +121,7 @@ public class DownloadMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(Data.DRequest req) {
-            log.debug("{} received local data request", config.getSelf());
+            log.debug("{} received local data request for readPos:{} readSize:{}", new Object[] {config.getSelf(), req.readPos, req.readBlockSize});
             
             if(!fileMngr.has(req.readPos, req.readBlockSize)) {
                 log.debug("{} data missing - readPos:{} , readSize:{}", new Object[]{config.getSelf(), req.readPos, req.readBlockSize});

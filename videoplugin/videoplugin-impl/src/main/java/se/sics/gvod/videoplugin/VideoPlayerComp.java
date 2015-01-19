@@ -55,6 +55,7 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
     public VideoPlayerComp(VideoPlayerInit init) {
         this.config = init.config;
+        this.playPos = -1;
 
         subscribe(handleStart, control);
     }
@@ -91,6 +92,7 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
                 playPos = playPos + resp.block.length;
                 if (playPos == config.videoLength) {
                     log.info("{} video ended");
+                    playPos = -1;
                 } else {
                     tryNextPiece();
                 }
@@ -127,6 +129,10 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
     @Override
     public void play(long readPos, OutputStream responseBody) {
+        if(playPos != -1) {
+            log.info("{} already playing video", config.overlayId);
+            return;
+        }
         log.info("{} play at {}", config.overlayId, readPos);
         this.playPos = readPos;
         this.responseBody = responseBody;

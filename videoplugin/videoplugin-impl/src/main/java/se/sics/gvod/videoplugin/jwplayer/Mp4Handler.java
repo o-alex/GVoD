@@ -162,6 +162,7 @@ public class Mp4Handler extends BaseHandler {
             logger.trace(exchange.getRequestMethod() + "\n"
                     + exchange.getRequestHeaders().entrySet() + "\n"
                     + exchange.getResponseHeaders().entrySet());
+            
             if (requestMethod.equalsIgnoreCase("GET")) {
 
                 // start == seconds. Need to convert it to bytes.

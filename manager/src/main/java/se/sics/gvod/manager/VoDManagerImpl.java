@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ import se.sics.gvod.videoplugin.jwplayer.Mp4Handler;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
+import se.sics.kompics.Kompics;
 import se.sics.kompics.Positive;
 
 /**
@@ -148,6 +150,13 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         }
         videos.put(videoName, FileStatus.DOWNLOADING);
         trigger(new DownloadVideo.Request(videoName, overlayId), vodPort);
+        do {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+        } while (videoPlayers.containsKey(videoName));
         return true;
     }
 
@@ -158,7 +167,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
             log.info("player for video:{} is not ready yet", videoName);
             return null;
         }
-        
+
         int mediaPort = 0;
         do {
             mediaPort = tryPort(10000 + rand.nextInt(40000));
@@ -169,13 +178,12 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     }
 
     private void setupPlayerHttpConnection(VideoPlayer playMngr, String videoName, int mediaPort) {
-
-        log.info("{} starting player http connection http://{}:{}/{}/", new Object[]{config.selfAddress, config.selfAddress.getIp(), mediaPort, videoName});
-        String httpPath = "/" + videoName + "/";
+        String httpPath = "http://127.0.0.1:" + mediaPort + "/" + videoName + "/" + videoName;
+        log.info("{} starting player http connection {}", new Object[]{config.selfAddress, httpPath});
+        String fileName = "/" + videoName + "/";
         BaseHandler handler = new Mp4Handler(playMngr);
-    
         try {
-            JwHttpServer.startOrUpdate(new InetSocketAddress(mediaPort), httpPath, handler);
+            JwHttpServer.startOrUpdate(new InetSocketAddress(mediaPort), fileName, handler);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }

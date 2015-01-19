@@ -207,7 +207,7 @@ public class VoDComp extends ComponentDefinition {
         Component connMngr = create(ConnMngrComp.class, new ConnMngrComp.ConnMngrInit(connMngrConfig));
         Component downloadMngr = create(DownloadMngrComp.class, new DownloadMngrComp.DownloadMngrInit(downloadMngrConfig, hashedFileMngr.getValue0(), hashedFileMngr.getValue1(), download));
         Component croupier = create(CroupierComp.class, new CroupierComp.CroupierInit(overlayId, config.selfAddress));
-        Component playMngr = create(VideoPlayerComp.class, new VideoPlayerComp.VideoPlayerInit(new VideoPlayerComp.VideoPlayerConfig(fileMeta.fileName, overlayId, fileMeta.fileSize, 1000, 100 * 1024)));
+        Component playMngr = create(VideoPlayerComp.class, new VideoPlayerComp.VideoPlayerInit(new VideoPlayerComp.VideoPlayerConfig(fileMeta.fileName, overlayId, fileMeta.fileSize, 1000, 1024 * 1024)));
         videoComps.put(overlayId, Quartet.with(connMngr, downloadMngr, croupier, playMngr));
 
         connect(croupier.getNegative(Timer.class), timer);
