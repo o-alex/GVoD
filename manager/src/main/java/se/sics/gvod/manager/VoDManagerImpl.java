@@ -156,7 +156,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
             } catch (InterruptedException ex) {
                 throw new RuntimeException(ex);
             }
-        } while (videoPlayers.containsKey(videoName));
+        } while (!videoPlayers.containsKey(videoName));
         return true;
     }
 
@@ -166,6 +166,8 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         if (videoPlayer == null) {
             log.info("player for video:{} is not ready yet", videoName);
             return null;
+        } else {
+            log.info("setting up player for video:{}", videoName);
         }
 
         int mediaPort = 0;
