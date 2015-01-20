@@ -181,6 +181,10 @@ public class ConnMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(CroupierSample event) {
+            log.info("{} internal state check downloadersConn:{} pendingUploadersConn:{} uploadersConn:{} pendingDownData:{} pendinfDownHash:{} pendingUpData:{} pendingUpHash", 
+                    new Object[]{config.getSelf(), downloadersConn.size(), pendingUploadersConn.size(), uploadersConn.size(), pendingDownloadingData.size(), 
+                        pendingDownloadingHash.size(), pendingUploadingData.size(), pendingUploadingHash.size()});
+            
             log.debug("{} handle new samples {}", config.getSelf(), event.sample);
 
             for (Map.Entry<VodAddress, VodDescriptor> e : event.sample.entrySet()) {
@@ -203,9 +207,6 @@ public class ConnMngrComp extends ComponentDefinition {
         @Override
         public void handle(ScheduleConnUpdate event) {
             log.trace("{} handle {}", config.getSelf(), event);
-            log.info("{} internal state check downloadersConn:{} pendingUploadersConn:{} uploadersConn:{} pendingDownData:{} pendinfDownHash:{} pendingUpData:{} pendingUpHash", 
-                    new Object[]{config.getSelf(), downloadersConn.size(), pendingUploadersConn.size(), uploadersConn.size(), pendingDownloadingData.size(), 
-                        pendingDownloadingHash.size(), pendingUploadingData.size(), pendingUploadingHash.size()});
             for (VodAddress partner : downloadersConn.keySet()) {
                 Connection.Update upd = new Connection.Update(UUID.randomUUID(), selfDesc.vodDesc);
                 trigger(new NetConnection.Update(config.getSelf(), partner, upd.id, config.overlayId, upd), network);
