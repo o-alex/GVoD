@@ -181,7 +181,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(CroupierSample event) {
-            log.info("{} internal state check downloadersConn:{} pendingUploadersConn:{} uploadersConn:{} pendingDownData:{} pendinfDownHash:{} pendingUpData:{} pendingUpHash", 
+            log.debug("{} internal state check downloadersConn:{} pendingUploadersConn:{} uploadersConn:{} pendingDownData:{} pendinfDownHash:{} pendingUpData:{} pendingUpHash:{}", 
                     new Object[]{config.getSelf(), downloadersConn.size(), pendingUploadersConn.size(), uploadersConn.size(), pendingDownloadingData.size(), 
                         pendingDownloadingHash.size(), pendingUploadingData.size(), pendingUploadingHash.size()});
             
