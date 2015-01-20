@@ -136,6 +136,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         FileStatus videoStatus = videos.get(videoName);
         if (videoStatus == null || !videoStatus.equals(FileStatus.PENDING)) {
             log.warn("{} video not pending upload - cannot initiate upload", new Object[]{config.selfAddress, videoName, config.libDir});
+//            videos.put(videoName, FileStatus.NONE);
             return false;
         }
         log.info("{} video {} found - uploading", config.selfAddress, videoName);
