@@ -331,8 +331,8 @@ public class DownloadMngrComp extends ComponentDefinition {
         @Override
         public void handle(ScheduledUtilityUpdate event) {
             log.trace("{} handle {}", config.getSelf(), event);
-            log.trace("{} hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}",
-                    new Object[]{config.getSelf(), hashMngr.isComplete(0), fileMngr.isComplete(0), pendingPieces.size(), nextPieces.size(), pendingHashes.size(), nextHashes.size()});
+            log.trace("{} hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}, pendinBlocks:{}",
+                    new Object[]{config.getSelf(), hashMngr.isComplete(0), fileMngr.isComplete(0), pendingPieces.size(), nextPieces.size(), pendingHashes.size(), nextHashes.size(), queuedBlocks.size()});
 
             int downloadPos = fileMngr.contiguous(0);
             int hashPos = hashMngr.contiguous(0);
@@ -367,11 +367,21 @@ public class DownloadMngrComp extends ComponentDefinition {
     private boolean getNewPieces() {
         int filePos = fileMngr.contiguous(0);
         int hashPos = hashMngr.contiguous(0);
-
+        
+         if (filePos + config.minHashAhead > hashPos) {
+            Set<Integer> except = new HashSet<Integer>();
+            except.addAll(pendingHashes);
+            except.addAll(nextHashes);
+            Set<Integer> newNextHashes = hashMngr.nextHashes(config.hashesPerMsg, 0, except);
+            log.debug("hashPos:{} pendingHashes:{} nextHashes:{} newNextHashes:{}", new Object[]{hashPos, pendingHashes, nextHashes, newNextHashes});
+            nextHashes.addAll(newNextHashes);
+        }
+         
         Integer nextBlockNr = fileMngr.nextBlock(0, queuedBlocks.keySet());
         if (nextBlockNr == null) {
+            log.debug("next block is null, blockNr:{}", filePos);
             return false;
-        }
+        } 
         //last block might have less nr of pieces than default
         int blockSize = fileMngr.blockSize(nextBlockNr);
         BlockMngr blankBlock = StorageMngrFactory.getSimpleBlockMngr(blockSize, config.pieceSize);
@@ -379,14 +389,6 @@ public class DownloadMngrComp extends ComponentDefinition {
         for (int i = 0; i < blankBlock.nrPieces(); i++) {
             int pieceId = nextBlockNr * config.piecesPerBlock + i;
             nextPieces.add(pieceId);
-        }
-        if (filePos + config.minHashAhead > hashPos) {
-            Set<Integer> except = new HashSet<Integer>();
-            except.addAll(pendingHashes);
-            except.addAll(nextHashes);
-            Set<Integer> newNextHashes = hashMngr.nextHashes(config.hashesPerMsg, 0, except);
-            log.debug("hashPos:{} pendingHashes:{} nextHashes:{} newNextHashes:{}", new Object[]{hashPos, pendingHashes, nextHashes, newNextHashes});
-            nextHashes.addAll(newNextHashes);
         }
         return true;
     }
