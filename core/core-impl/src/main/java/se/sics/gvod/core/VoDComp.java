@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 import org.javatuples.Pair;
 import org.javatuples.Quartet;
 import org.slf4j.Logger;
@@ -194,6 +195,14 @@ public class VoDComp extends ComponentDefinition {
     };
 
     private void startVideoComp(int overlayId, FileMetadata fileMeta, Pair<FileMngr, HashMngr> hashedFileMngr, boolean download) {
+        int hashSize;
+        try {
+            hashSize = HashUtil.getHashSize(fileMeta.hashAlg);
+        } catch (GVoDConfigException.Missing ex) {
+            log.error("{} unknown hash function:{}", config.selfAddress, fileMeta.hashAlg);
+            throw new RuntimeException(ex);
+        }
+        log.info("{} - videoName:{} videoFileSize:{}, hashFileSize:{}, hashSize:{}", new Object[]{config.selfAddress, fileMeta.fileName, fileMeta.fileSize, fileMeta.hashFileSize, hashSize});
         DownloadMngrConfig downloadMngrConfig;
         ConnMngrConfig connMngrConfig;
 
