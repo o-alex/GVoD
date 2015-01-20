@@ -91,6 +91,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
         File dir = new File(config.libDir);
         if (!dir.isDirectory()) {
+            log.error("library path is invalid");
             throw new RuntimeException("bad library path");
         }
 

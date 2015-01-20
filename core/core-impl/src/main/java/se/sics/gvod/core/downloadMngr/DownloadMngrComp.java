@@ -121,9 +121,9 @@ public class DownloadMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(Data.DRequest req) {
-            log.debug("{} received local data request for readPos:{} readSize:{}", new Object[] {config.getSelf(), req.readPos, req.readBlockSize});
-            
-            if(!fileMngr.has(req.readPos, req.readBlockSize)) {
+            log.trace("{} received local data request for readPos:{} readSize:{}", new Object[]{config.getSelf(), req.readPos, req.readBlockSize});
+
+            if (!fileMngr.has(req.readPos, req.readBlockSize)) {
                 log.debug("{} data missing - readPos:{} , readSize:{}", new Object[]{config.getSelf(), req.readPos, req.readBlockSize});
                 trigger(new Data.DResponse(req, ReqStatus.MISSING, null), dataPort);
                 return;
@@ -175,7 +175,7 @@ public class DownloadMngrComp extends ComponentDefinition {
                     missingHashes.add(hash);
                 }
             }
-            log.debug("{} sending hashes {}", config.getSelf(), hashes.keySet());
+            log.debug("{} sending hashes{} missing hashes:{}", new Object[]{config.getSelf(), hashes.keySet(), missingHashes});
             trigger(req.success(hashes, missingHashes), connMngr);
         }
 
@@ -189,7 +189,7 @@ public class DownloadMngrComp extends ComponentDefinition {
 
             switch (resp.status) {
                 case SUCCESS:
-                    log.debug("{} hashes:{}", new Object[]{config.getSelf(), resp.hashes.keySet()});
+                    log.debug("{} received hashes:{} missing hashes:{}", new Object[]{config.getSelf(), resp.hashes.keySet(), resp.missingHashes});
 
                     for (Map.Entry<Integer, byte[]> hash : resp.hashes.entrySet()) {
                         hashMngr.writeHash(hash.getKey(), hash.getValue());
@@ -201,6 +201,7 @@ public class DownloadMngrComp extends ComponentDefinition {
                     download();
                     return;
                 case TIMEOUT:
+                    log.debug("{} hash req timed out", config.getSelf());
                     pendingHashes.removeAll(resp.missingHashes);
                     nextHashes.addAll(0, resp.missingHashes);
                     download();
@@ -243,7 +244,7 @@ public class DownloadMngrComp extends ComponentDefinition {
 
             switch (resp.status) {
                 case SUCCESS:
-                    log.debug("{} {} {} piece:{}", new Object[]{config.getSelf(), resp, resp.status, resp.pieceId});
+                    log.debug("{} received piece:{}", new Object[]{config.getSelf(), resp.pieceId});
 
                     Pair<Integer, Integer> pieceIdToBlockNr = pieceIdToBlockNrPieceNr(resp.pieceId);
                     BlockMngr block = queuedBlocks.get(pieceIdToBlockNr.getValue0());
@@ -256,7 +257,7 @@ public class DownloadMngrComp extends ComponentDefinition {
                     return;
                 case TIMEOUT:
                 case MISSING:
-                    log.debug("{} {} {} piece:{}", new Object[]{config.getSelf(), resp, resp.status, resp.pieceId});
+                    log.debug("{} piece:{} {}", new Object[]{config.getSelf(), resp.pieceId, resp.status});
                     pendingPieces.remove(resp.pieceId);
                     nextPieces.add(0, resp.pieceId);
                     download();
@@ -278,7 +279,7 @@ public class DownloadMngrComp extends ComponentDefinition {
     private void checkCompleteBlocks() {
         for (Map.Entry<Integer, BlockMngr> block : queuedBlocks.entrySet()) {
             int blockNr = block.getKey();
-            if(!block.getValue().isComplete()) {
+            if (!block.getValue().isComplete()) {
                 continue;
             }
             if (!hashMngr.hasHash(blockNr)) {
@@ -330,9 +331,8 @@ public class DownloadMngrComp extends ComponentDefinition {
         @Override
         public void handle(ScheduledUtilityUpdate event) {
             log.trace("{} handle {}", config.getSelf(), event);
-            log.trace("{} hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}", 
+            log.trace("{} hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}",
                     new Object[]{config.getSelf(), hashMngr.isComplete(0), fileMngr.isComplete(0), pendingPieces.size(), nextPieces.size(), pendingHashes.size(), nextHashes.size()});
-
 
             int downloadPos = fileMngr.contiguous(0);
             int hashPos = hashMngr.contiguous(0);
@@ -349,13 +349,13 @@ public class DownloadMngrComp extends ComponentDefinition {
                 finishDownload();
                 return false;
             } else {
-                if(!getNewPieces()) {
+                if (!getNewPieces()) {
                     log.debug("{} no new pieces", config.getSelf());
                     return false;
                 }
             }
         }
-        
+
         if (!downloadHash()) {
             if (!downloadData()) {
                 return false;
@@ -395,7 +395,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             return false;
         }
         int nextPieceId = nextPieces.remove(0);
-        log.debug("{} downloading piece {}", config.getSelf(), nextPieceId);
+        log.debug("{} downloading piece:{}", config.getSelf(), nextPieceId);
         trigger(new Download.DataRequest(UUID.randomUUID(), config.overlayId, nextPieceId), connMngr);
         pendingPieces.add(nextPieceId);
         return true;
@@ -410,7 +410,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             hashesToDownload.add(nextHashes.remove(0));
         }
         int targetPos = Collections.min(hashesToDownload);
-        log.debug("{} downloading hashes {}", config.getSelf(), hashesToDownload);
+        log.debug("{} downloading hashes:{}", config.getSelf(), hashesToDownload);
         trigger(new Download.HashRequest(UUID.randomUUID(), targetPos, hashesToDownload), connMngr);
         pendingHashes.addAll(hashesToDownload);
         return true;
@@ -448,18 +448,21 @@ public class DownloadMngrComp extends ComponentDefinition {
     }
 
     private void finishDownload() {
-        log.info("{} finished download", config.getSelf());
-
-        downloading = false;
+        Integer downloadPos = fileMngr.contiguous(0);
+        Integer hashPos = hashMngr.contiguous(0);
+        log.info("{} video pos:{}, hash pos:{}", new Object[]{config.getSelf(), downloadPos, hashPos});
 
         //one last update
-        trigger(new UtilityUpdate(config.overlayId, downloading, fileMngr.contiguous(0)), utilityUpdate);
+        trigger(new UtilityUpdate(config.overlayId, downloading, downloadPos), utilityUpdate);
 
         //cancel timeouts
         cancelSpeedUp();
         cancelUpdateSelf();
         unsubscribe(handleUpdateSelf, timer);
         unsubscribe(handleDownloadSpeedUp, timer);
+        
+        downloading = false;
+        log.info("{} finished download", config.getSelf());
     }
 
     public static class DownloadMngrInit extends Init<DownloadMngrComp> {

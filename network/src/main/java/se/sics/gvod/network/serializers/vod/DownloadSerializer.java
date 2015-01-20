@@ -71,10 +71,16 @@ public class DownloadSerializer {
             super.decodeParent(context, buf, shellObj);
             int overlayId = buf.readInt();
             int pieceId = buf.readInt();
-            int size = buf.readInt();
-            byte[] piece = new byte[size];
-            buf.readBytes(piece);
-            return new Download.DataResponse((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), overlayId, pieceId, piece);
+            if (((ReqStatus) shellObj.get(STATUS_F)).equals(ReqStatus.SUCCESS)) {
+                int size = buf.readInt();
+                byte[] piece = new byte[size];
+                buf.readBytes(piece);
+                return new Download.DataResponse((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), overlayId, pieceId, piece);
+            } else {
+                //nothing
+                return new Download.DataResponse((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), overlayId, pieceId, null);
+            }
+
         }
 
         @Override
@@ -82,8 +88,12 @@ public class DownloadSerializer {
             super.encode(context, buf, obj);
             buf.writeInt(obj.overlayId);
             buf.writeInt(obj.pieceId);
-            buf.writeInt(obj.piece.length);
-            buf.writeBytes(obj.piece);
+            if (obj.status.equals(ReqStatus.SUCCESS)) {
+                buf.writeInt(obj.piece.length);
+                buf.writeBytes(obj.piece);
+            } else {
+                //nothing
+            }
             return buf;
         }
 
@@ -92,8 +102,12 @@ public class DownloadSerializer {
             int size = super.getSize(context, obj);
             size += Integer.SIZE / 8; //overlayId
             size += Integer.SIZE / 8; //pieceId
-            size += Integer.SIZE / 8; //size of piece
-            size += obj.piece.length * Byte.SIZE / 8; //piece
+            if (obj.status.equals(ReqStatus.SUCCESS)) {
+                size += Integer.SIZE / 8; //size of piece
+                size += obj.piece.length * Byte.SIZE / 8; //piece
+            } else {
+                //nothing
+            }
             return size;
         }
 
@@ -165,7 +179,7 @@ public class DownloadSerializer {
                 missingHashes.add(buf.readInt());
             }
 
-            return new Download.HashResponse((UUID)shellObj.get(ID_F), (ReqStatus)shellObj.get(STATUS_F), targetPos, hashes, missingHashes);
+            return new Download.HashResponse((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), targetPos, hashes, missingHashes);
         }
 
         @Override
