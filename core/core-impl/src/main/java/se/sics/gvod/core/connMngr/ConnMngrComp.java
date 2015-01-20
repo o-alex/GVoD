@@ -203,6 +203,9 @@ public class ConnMngrComp extends ComponentDefinition {
         @Override
         public void handle(ScheduleConnUpdate event) {
             log.trace("{} handle {}", config.getSelf(), event);
+            log.info("{} internal state check downloadersConn:{} pendingUploadersConn:{} uploadersConn:{} pendingDownData:{} pendinfDownHash:{} pendingUpData:{} pendingUpHash", 
+                    new Object[]{config.getSelf(), downloadersConn.size(), pendingUploadersConn.size(), uploadersConn.size(), pendingDownloadingData.size(), 
+                        pendingDownloadingHash.size(), pendingUploadingData.size(), pendingUploadingHash.size()});
             for (VodAddress partner : downloadersConn.keySet()) {
                 Connection.Update upd = new Connection.Update(UUID.randomUUID(), selfDesc.vodDesc);
                 trigger(new NetConnection.Update(config.getSelf(), partner, upd.id, config.overlayId, upd), network);
@@ -476,7 +479,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
                 @Override
                 public void handle(NetDownload.HashResponse resp) {
-                    log.trace("{} handle net {}", new Object[]{config.getSelf(), resp});
+                    log.debug("{} handle net {} {}", new Object[]{config.getSelf(), resp, resp.content.status});
                     UploaderVodDescriptor up = uploadersConn.get(resp.getVodSource());
                     if (up != null) {
                         up.freeSlot();
@@ -538,7 +541,7 @@ public class ConnMngrComp extends ComponentDefinition {
             //cleaning
             targetHashTraffic.remove(timeout.reqId);
             if (targetHashTraffic.isEmpty()) {
-                pendingDownloadingData.remove(timeout.target);
+                pendingDownloadingHash.remove(timeout.target);
             }
         }
     };
