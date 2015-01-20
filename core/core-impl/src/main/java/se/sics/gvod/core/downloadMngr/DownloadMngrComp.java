@@ -385,6 +385,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             except.addAll(pendingHashes);
             except.addAll(nextHashes);
             Set<Integer> newNextHashes = hashMngr.nextHashes(config.hashesPerMsg, 0, except);
+            log.debug("hashPos:{} pendingHashes:{} nextHashes:{} newNextHashes:{}", new Object[]{hashPos, pendingHashes, nextHashes, newNextHashes});
             nextHashes.addAll(newNextHashes);
         }
         return true;
@@ -410,7 +411,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             hashesToDownload.add(nextHashes.remove(0));
         }
         int targetPos = Collections.min(hashesToDownload);
-        log.debug("{} downloading hashes:{}", config.getSelf(), hashesToDownload);
+        log.debug("{} downloading hashes:{} targetPos:{}", new Object[]{config.getSelf(), hashesToDownload, targetPos});
         trigger(new Download.HashRequest(UUID.randomUUID(), targetPos, hashesToDownload), connMngr);
         pendingHashes.addAll(hashesToDownload);
         return true;
