@@ -332,7 +332,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         @Override
         public void handle(ScheduledUtilityUpdate event) {
             log.trace("{} handle {}", config.getSelf(), event);
-            log.trace("{} internal state: hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}, pendinBlocks:{}",
+            log.trace("{} internal state: hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}, pendingBlocks:{}",
                     new Object[]{config.getSelf(), hashMngr.isComplete(0), fileMngr.isComplete(0), pendingPieces.size(), nextPieces.size(), pendingHashes.size(), nextHashes.size(), queuedBlocks.size()});
 
             int downloadPos = fileMngr.contiguous(0);
