@@ -87,7 +87,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
     public ConnMngrComp(ConnMngrInit init) {
         this.config = init.config;
-        log.info("{} creating...", config.getSelf());
+        log.info("{} starting ...", config.getSelf());
 
         this.selfDesc = null;
         this.downloadersConn = new HashMap<VodAddress, DownloaderVodDescriptor>();
@@ -106,7 +106,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(UtilityUpdate event) {
-            log.trace("{} updating self descriptor", config.getSelf(), selfDesc);
+            log.info("{} updating self descriptor", config.getSelf(), selfDesc);
 
             if (selfDesc == null) {
                 selfDesc = new LocalVodDescriptor(new VodDescriptor(event.downloadPos), event.downloading);
@@ -190,7 +190,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 if (uploadersConn.containsKey(e.getKey()) || pendingUploadersConn.containsKey(e.getKey())) {
                     continue;
                 }
-                log.debug("{} opening connection to {}", config.getSelf(), e.getKey());
+                log.info("{} opening connection to {}", config.getSelf(), e.getKey());
                 pendingUploadersConn.put(e.getKey(), e.getValue());
                 Connection.Request req = new Connection.Request(UUID.randomUUID(), selfDesc.vodDesc);
                 trigger(new NetConnection.Request(config.getSelf(), e.getKey(), req.id, config.overlayId, req), network);
@@ -245,7 +245,7 @@ public class ConnMngrComp extends ComponentDefinition {
             }
 
             if (!pendingUploadersConn.containsKey(resp.getVodSource())) {
-                log.debug("{} closing connection to {}", config.getSelf(), resp.getVodSource());
+                log.info("{} closing connection to {}", config.getSelf(), resp.getVodSource());
                 Connection.Close close = new Connection.Close(UUID.randomUUID());
                 trigger(new NetConnection.Close(config.getSelf(), resp.getVodSource(), UUID.randomUUID(), config.overlayId, close), network);
                 return;

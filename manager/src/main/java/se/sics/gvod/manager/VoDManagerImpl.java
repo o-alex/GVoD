@@ -80,7 +80,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
         @Override
         public void handle(PlayReady event) {
-            log.info("video: ready to play", event.videoPlayer.getVideoName());
+            log.info("video:{} ready to play", event.videoPlayer.getVideoName());
             videoPlayers.put(event.videoPlayer.getVideoName(), event.videoPlayer);
         }
     };
@@ -114,6 +114,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
     @Override
     public Map<String, FileStatus> getFiles() {
+        log.info("returning library content");
         return new HashMap<String, FileStatus>(videos);
     }
 

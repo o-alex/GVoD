@@ -105,7 +105,7 @@ public class DownloadMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(Start event) {
-            log.trace("{} starting...", config.getSelf());
+            log.info("{} starting...", config.getSelf());
 
             Integer downloadPos = fileMngr.contiguous(0);
             Integer hashPos = hashMngr.contiguous(0);
@@ -139,7 +139,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         @Override
         public void handle(Ready event) {
             if (downloading) {
-                log.info("{} starting video download", config.getSelf());
+                log.info("{} downloading video", config.getSelf());
                 for (int i = 0; i < config.startPieces; i++) {
                     download();
                 }
@@ -316,7 +316,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             log.trace("{} handling speedup {}", config.getSelf(), event.getTimeoutId());
 
             if (speedUpTId == null) {
-                log.info("{} late timeout {}", config.getSelf(), speedUpTId);
+                log.debug("{} late timeout {}", config.getSelf(), speedUpTId);
                 return;
             }
             download();
