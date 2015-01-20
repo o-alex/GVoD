@@ -277,6 +277,7 @@ public class DownloadMngrComp extends ComponentDefinition {
     };
 
     private void checkCompleteBlocks() {
+        Set<Integer> completedBlocks = new HashSet<Integer>();
         for (Map.Entry<Integer, BlockMngr> block : queuedBlocks.entrySet()) {
             int blockNr = block.getKey();
             if (!block.getValue().isComplete()) {
@@ -289,7 +290,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             byte[] blockHash = hashMngr.readHash(blockNr);
             if (HashUtil.checkHash(config.hashAlg, blockBytes, blockHash)) {
                 fileMngr.writeBlock(blockNr, blockBytes);
-                queuedBlocks.remove(blockNr);
+                completedBlocks.add(blockNr);
             } else {
                 //TODO Alex - might need to re-download hash as well
                 log.debug("{} piece:{} - hash problem, dropping block:{}", config.getSelf(), blockNr);
@@ -302,6 +303,9 @@ public class DownloadMngrComp extends ComponentDefinition {
                     nextPieces.add(0, pieceId);
                 }
             }
+        }
+        for (Integer blockNr : completedBlocks) {
+            queuedBlocks.remove(blockNr);
         }
     }
 
@@ -368,8 +372,8 @@ public class DownloadMngrComp extends ComponentDefinition {
     private boolean getNewPieces() {
         int filePos = fileMngr.contiguous(0);
         int hashPos = hashMngr.contiguous(0);
-        
-         if (filePos + config.minHashAhead > hashPos) {
+
+        if (filePos + config.minHashAhead > hashPos) {
             Set<Integer> except = new HashSet<Integer>();
             except.addAll(pendingHashes);
             except.addAll(nextHashes);
@@ -377,12 +381,12 @@ public class DownloadMngrComp extends ComponentDefinition {
             log.debug("hashPos:{} pendingHashes:{} nextHashes:{} newNextHashes:{}", new Object[]{hashPos, pendingHashes, nextHashes, newNextHashes});
             nextHashes.addAll(newNextHashes);
         }
-         
+
         Integer nextBlockNr = fileMngr.nextBlock(0, queuedBlocks.keySet());
         if (nextBlockNr == null) {
             log.debug("next block is null, blockNr:{}", filePos);
             return false;
-        } 
+        }
         //last block might have less nr of pieces than default
         int blockSize = fileMngr.blockSize(nextBlockNr);
         BlockMngr blankBlock = StorageMngrFactory.getSimpleBlockMngr(blockSize, config.pieceSize);
@@ -464,7 +468,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         cancelUpdateSelf();
         unsubscribe(handleUpdateSelf, timer);
         unsubscribe(handleDownloadSpeedUp, timer);
-        
+
         downloading = false;
         log.info("{} finished download", config.getSelf());
     }
