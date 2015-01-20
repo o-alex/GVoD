@@ -289,6 +289,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             byte[] blockHash = hashMngr.readHash(blockNr);
             if (HashUtil.checkHash(config.hashAlg, blockBytes, blockHash)) {
                 fileMngr.writeBlock(blockNr, blockBytes);
+                queuedBlocks.remove(blockNr);
             } else {
                 //TODO Alex - might need to re-download hash as well
                 log.debug("{} piece:{} - hash problem, dropping block:{}", config.getSelf(), blockNr);
@@ -331,7 +332,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         @Override
         public void handle(ScheduledUtilityUpdate event) {
             log.trace("{} handle {}", config.getSelf(), event);
-            log.trace("{} hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}, pendinBlocks:{}",
+            log.trace("{} internal state: hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}, pendinBlocks:{}",
                     new Object[]{config.getSelf(), hashMngr.isComplete(0), fileMngr.isComplete(0), pendingPieces.size(), nextPieces.size(), pendingHashes.size(), nextHashes.size(), queuedBlocks.size()});
 
             int downloadPos = fileMngr.contiguous(0);
