@@ -40,7 +40,7 @@ public class Helper {
         long difT = 25l * 1000 * 1000 * 1000;
         for (byte[] peer : boverlaySample) {
             Triplet<VodAddress, Long, Integer> node = SerializerHelper.deserializeOverlayData(context, Unpooled.wrappedBuffer(peer));
-            if(node.getValue1() + difT < newT) {
+            if(node.getValue1() + difT > newT) {
                 overlaySample.put(node.getValue0(), node.getValue2());
             }
         }
