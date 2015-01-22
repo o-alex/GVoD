@@ -32,6 +32,7 @@ import se.sics.gvod.common.msg.peerMngr.Heartbeat;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.serializers.SerializationContext;
 import se.sics.gvod.network.serializers.Serializer;
+import se.sics.gvod.network.serializers.util.SerializerHelper;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -61,13 +62,14 @@ public class HeartbeatOp implements Operation {
     @Override
     public void start() {
         try {
-            byte[] bytesSrc = context.getSerializer(VodAddress.class).encode(context, Unpooled.buffer(), src).array();
-            PMJoinOverlay.Request joinSystem = new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), bytesSrc);
+            byte[] bytesBootOverlay = SerializerHelper.serializeOverlayData(context, src, System.nanoTime(), 0);
+            PMJoinOverlay.Request joinSystem = new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), bytesBootOverlay);
             opMngr.sendPeerManagerReq(getId(), joinSystem);
             pendingJoins.add(joinSystem.id);
             
             for (Map.Entry<Integer, Integer> e : oneWay.overlayUtilities.entrySet()) {
-                PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getPeerAddress().getId(), encodeHeartbeatEntry(src, e.getValue()));
+                byte[] bytesOverlay = SerializerHelper.serializeOverlayData(context, src, System.nanoTime(), e.getValue());
+                PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getPeerAddress().getId(), bytesOverlay);
                 opMngr.sendPeerManagerReq(getId(), joinOverlay);
                 pendingJoins.add(joinOverlay.id);
             }
@@ -93,12 +95,5 @@ public class HeartbeatOp implements Operation {
         } else {
             throw new RuntimeException("wrong phase");
         }
-    }
-    
-    private byte[] encodeHeartbeatEntry(VodAddress src, int overlayUtility) throws Serializer.SerializerException, SerializationContext.MissingException {
-        ByteBuf buf = Unpooled.buffer();
-        context.getSerializer(VodAddress.class).encode(context, buf, src);
-        buf.writeInt(overlayUtility);
-        return buf.array();
     }
 }

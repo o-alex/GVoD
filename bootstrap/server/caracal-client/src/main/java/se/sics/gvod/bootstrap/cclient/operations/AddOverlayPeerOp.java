@@ -18,7 +18,10 @@
  */
 package se.sics.gvod.bootstrap.cclient.operations;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.util.UUID;
+import se.sics.caracaldb.Key;
 import se.sics.caracaldb.operations.CaracalOp;
 import se.sics.caracaldb.operations.PutRequest;
 import se.sics.caracaldb.operations.PutResponse;
@@ -48,7 +51,8 @@ public class AddOverlayPeerOp implements Operation<CaracalOp> {
 
     @Override
     public void start() {
-        opMngr.sendCaracalReq(req.id, CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId), new PutRequest(UUID.randomUUID(), CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId), req.nodeInfo));
+        Key target = CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId);
+        opMngr.sendCaracalReq(req.id, target, new PutRequest(UUID.randomUUID(), target, req.nodeInfo));
     }
 
     @Override

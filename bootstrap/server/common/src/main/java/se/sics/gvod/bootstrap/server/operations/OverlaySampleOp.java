@@ -24,8 +24,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.javatuples.Pair;
 import se.sics.gvod.bootstrap.server.PeerOpManager;
+import se.sics.gvod.bootstrap.server.operations.util.Helper;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.common.msg.ReqStatus;
@@ -67,7 +70,13 @@ public class OverlaySampleOp implements Operation {
             PMGetOverlaySample.Response sampleResp = (PMGetOverlaySample.Response) resp;
             OverlaySample.Response opResp;
             if (sampleResp.status == ReqStatus.SUCCESS) {
-                opResp = req.success(processOverlaySample(sampleResp.overlaySample));
+                try {
+                    opResp = req.success(Helper.processOverlaySample(context, sampleResp.overlaySample));
+                } catch (Serializer.SerializerException ex) {
+                    throw new RuntimeException(ex);
+                } catch (SerializationContext.MissingException ex) {
+                    throw new RuntimeException(ex);
+                }
             } else {
                 opResp = req.fail();
             }
@@ -76,29 +85,4 @@ public class OverlaySampleOp implements Operation {
             throw new RuntimeException("wrong phase");
         }
     }
-
-    private Map<VodAddress, Integer> processOverlaySample(Set<byte[]> boverlaySample) {
-        Map<VodAddress, Integer> overlaySample = new HashMap<VodAddress, Integer>();
-        for (byte[] data : boverlaySample) {
-            Pair<VodAddress, Integer> heartbeatEntry = decodeHeartbeatEntry(data);
-            overlaySample.put(heartbeatEntry.getValue0(), heartbeatEntry.getValue1());
-        }
-        return overlaySample;
-    }
-    
-    
-    private Pair<VodAddress, Integer> decodeHeartbeatEntry(byte[] bytes) {
-        ByteBuf buf = Unpooled.wrappedBuffer(bytes);
-        VodAddress adr;
-        try {
-            adr = context.getSerializer(VodAddress.class).decode(context, buf);
-        } catch (Serializer.SerializerException ex) {
-            throw new RuntimeException(ex);
-        } catch (SerializationContext.MissingException ex) {
-            throw new RuntimeException(ex);
-        }
-        int overlayUtility = buf.readInt();
-        return Pair.with(adr, overlayUtility);
-    }
-
 }

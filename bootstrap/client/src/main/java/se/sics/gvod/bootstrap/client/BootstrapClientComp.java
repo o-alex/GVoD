@@ -43,10 +43,15 @@ import se.sics.gvod.network.netmsg.bootstrap.NetBootstrapGlobal;
 import se.sics.gvod.network.netmsg.bootstrap.NetHeartbeat;
 import se.sics.gvod.network.netmsg.bootstrap.NetJoinOverlay;
 import se.sics.gvod.network.netmsg.bootstrap.NetOverlaySample;
+import se.sics.gvod.timer.CancelTimeout;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;
+import se.sics.gvod.timer.ScheduleTimeout;
+import se.sics.gvod.timer.Timeout;
+import se.sics.gvod.timer.TimeoutId;
 import se.sics.gvod.timer.Timer;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
+import se.sics.kompics.Kompics;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
@@ -70,6 +75,8 @@ public class BootstrapClientComp extends ComponentDefinition {
     private final Map<Integer, Integer> overlaysUtility;
     private final Set<VodAddress> bootstrapNodes;
     private final Map<Integer, FileMetadata> pendingAddOverlay;
+    
+    private final Map<UUID, TimeoutId> pendingRequests;
 
     public BootstrapClientComp(BootstrapClientInit init) {
         this.config = init.config;
@@ -79,6 +86,7 @@ public class BootstrapClientComp extends ComponentDefinition {
         this.overlaysUtility = new HashMap<Integer, Integer>();
         this.bootstrapNodes = new HashSet<VodAddress>();
         this.pendingAddOverlay = new HashMap<Integer, FileMetadata>();
+        this.pendingRequests = new HashMap<UUID, TimeoutId>();
 
         subscribe(handleStart, control);
         subscribe(handleAddOverlayRequest, myPort);
@@ -90,6 +98,7 @@ public class BootstrapClientComp extends ComponentDefinition {
         subscribe(handleOverlaySampleResponse, network);
         subscribe(handleUtilityUpdate, utilityPort);
         subscribe(handleHeartbeat, timer);
+        subscribe(handleCaracalReqTimeout, timer);
     }
 
     public Handler<Start> handleStart = new Handler<Start>() {
@@ -98,7 +107,8 @@ public class BootstrapClientComp extends ComponentDefinition {
         public void handle(Start event) {
             BootstrapGlobal.Request req = new BootstrapGlobal.Request(UUID.randomUUID());
             NetBootstrapGlobal.Request netReq = new NetBootstrapGlobal.Request(config.self, config.server, req.id, req);
-            log.debug("{} sending {}", new Object[]{config.self, netReq.toString()});
+            log.info("{} contacting caracalDB - sending {}", new Object[]{config.self, netReq.toString()});
+            pendingRequests.put(req.id, scheduleCaracalReqTimeout(req.id));
             trigger(netReq, network);
 
             SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(config.heartbeatPeriod, config.heartbeatPeriod);
@@ -112,7 +122,9 @@ public class BootstrapClientComp extends ComponentDefinition {
         @Override
         public void handle(NetBootstrapGlobal.Response resp) {
             if (resp.content.status == ReqStatus.SUCCESS) {
+                log.info("{} contacted caracalDB successfully", config.self);
                 log.debug("{} global nodes {}", new Object[]{config.self, resp.content.systemSample});
+                cancelCaracalReqTimeout(pendingRequests.remove(resp.id));
                 for (VodAddress peer : resp.content.systemSample) {
                     if (bootstrapNodes.size() < config.openViewSize) {
                         bootstrapNodes.add(peer);
@@ -132,6 +144,7 @@ public class BootstrapClientComp extends ComponentDefinition {
 
             NetAddOverlay.Request netReq = new NetAddOverlay.Request(config.self, config.server, req.id, req);
             log.trace("{} sending {}", new Object[]{config.self, netReq});
+            pendingRequests.put(req.id, scheduleCaracalReqTimeout(req.id));
             trigger(netReq, network);
         }
     };
@@ -144,6 +157,7 @@ public class BootstrapClientComp extends ComponentDefinition {
             log.debug("{} joining overlay:{}", config.self, req.overlayId);
             NetJoinOverlay.Request netReq = new NetJoinOverlay.Request(config.self, config.server, req.id, req);
             log.debug("{} sending {}", new Object[]{config.self, netReq});
+            pendingRequests.put(req.id, scheduleCaracalReqTimeout(req.id));
             trigger(netReq, network);
         }
     };
@@ -156,6 +170,7 @@ public class BootstrapClientComp extends ComponentDefinition {
 
             NetOverlaySample.Request netReq = new NetOverlaySample.Request(config.self, config.server, req.id, req);
             log.debug("{} sending {}", new Object[]{config.self, netReq});
+            pendingRequests.put(req.id, scheduleCaracalReqTimeout(req.id));
             trigger(netReq, network);
         }
     };
@@ -165,6 +180,7 @@ public class BootstrapClientComp extends ComponentDefinition {
         @Override
         public void handle(NetAddOverlay.Response resp) {
             log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
+            cancelCaracalReqTimeout(pendingRequests.remove(resp.id));
             trigger(resp.content, myPort);
             FileMetadata fileMeta = pendingAddOverlay.remove(resp.content.overlayId);
             if (fileMeta == null) {
@@ -180,8 +196,8 @@ public class BootstrapClientComp extends ComponentDefinition {
         @Override
         public void handle(NetJoinOverlay.Response resp) {
             log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
+            cancelCaracalReqTimeout(pendingRequests.remove(resp.id));
             trigger(resp.content, myPort);
-
             int downloadPos = 0;
             overlaysUtility.put(resp.content.overlayId, downloadPos);
         }
@@ -192,6 +208,7 @@ public class BootstrapClientComp extends ComponentDefinition {
                 @Override
                 public void handle(NetOverlaySample.Response resp) {
                     log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
+                    cancelCaracalReqTimeout(pendingRequests.remove(resp.id));
                     trigger(resp.content, myPort);
                 }
             };
@@ -217,4 +234,37 @@ public class BootstrapClientComp extends ComponentDefinition {
             trigger(netOneWay, network);
         }
     };
+    
+    public Handler<CaracalReqTimeout> handleCaracalReqTimeout = new Handler<CaracalReqTimeout>() {
+
+        @Override
+        public void handle(CaracalReqTimeout timeout) {
+            log.debug("{} timeout for req:{}", new Object[]{config.self, timeout.reqId});
+
+            TimeoutId tid = pendingRequests.remove(timeout.reqId);
+            if(tid == null) {
+                log.debug("{} late timeout:{}", new Object[]{config.self, tid});
+                return;
+            } else {
+                log.error("{} caracal timed out - shutting down");
+                Kompics.shutdown();
+            }
+        }
+        
+    };
+    
+    private TimeoutId scheduleCaracalReqTimeout(UUID reqId) {
+        ScheduleTimeout st = new ScheduleTimeout(3000);
+        Timeout t = new CaracalReqTimeout(st, reqId);
+        st.setTimeoutEvent(t);
+        log.debug("{} scheduling timeout:{} for caracal req:{}", new Object[]{config.self, t.getTimeoutId(), reqId});
+        trigger(st, timer);
+        return t.getTimeoutId();
+    }
+
+    private void cancelCaracalReqTimeout(TimeoutId tid) {
+        log.debug("{} canceling timeout:{}", config.self, tid);
+        CancelTimeout cancelSpeedUp = new CancelTimeout(tid);
+        trigger(cancelSpeedUp, timer);
+    }
 }

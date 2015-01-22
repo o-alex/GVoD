@@ -17,11 +17,20 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.common.network.data;
+package se.sics.gvod.bootstrap.client;
+
+import java.util.UUID;
+import se.sics.gvod.timer.ScheduleTimeout;
+import se.sics.gvod.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface HeartbeatData<E> {
-    
+public class CaracalReqTimeout extends Timeout {
+    public final UUID reqId;
+
+    public CaracalReqTimeout(ScheduleTimeout schedule, UUID reqId) {
+        super(schedule);
+        this.reqId = reqId;
+    }
 }

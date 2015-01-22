@@ -18,11 +18,9 @@
  */
 package se.sics.gvod.bootstrap.server.operations;
 
-import io.netty.buffer.Unpooled;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.bootstrap.server.PeerOpManager;
+import se.sics.gvod.bootstrap.server.operations.util.Helper;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
@@ -31,6 +29,7 @@ import se.sics.gvod.common.msg.peerMngr.BootstrapGlobal;
 import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.network.serializers.SerializationContext;
 import se.sics.gvod.network.serializers.Serializer;
+import se.sics.gvod.network.serializers.util.SerializerHelper;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -74,9 +73,9 @@ public class BootstrapGlobalOp implements Operation {
             if (phase1Resp.status == ReqStatus.SUCCESS) {
                 byte[] bytes;
                 try {
-                    bytes = context.getSerializer(VodAddress.class).encode(context, Unpooled.buffer(), src).array();
+                    bytes = SerializerHelper.serializeOverlayData(context, src, System.nanoTime(), 0);
                     opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), bytes));
-                    resp = req.success(processOverlaySample(phase1Resp.overlaySample));
+                    resp = req.success(Helper.processOverlaySample(context, phase1Resp.overlaySample).keySet());
                 } catch (Serializer.SerializerException ex) {
                     throw new RuntimeException(ex);
                 } catch (SerializationContext.MissingException ex) {
@@ -89,13 +88,5 @@ public class BootstrapGlobalOp implements Operation {
         } else {
             throw new RuntimeException("wrong phase");
         }
-    }
-
-    private Set<VodAddress> processOverlaySample(Set<byte[]> boverlaySample) throws Serializer.SerializerException, SerializationContext.MissingException {
-        Set<VodAddress> overlaySample = new HashSet<VodAddress>();
-        for (byte[] peer : boverlaySample) {
-            overlaySample.add(context.getSerializer(VodAddress.class).decode(context, Unpooled.wrappedBuffer(peer)));
-        }
-        return overlaySample;
     }
 }
