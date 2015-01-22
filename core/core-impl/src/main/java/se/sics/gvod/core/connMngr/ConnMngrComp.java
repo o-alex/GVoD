@@ -185,7 +185,7 @@ public class ConnMngrComp extends ComponentDefinition {
                     new Object[]{config.getSelf(), downloadersConn.size(), pendingUploadersConn.size(), uploadersConn.size(), pendingDownloadingData.size(), 
                         pendingDownloadingHash.size(), pendingUploadingData.size(), pendingUploadingHash.size()});
             
-            log.debug("{} handle new samples {}", config.getSelf(), event.sample);
+            log.info("{} handle new samples {}", config.getSelf(), event.sample);
 
             for (Map.Entry<VodAddress, VodDescriptor> e : event.sample.entrySet()) {
                 if (e.getValue().downloadPos < selfDesc.vodDesc.downloadPos) {

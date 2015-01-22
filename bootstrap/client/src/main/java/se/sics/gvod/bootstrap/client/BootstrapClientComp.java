@@ -226,7 +226,7 @@ public class BootstrapClientComp extends ComponentDefinition {
 
         @Override
         public void handle(Heartbeat.PeriodicTimeout timeout) {
-            log.trace("{} periodic heartbeat, active overlays:{}", new Object[]{config.self, overlaysUtility});
+            log.info("{} periodic heartbeat, active overlays:{}", new Object[]{config.self, overlaysUtility});
 
             Heartbeat.OneWay heartbeat = new Heartbeat.OneWay(UUID.randomUUID(), new HashMap<Integer, Integer>(overlaysUtility));
             NetHeartbeat.OneWay netOneWay = new NetHeartbeat.OneWay(config.self, config.server, heartbeat.id, heartbeat);
@@ -246,7 +246,7 @@ public class BootstrapClientComp extends ComponentDefinition {
                 log.debug("{} late timeout:{}", new Object[]{config.self, tid});
                 return;
             } else {
-                log.error("{} caracal timed out - shutting down");
+                log.error("{} caracal timed out - shutting down", config.self);
                 Kompics.shutdown();
             }
         }
