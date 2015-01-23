@@ -72,11 +72,13 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
         @Override
         public void handle(VideoPlayerTimeout.TryRead timeout) {
-            if(playPos == -1) {
-                return;
+            synchronized (config) {
+                if (playPos == -1) {
+                    return;
+                }
+                log.debug("{} timeout {}", config.overlayId, timeout.getTimeoutId());
+                tryNextPiece();
             }
-            log.debug("{} timeout {}", config.overlayId, timeout.getTimeoutId());
-            tryNextPiece();
         }
     };
 
@@ -84,26 +86,28 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
         @Override
         public void handle(Data.DResponse resp) {
-            if(playPos == -1) {
-                return;
-            }
-            if (resp.status.equals(ReqStatus.SUCCESS)) {
-                try {
-                    responseBody.write(resp.block);
-                    responseBody.flush();
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
+            synchronized (config) {
+                if (playPos == -1) {
+                    return;
                 }
-                
-                playPos = playPos + resp.block.length;
-                if (playPos == config.videoLength) {
-                    log.info("{} video ended");
-                    playPos = -1;
+                if (resp.status.equals(ReqStatus.SUCCESS)) {
+                    try {
+                        responseBody.write(resp.block);
+                        responseBody.flush();
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+
+                    playPos = playPos + resp.block.length;
+                    if (playPos == config.videoLength) {
+                        log.info("{} video ended");
+                        playPos = -1;
+                    } else {
+                        tryNextPiece();
+                    }
                 } else {
-                    tryNextPiece();
+                    scheduleTryRead(1);
                 }
-            } else {
-                scheduleTryRead(1);
             }
         }
     };
@@ -121,7 +125,7 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
         log.debug("video player:{} scheduling next read {}", config.overlayId, nextReadTId);
         trigger(st, timer);
     }
-    
+
     //TODO Alex -make thread safe later
     @Override
     public long getLength() {
@@ -135,30 +139,34 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
     @Override
     public void play(long readPos, OutputStream responseBody) {
-        if(playPos != -1) {
-            log.info("{} already playing video", config.overlayId);
-            return;
+        synchronized (config) {
+            if (playPos != -1) {
+                log.info("{} already playing video", config.overlayId);
+                return;
+            }
+            log.info("{} play at {}", config.overlayId, readPos);
+            this.playPos = readPos;
+            this.responseBody = responseBody;
+
+            subscribe(handleTryRead, timer);
+            subscribe(handleReadResponse, videoStore);
+
+            scheduleTryRead(1);
         }
-        log.info("{} play at {}", config.overlayId, readPos);
-        this.playPos = readPos;
-        this.responseBody = responseBody;
-        
-        subscribe(handleTryRead, timer);
-        subscribe(handleReadResponse, videoStore);
-        
-        scheduleTryRead(1);
     }
-    
+
     @Override
     public void stop() {
-        if(playPos == -1) {
-            log.info("{} already stopped", config.overlayId);
-            return;
+        synchronized (config) {
+            if (playPos == -1) {
+                log.info("{} already stopped", config.overlayId);
+                return;
+            }
+            log.info("{} stop", config.overlayId);
+            unsubscribe(handleTryRead, timer);
+            unsubscribe(handleReadResponse, videoStore);
+            playPos = -1;
         }
-        log.info("{} stop", config.overlayId);
-        unsubscribe(handleTryRead, timer);
-        unsubscribe(handleReadResponse, videoStore);
-        playPos = -1;
     }
 
     public static class VideoPlayerInit extends Init<VideoPlayerComp> {
