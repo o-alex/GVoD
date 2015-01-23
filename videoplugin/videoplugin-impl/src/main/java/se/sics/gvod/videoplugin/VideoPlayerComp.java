@@ -151,6 +151,10 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
     
     @Override
     public void stop() {
+        if(playPos == -1) {
+            log.info("{} already stopped", config.overlayId);
+            return;
+        }
         log.info("{} stop", config.overlayId);
         unsubscribe(handleTryRead, timer);
         unsubscribe(handleReadResponse, videoStore);

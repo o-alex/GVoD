@@ -226,7 +226,7 @@ public class ConnMngrComp extends ComponentDefinition {
             log.trace("{} handle {}", new Object[]{config.getSelf(), req});
 
             if (downloadersConn.containsKey(req.getVodSource())) {
-                return;
+//                return;
             }
 
             log.debug("{} new connection to downloader {}", config.getSelf(), req.getVodSource());
