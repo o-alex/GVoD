@@ -62,13 +62,14 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
     private final Map<String, FileStatus> videos;
     private final Map<String, VideoPlayer> videoPlayers;
-    private final Map<String, Integer> videoPorts;
+//    private final Map<String, Integer> videoPorts;
+    private Integer videoPort = null;
 
     public VoDManagerImpl(VoDManagerInit init) {
         this.config = init.config;
         this.videos = new ConcurrentHashMap<String, FileStatus>();
         this.videoPlayers = new ConcurrentHashMap<String, VideoPlayer>();
-        this.videoPorts = new ConcurrentHashMap<String, Integer>();
+//        this.videoPorts = new ConcurrentHashMap<String, Integer>();
         reloadLibrary();
 
         subscribe(handlePlayReady, vodPort);
@@ -171,15 +172,15 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
             log.info("setting up player for video:{}", videoName);
         }
 
-        Integer mediaPort = videoPorts.get(videoName);
-        if (mediaPort == null) {
+//        Integer mediaPort = videoPorts.get(videoName);
+        if (videoPort == null) {
             do {
-                mediaPort = tryPort(10000 + rand.nextInt(40000));
-            } while (mediaPort == -1);
-            setupPlayerHttpConnection(videoPlayer, videoName, mediaPort);
-            videoPorts.put(videoName, mediaPort);
+                videoPort = tryPort(10000 + rand.nextInt(40000));
+            } while (videoPort == -1);
+            setupPlayerHttpConnection(videoPlayer, videoName);
+//            videoPorts.put(videoName, mediaPort);
         }
-        return mediaPort;
+        return videoPort;
     }
 
     @Override
@@ -196,13 +197,13 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         }
     }
 
-    private void setupPlayerHttpConnection(VideoPlayer playMngr, String videoName, int mediaPort) {
-        String httpPath = "http://127.0.0.1:" + mediaPort + "/" + videoName + "/" + videoName;
+    private void setupPlayerHttpConnection(VideoPlayer playMngr, String videoName) {
+        String httpPath = "http://127.0.0.1:" + videoPort + "/" + videoName + "/" + videoName;
         log.info("{} starting player http connection {}", new Object[]{config.selfAddress, httpPath});
         String fileName = "/" + videoName + "/";
         BaseHandler handler = new Mp4Handler(playMngr);
         try {
-            JwHttpServer.startOrUpdate(new InetSocketAddress(mediaPort), fileName, handler);
+            JwHttpServer.startOrUpdate(new InetSocketAddress(videoPort), fileName, handler);
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
