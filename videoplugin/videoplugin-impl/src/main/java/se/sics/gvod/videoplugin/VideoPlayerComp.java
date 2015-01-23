@@ -72,6 +72,9 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
         @Override
         public void handle(VideoPlayerTimeout.TryRead timeout) {
+            if(playPos == -1) {
+                return;
+            }
             log.debug("{} timeout {}", config.overlayId, timeout.getTimeoutId());
             tryNextPiece();
         }
@@ -81,6 +84,9 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
         @Override
         public void handle(Data.DResponse resp) {
+            if(playPos == -1) {
+                return;
+            }
             if (resp.status.equals(ReqStatus.SUCCESS)) {
                 try {
                     responseBody.write(resp.block);
