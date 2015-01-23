@@ -61,14 +61,9 @@ public class CleanupOp implements Operation<CaracalOp> {
     @Override
     public void start() {
         Key key1 = randomKey(8);
-        Key key2 = randomKey(8);
-        KeyRange range;
-        if (key1.compareTo(key2) < 0) {
-            range = KeyRange.closed(key1).closed(key2);
-        } else {
-            range = KeyRange.closed(key2).closed(key1);
-        }
-        opMngr.sendCaracalReq(id, range.begin, new RangeQuery.Request(id, range, Limit.toItems(50), TFFactory.noTF(), ActionFactory.noop(), RangeQuery.Type.SEQUENTIAL));
+        Key key2 = new Key(schemaData.getId("gvod.heartbeat")).inc();
+        KeyRange range = KeyRange.closed(key1).open(key2);
+        opMngr.sendCaracalReq(id, range.begin, new RangeQuery.Request(id, range, Limit.toItems(20), TFFactory.noTF(), ActionFactory.noop(), RangeQuery.Type.SEQUENTIAL));
     }
 
     @Override

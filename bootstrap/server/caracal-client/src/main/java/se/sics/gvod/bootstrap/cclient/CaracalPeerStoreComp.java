@@ -244,7 +244,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
 
     private void schedulePeriodicHeartbeatCleanup() {
         //TODO Alex move to config
-        long cleanupPeriod = 60l * 1000 * 1000; //1min
+        long cleanupPeriod = 30l * 1000 * 1000; //30s
         SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(cleanupPeriod, cleanupPeriod);
         Timeout t = new CaracalCleanupTimeout(spt);
         caracalPeriodicCleanupTid = t.getTimeoutId();
