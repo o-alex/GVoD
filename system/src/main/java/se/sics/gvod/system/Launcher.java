@@ -19,10 +19,13 @@
 package se.sics.gvod.system;
 
 import java.net.InetAddress;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
 import se.sics.gvod.bootstrap.cclient.CaracalPSManagerComp;
+import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
+import se.sics.gvod.bootstrap.server.peermanager.msg.CaracalReady;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.net.NatNetworkControl;
@@ -61,12 +64,14 @@ public class Launcher extends ComponentDefinition {
     private Component resolveIp;
     private Component network;
     private Component manager;
+    private Component caracalPSManager;
     private static VoDManager vodManager = null;
 
     public static CMD firstCmd = null;
 
     private Address selfAddress;
-    private final HostConfiguration.ExecBuilder config;
+    private final HostConfiguration.ExecBuilder configBuilder;
+    private HostConfiguration config;
 
     public static VoDManager getInstance() {
         return vodManager;
@@ -85,7 +90,7 @@ public class Launcher extends ComponentDefinition {
         GVoDNetworkSettings.checkPreCond();
         GVoDNetworkSettings.registerSerializers();
 
-        config = new HostConfiguration.ExecBuilder();
+        configBuilder = new HostConfiguration.ExecBuilder();
 
         phase1();
     }
@@ -101,8 +106,8 @@ public class Launcher extends ComponentDefinition {
 
     private void phase2(InetAddress selfIp) {
         try {
-            log.info("phase 2 - ip:{} - binding port:{}", selfIp, config.getPort());
-            selfAddress = new Address(selfIp, config.getPort(), config.getId());
+            log.info("phase 2 - ip:{} - binding port:{}", selfIp, configBuilder.getPort());
+            selfAddress = new Address(selfIp, configBuilder.getPort(), configBuilder.getId());
 
             network = create(NettyNetwork.class, new NettyInit(seed, true, GVoDNetFrameDecoder.class));
             connect(network.getNegative(Timer.class), timer.getPositive(Timer.class));
@@ -117,49 +122,67 @@ public class Launcher extends ComponentDefinition {
     private void phase3(Address selfAddress) {
         log.info("phase 3 - starting with Address: {}", selfAddress);
         try {
-            HostConfiguration hostConfig = config.setSelfAddress(selfAddress).setSeed(bseed).finalise();
-            //TODO
-            //should create and start only on open nodes
-            Component peerManager = create(CaracalPSManagerComp.class, new CaracalPSManagerComp.CaracalPSManagerInit(hostConfig.getCaracalPSManagerConfig()));
-            manager = create(HostManagerComp.class, new HostManagerComp.HostManagerInit(hostConfig, peerManager));
-            vodManager = ((HostManagerComp) manager.getComponent()).getVoDManager();
-            connect(manager.getNegative(VodNetwork.class), network.getPositive(VodNetwork.class));
-            connect(manager.getNegative(Timer.class), timer.getPositive(Timer.class));
+            config = configBuilder.setSelfAddress(selfAddress).setSeed(bseed).finalise();
+        } catch (GVoDConfigException.Missing ex) {
+            log.error(" bad configuration");
+            Kompics.shutdown();
+        }
+        //TODO
+        //should create and start only on open nodes
+        caracalPSManager = create(CaracalPSManagerComp.class, new CaracalPSManagerComp.CaracalPSManagerInit(config.getCaracalPSManagerConfig()));
+        connect(caracalPSManager.getNegative(Timer.class), timer.getPositive(Timer.class));
+        
+        trigger(Start.event, caracalPSManager.control());
+        subscribe(handleCaracalReady, caracalPSManager.getPositive(PeerManagerPort.class));
+    }
+    
+    private Handler<CaracalReady> handleCaracalReady = new Handler<CaracalReady>() {
 
-            trigger(Start.event, peerManager.control());
-            trigger(Start.event, manager.control());
+        @Override
+        public void handle(CaracalReady event) {
+            unsubscribe(handleCaracalReady, caracalPSManager.getPositive(PeerManagerPort.class));
+            phase4();
+        }
+    };
 
-            if (firstCmd != null) {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException ex) {
-                    throw new RuntimeException(ex);
+    private void phase4() {
+        manager = create(HostManagerComp.class, new HostManagerComp.HostManagerInit(config, caracalPSManager));
+        vodManager = ((HostManagerComp) manager.getComponent()).getVoDManager();
+        
+        connect(manager.getNegative(VodNetwork.class), network.getPositive(VodNetwork.class));
+        connect(manager.getNegative(Timer.class), timer.getPositive(Timer.class));
+
+        
+        trigger(Start.event, manager.control());
+
+        if (firstCmd != null) {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+            if (firstCmd.download) {
+                if (!vodManager.downloadVideo(firstCmd.fileName, firstCmd.overlayId)) {
+                    throw new RuntimeException("bad first command cannot download");
                 }
-                if (firstCmd.download) {
-                    if (!vodManager.downloadVideo(firstCmd.fileName, firstCmd.overlayId)) {
-                        throw new RuntimeException("bad first command cannot download");
+                Integer videoPort = null;
+                do {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ex) {
+                        throw new RuntimeException(ex);
                     }
-                    Integer videoPort = null;
-                    do {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException ex) {
-                            throw new RuntimeException(ex);
-                        }
-                        videoPort = vodManager.playVideo(firstCmd.fileName);
-                    } while (videoPort == null);
-                    log.info("can play video:{} on port:{}", firstCmd.fileName, videoPort);
-                } else {
-                    if (!vodManager.pendingUpload(firstCmd.fileName)) {
-                        throw new RuntimeException("bad first command cannot cannot upload");
-                    }
-                    if (!vodManager.uploadVideo(firstCmd.fileName, firstCmd.overlayId)) {
-                        throw new RuntimeException("bad first command cannot cannot upload");
-                    }
+                    videoPort = vodManager.playVideo(firstCmd.fileName);
+                } while (videoPort == null);
+                log.info("can play video:{} on port:{}", firstCmd.fileName, videoPort);
+            } else {
+                if (!vodManager.pendingUpload(firstCmd.fileName)) {
+                    throw new RuntimeException("bad first command cannot cannot upload");
+                }
+                if (!vodManager.uploadVideo(firstCmd.fileName, firstCmd.overlayId)) {
+                    throw new RuntimeException("bad first command cannot cannot upload");
                 }
             }
-        } catch (GVoDConfigException.Missing ex) {
-            throw new RuntimeException(ex);
         }
     }
 

@@ -19,15 +19,15 @@
 
 package se.sics.gvod.bootstrap.cclient;
 
-import java.util.UUID;
-import se.sics.caracaldb.Key;
-import se.sics.caracaldb.operations.CaracalOp;
-import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
+import se.sics.gvod.timer.SchedulePeriodicTimeout;
+import se.sics.gvod.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface CaracalOpManager {
-    public void finish(UUID id, PeerManagerMsg.Response resp);
-    public void sendCaracalReq(UUID opId, Key forwardTo, CaracalOp req);
+public class CaracalCleanupTimeout extends Timeout {
+
+    public CaracalCleanupTimeout(SchedulePeriodicTimeout spt) {
+        super(spt);
+    }
 }

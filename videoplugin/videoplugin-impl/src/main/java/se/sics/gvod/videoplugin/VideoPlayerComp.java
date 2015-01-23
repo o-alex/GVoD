@@ -145,10 +145,10 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
     
     @Override
     public void stop() {
-        log.warn("{} stop", config.overlayId);
+        log.info("{} stop", config.overlayId);
         unsubscribe(handleTryRead, timer);
         unsubscribe(handleReadResponse, videoStore);
-        throw new RuntimeException();
+        playPos = -1;
     }
 
     public static class VideoPlayerInit extends Init<VideoPlayerComp> {

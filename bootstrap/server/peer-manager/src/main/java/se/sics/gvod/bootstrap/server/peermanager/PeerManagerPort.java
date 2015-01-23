@@ -19,6 +19,7 @@
 
 package se.sics.gvod.bootstrap.server.peermanager;
 
+import se.sics.gvod.bootstrap.server.peermanager.msg.CaracalReady;
 import se.sics.kompics.PortType;
 
 /**
@@ -26,6 +27,7 @@ import se.sics.kompics.PortType;
  */
 public class PeerManagerPort extends PortType {
     {
+        indication(CaracalReady.class);
         request(PeerManagerMsg.Request.class);
         indication(PeerManagerMsg.Response.class);
     }

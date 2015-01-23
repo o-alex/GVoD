@@ -105,11 +105,12 @@ public class BootstrapClientComp extends ComponentDefinition {
 
         @Override
         public void handle(Start event) {
-            BootstrapGlobal.Request req = new BootstrapGlobal.Request(UUID.randomUUID());
-            NetBootstrapGlobal.Request netReq = new NetBootstrapGlobal.Request(config.self, config.server, req.id, req);
-            log.info("{} contacting caracalDB - sending {}", new Object[]{config.self, netReq.toString()});
-            pendingRequests.put(req.id, scheduleCaracalReqTimeout(req.id));
-            trigger(netReq, network);
+            //TODO Alex uncoment and fix later
+//            BootstrapGlobal.Request req = new BootstrapGlobal.Request(UUID.randomUUID());
+//            NetBootstrapGlobal.Request netReq = new NetBootstrapGlobal.Request(config.self, config.server, req.id, req);
+//            log.info("{} contacting caracalDB - sending {}", new Object[]{config.self, netReq.toString()});
+//            pendingRequests.put(req.id, scheduleCaracalReqTimeout(req.id));
+//            trigger(netReq, network);
 
             SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(config.heartbeatPeriod, config.heartbeatPeriod);
             spt.setTimeoutEvent(new Heartbeat.PeriodicTimeout(spt));

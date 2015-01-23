@@ -38,6 +38,8 @@ public interface VoDManager {
     
     public Integer playVideo(String videoName);
     
+    public void stopVideo(String videoName);
+    
     public boolean isInitialized();
 
     public String downloadVideoFromUrl(String torrentUrl);

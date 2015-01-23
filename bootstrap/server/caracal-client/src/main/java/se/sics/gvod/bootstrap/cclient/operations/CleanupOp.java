@@ -18,53 +18,57 @@
  */
 package se.sics.gvod.bootstrap.cclient.operations;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.caracaldb.Key;
 import se.sics.caracaldb.KeyRange;
 import se.sics.caracaldb.global.SchemaData;
 import se.sics.caracaldb.operations.CaracalOp;
+import se.sics.caracaldb.operations.PutRequest;
 import se.sics.caracaldb.operations.RangeQuery;
 import se.sics.caracaldb.operations.ResponseCode;
 import se.sics.caracaldb.store.ActionFactory;
 import se.sics.caracaldb.store.Limit;
 import se.sics.caracaldb.store.TFFactory;
-import se.sics.gvod.bootstrap.cclient.CaracalKeyFactory;
 import se.sics.gvod.bootstrap.cclient.CaracalOpManager;
-import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.common.util.Operation;
 
 /**
+ *
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class GetOverlaySampleOp implements Operation<CaracalOp> {
+
+//TODO Alex change to cleaner version as soon as possible
+public class CleanupOp implements Operation<CaracalOp> {
 
     private final CaracalOpManager opMngr;
-    private final PMGetOverlaySample.Request req;
     private final SchemaData schemaData;
-    private final int sampleSize;
+    private final UUID id;
+    private final Random rand;
 
-    public GetOverlaySampleOp(CaracalOpManager opMngr, PMGetOverlaySample.Request req, SchemaData schemaData, int sampleSize) {
+    public CleanupOp(CaracalOpManager opMngr, SchemaData schemaData, Random rand) {
         this.opMngr = opMngr;
-        this.req = req;
-        this.sampleSize = sampleSize;
         this.schemaData = schemaData;
-    }
-
-    @Override
-    public UUID getId() {
-        return req.id;
+        this.id = UUID.randomUUID();
+        this.rand = rand;
     }
 
     @Override
     public void start() {
-        KeyRange overlayRange = CaracalKeyFactory.getOverlayRange(req.overlayId);
-        Key startK = overlayRange.begin.prepend(schemaData.getId("gvod.heartbeat")).get();
-        Key endK = overlayRange.end.prepend(schemaData.getId("gvod.heartbeat")).get();
-        KeyRange newRange = overlayRange.replaceKeys(startK, endK);
-        opMngr.sendCaracalReq(req.id, newRange.begin, new RangeQuery.Request(UUID.randomUUID(), newRange, Limit.toItems(sampleSize), TFFactory.noTF(), ActionFactory.noop(), RangeQuery.Type.SEQUENTIAL));
+        Key key1 = randomKey(8);
+        Key key2 = randomKey(8);
+        KeyRange range;
+        if (key1.compareTo(key2) < 0) {
+            range = KeyRange.closed(key1).closed(key2);
+        } else {
+            range = KeyRange.closed(key2).closed(key1);
+        }
+        opMngr.sendCaracalReq(id, range.begin, new RangeQuery.Request(id, range, Limit.toItems(50), TFFactory.noTF(), ActionFactory.noop(), RangeQuery.Type.SEQUENTIAL));
     }
 
     @Override
@@ -74,17 +78,53 @@ public class GetOverlaySampleOp implements Operation<CaracalOp> {
             if (phase1Resp.code == ResponseCode.SUCCESS) {
                 Set<byte[]> overlaySample = new HashSet<byte[]>();
                 for (Map.Entry<Key, byte[]> e : phase1Resp.data.entrySet()) {
-                    if(e.getValue() == null) {
-                        continue;
-                    }
                     overlaySample.add(e.getValue());
                 }
-                opMngr.finish(req.id, req.success(overlaySample));
+                Set<Key> deleteKeys = processOverlaySample(phase1Resp.data);
+                for(Key key : deleteKeys) {
+                    opMngr.sendCaracalReq(id, key, new PutRequest(id, key, null));
+                }
+                opMngr.finish(id, null);
             } else {
-                opMngr.finish(req.id, req.fail());
+                opMngr.finish(id, null);
             }
         } else {
             throw new RuntimeException("wrong phase");
         }
+    }
+
+    private Key randomKey(int size) {
+        byte[] bytes = new byte[size];
+        rand.nextBytes(bytes);
+        Key key = new Key(bytes);
+        return key.append(schemaData.getId("gvod.heartbeat")).get();
+    }
+
+    //TODO Alex duplicate code from SerializerHelper and Helper
+    public static long getTimestamp(ByteBuf buf) {
+        long timestamp = buf.readLong();
+        return timestamp;
+    }
+
+    public static Set<Key> processOverlaySample(Map<Key, byte[]> overlaySample) {
+        Set<Key> oldSamples = new HashSet<Key>();
+        //TODO Alex fix hardcoded timestamp old
+        long newT = System.nanoTime();
+        long difT = 60l * 1000 * 1000 * 1000; //1min 
+        for (Map.Entry<Key, byte[]> e : overlaySample.entrySet()) {
+            if(e.getValue() == null) {
+                continue;
+            }
+            long timestamp = getTimestamp(Unpooled.wrappedBuffer(e.getValue()));
+            if (timestamp + difT < newT) {
+                oldSamples.add(e.getKey());
+            }
+        }
+        return oldSamples;
+    }
+
+    @Override
+    public UUID getId() {
+        return id;
     }
 }

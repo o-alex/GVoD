@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +44,6 @@ import se.sics.gvod.videoplugin.jwplayer.Mp4Handler;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
-import se.sics.kompics.Kompics;
 import se.sics.kompics.Positive;
 
 /**
@@ -173,13 +171,29 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
             log.info("setting up player for video:{}", videoName);
         }
 
-        int mediaPort = 0;
-        do {
-            mediaPort = tryPort(10000 + rand.nextInt(40000));
-        } while (mediaPort == -1);
-        setupPlayerHttpConnection(videoPlayer, videoName, mediaPort);
-        videoPorts.put(videoName, mediaPort);
+        Integer mediaPort = videoPorts.get(videoName);
+        if (mediaPort == null) {
+            do {
+                mediaPort = tryPort(10000 + rand.nextInt(40000));
+            } while (mediaPort == -1);
+            setupPlayerHttpConnection(videoPlayer, videoName, mediaPort);
+            videoPorts.put(videoName, mediaPort);
+        }
         return mediaPort;
+    }
+
+    @Override
+    public void stopVideo(String videoName) {
+        VideoPlayer videoPlayer = videoPlayers.get(videoName);
+        if (videoPlayer == null) {
+            log.info("player for video:{} is not ready yet - weird stop message", videoName);
+            return;
+        } else {
+            log.info("stopping play for video:{}", videoName);
+            videoPlayer.stop();
+            //TODO Alex close player http server in order not to keep ports used.
+            return;
+        }
     }
 
     private void setupPlayerHttpConnection(VideoPlayer playMngr, String videoName, int mediaPort) {

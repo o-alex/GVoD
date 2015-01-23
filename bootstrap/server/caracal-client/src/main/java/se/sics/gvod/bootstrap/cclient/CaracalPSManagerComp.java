@@ -20,23 +20,18 @@ package se.sics.gvod.bootstrap.cclient;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import se.sics.caracaldb.CoreSerializer;
-import se.sics.caracaldb.global.ForwardMessage;
-import se.sics.caracaldb.operations.CaracalMsg;
-import se.sics.caracaldb.operations.CaracalOp;
-import se.sics.caracaldb.operations.PutRequest;
-import se.sics.caracaldb.operations.PutResponse;
-import se.sics.caracaldb.operations.RangeQuery;
+import se.sics.caracaldb.MessageRegistrator;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
 import se.sics.gvod.common.util.GVoDConfigException;
+import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Init;
 import se.sics.kompics.Negative;
+import se.sics.kompics.Positive;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.network.netty.NettyInit;
 import se.sics.kompics.network.netty.NettyNetwork;
-import se.sics.kompics.network.netty.serialization.Serializers;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -46,6 +41,7 @@ public class CaracalPSManagerComp extends ComponentDefinition {
     private static final Logger log = LoggerFactory.getLogger(CaracalPSManagerComp.class);
 
     private Negative<PeerManagerPort> peerManager = provides(PeerManagerPort.class);
+    private Positive<Timer> timer = requires(Timer.class);
     
     private Component network;
     private Component caracal;
@@ -53,7 +49,7 @@ public class CaracalPSManagerComp extends ComponentDefinition {
     private final CaracalPSManagerConfig config;
 
     public CaracalPSManagerComp(CaracalPSManagerInit init) {
-        registerSerializers();
+        MessageRegistrator.register();
         try {
             this.config = init.config;
             log.info("{} connecting components", config.selfAddress);
@@ -62,26 +58,13 @@ public class CaracalPSManagerComp extends ComponentDefinition {
             caracal = create(CaracalPeerStoreComp.class, new CaracalPeerStoreComp.CaracalPeerStoreInit(config.getCaracalPeerStoreConfig()));
             
             connect(caracal.getNegative(Network.class), network.getPositive(Network.class));
+            connect(caracal.getNegative(Timer.class), timer);
             connect(peerManager, caracal.getPositive(PeerManagerPort.class));
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException(ex);
         }
     }
     
-    private void registerSerializers() {
-        Serializers.register(CoreSerializer.LOOKUP.instance, "lookupS");
-        Serializers.register(ForwardMessage.class, "lookupS");
-        Serializers.register(se.sics.caracaldb.global.Message.class, "lookupS");
-        Serializers.register(CoreSerializer.OP.instance, "opS");
-        Serializers.register(CaracalMsg.class, "opS");
-        Serializers.register(CaracalOp.class, "opS");
-        Serializers.register(CoreSerializer.OP.instance, "caracal-op");
-        Serializers.register(RangeQuery.Request.class, "caracal-op");
-        Serializers.register(RangeQuery.Response.class, "caracal-op");
-        Serializers.register(PutRequest.class, "caracal-op");
-        Serializers.register(PutResponse.class, "caracal-op");
-    }
-
     public static class CaracalPSManagerInit extends Init<CaracalPSManagerComp> {
         public final CaracalPSManagerConfig config;
         

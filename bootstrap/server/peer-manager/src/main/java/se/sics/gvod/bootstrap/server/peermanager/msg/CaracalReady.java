@@ -17,17 +17,12 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.bootstrap.cclient;
+package se.sics.gvod.bootstrap.server.peermanager.msg;
 
-import java.util.UUID;
-import se.sics.caracaldb.Key;
-import se.sics.caracaldb.operations.CaracalOp;
-import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
+import se.sics.kompics.KompicsEvent;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface CaracalOpManager {
-    public void finish(UUID id, PeerManagerMsg.Response resp);
-    public void sendCaracalReq(UUID opId, Key forwardTo, CaracalOp req);
+public class CaracalReady implements KompicsEvent {
 }

@@ -20,6 +20,8 @@
 package se.sics.gvod.bootstrap.cclient.operations;
 
 import java.util.UUID;
+import se.sics.caracaldb.Key;
+import se.sics.caracaldb.global.SchemaData;
 import se.sics.caracaldb.operations.CaracalOp;
 import se.sics.caracaldb.operations.GetRequest;
 import se.sics.caracaldb.operations.GetResponse;
@@ -35,10 +37,12 @@ import se.sics.gvod.common.util.Operation;
 public class GetFileMetadataOp implements Operation<CaracalOp> {
     private final CaracalOpManager opMngr;
     private final PMGetFileMetadata.Request req;
-
-    public GetFileMetadataOp(CaracalOpManager opMngr, PMGetFileMetadata.Request req) {
+    private final SchemaData schemaData;
+    
+    public GetFileMetadataOp(CaracalOpManager opMngr, PMGetFileMetadata.Request req, SchemaData schemaData) {
         this.opMngr = opMngr;
         this.req = req;
+        this.schemaData = schemaData;
     }
 
     @Override
@@ -48,7 +52,8 @@ public class GetFileMetadataOp implements Operation<CaracalOp> {
 
     @Override
     public void start() {
-        opMngr.sendCaracalReq(req.id, CaracalKeyFactory.getFileMetadataKey(req.overlayId), new GetRequest(UUID.randomUUID(), CaracalKeyFactory.getFileMetadataKey(req.overlayId)));
+        Key target = CaracalKeyFactory.getFileMetadataKey(req.overlayId).prepend(schemaData.getId("gvod.metadata")).get();
+        opMngr.sendCaracalReq(req.id, target, new GetRequest(UUID.randomUUID(), target));
     }
 
     @Override
@@ -56,9 +61,9 @@ public class GetFileMetadataOp implements Operation<CaracalOp> {
         if (caracalResp instanceof GetResponse) {
             GetResponse phase1Resp = (GetResponse) caracalResp;
             if (phase1Resp.code == ResponseCode.SUCCESS && phase1Resp.data != null) {
-                opMngr.finish(req.success(phase1Resp.data));
+                opMngr.finish(req.id, req.success(phase1Resp.data));
             } else {
-                opMngr.finish(req.fail());
+                opMngr.finish(req.id, req.fail());
             }
         } else {
             throw new RuntimeException("wrong phase");

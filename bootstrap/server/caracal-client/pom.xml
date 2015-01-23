@@ -13,7 +13,7 @@
     <packaging>jar</packaging>
     
     <properties>
-        <caracaldb-version>0.0.5-SNAPSHOT</caracaldb-version>
+        <caracaldb-version>0.0.6-SNAPSHOT</caracaldb-version>
     </properties>
     
     <dependencies>
@@ -37,7 +37,7 @@
         <dependency>
             <groupId>se.sics.caracaldb</groupId>
             <artifactId>caracaldb-core</artifactId>
-            <version>0.0.5-SNAPSHOT</version>
+            <version>${caracaldb-version}</version>
         </dependency>
         
     </dependencies>

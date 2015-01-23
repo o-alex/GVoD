@@ -16,18 +16,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.bootstrap.cclient;
 
-import java.util.UUID;
-import se.sics.caracaldb.Key;
-import se.sics.caracaldb.operations.CaracalOp;
-import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
+import se.sics.gvod.timer.ScheduleTimeout;
+import se.sics.gvod.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public interface CaracalOpManager {
-    public void finish(UUID id, PeerManagerMsg.Response resp);
-    public void sendCaracalReq(UUID opId, Key forwardTo, CaracalOp req);
+public class CaracalSampleTimeout extends Timeout {
+
+    public CaracalSampleTimeout(ScheduleTimeout schedule) {
+        super(schedule);
+    }
 }
