@@ -279,8 +279,8 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
     @Override
     public void sendCaracalReq(UUID opId, Key forwardTo, CaracalOp req) {
         pendingCaracalOps.put(req.id, opId);
-        Address caracalServer = caracalNodes.get(rand.nextInt(caracalNodes.size()));
-//        Address caracalServer = config.caracalServer;
+//        Address caracalServer = caracalNodes.get(rand.nextInt(caracalNodes.size()));
+        Address caracalServer = config.caracalServer;
         CaracalMsg cmsg = new CaracalMsg(config.self, caracalServer, req);
         log.debug("{} sending:{} to:{}", new Object[]{config.self, req, caracalServer});
         trigger(new ForwardMessage(config.self, caracalServer, forwardTo, cmsg), network);
