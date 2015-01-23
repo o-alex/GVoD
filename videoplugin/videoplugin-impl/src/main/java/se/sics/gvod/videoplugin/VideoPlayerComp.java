@@ -95,7 +95,10 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
                         responseBody.write(resp.block);
                         responseBody.flush();
                     } catch (IOException ex) {
-                        throw new RuntimeException(ex);
+                        log.warn("{} player seems to have died... reseting connection", config.overlayId);
+                        playPos = -1;
+                        responseBody = null;
+                        return;
                     }
 
                     playPos = playPos + resp.block.length;
