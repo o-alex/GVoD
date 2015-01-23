@@ -104,8 +104,8 @@ public class CleanupOp implements Operation<CaracalOp> {
     public static Set<Key> processOverlaySample(Map<Key, byte[]> overlaySample) {
         Set<Key> oldSamples = new HashSet<Key>();
         //TODO Alex fix hardcoded timestamp old
-        long newT = System.nanoTime();
-        long difT = 60l * 1000 * 1000 * 1000; //1min 
+        long newT = System.currentTimeMillis();
+        long difT = 60l * 1000; //1min to ms
         for (Map.Entry<Key, byte[]> e : overlaySample.entrySet()) {
             if(e.getValue() == null) {
                 continue;

@@ -62,13 +62,13 @@ public class HeartbeatOp implements Operation {
     @Override
     public void start() {
         try {
-            byte[] bytesBootOverlay = SerializerHelper.serializeOverlayData(context, src, System.nanoTime(), 0);
+            byte[] bytesBootOverlay = SerializerHelper.serializeOverlayData(context, src, System.currentTimeMillis(), 0);
             PMJoinOverlay.Request joinSystem = new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), bytesBootOverlay);
             opMngr.sendPeerManagerReq(getId(), joinSystem);
             pendingJoins.add(joinSystem.id);
             
             for (Map.Entry<Integer, Integer> e : oneWay.overlayUtilities.entrySet()) {
-                byte[] bytesOverlay = SerializerHelper.serializeOverlayData(context, src, System.nanoTime(), e.getValue());
+                byte[] bytesOverlay = SerializerHelper.serializeOverlayData(context, src, System.currentTimeMillis(), e.getValue());
                 PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getPeerAddress().getId(), bytesOverlay);
                 opMngr.sendPeerManagerReq(getId(), joinOverlay);
                 pendingJoins.add(joinOverlay.id);

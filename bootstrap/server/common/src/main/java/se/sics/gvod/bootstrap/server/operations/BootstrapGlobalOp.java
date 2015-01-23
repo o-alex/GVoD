@@ -73,7 +73,7 @@ public class BootstrapGlobalOp implements Operation {
             if (phase1Resp.status == ReqStatus.SUCCESS) {
                 byte[] bytes;
                 try {
-                    bytes = SerializerHelper.serializeOverlayData(context, src, System.nanoTime(), 0);
+                    bytes = SerializerHelper.serializeOverlayData(context, src, System.currentTimeMillis(), 0);
                     opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), bytes));
                     resp = req.success(Helper.processOverlaySample(context, phase1Resp.overlaySample).keySet());
                 } catch (Serializer.SerializerException ex) {

@@ -36,8 +36,8 @@ public class Helper {
     public static Map<VodAddress, Integer> processOverlaySample(SerializationContext context, Set<byte[]> boverlaySample) throws Serializer.SerializerException, SerializationContext.MissingException {
         Map<VodAddress, Integer> overlaySample = new HashMap<VodAddress, Integer>();
         //TODO Alex fix hardcoded timestamp old
-        long newT = System.nanoTime();
-        long difT = 25l * 1000 * 1000 * 1000;
+        long newT = System.currentTimeMillis();
+        long difT = 25l * 1000; //25s to ms
         for (byte[] peer : boverlaySample) {
             Triplet<VodAddress, Long, Integer> node = SerializerHelper.deserializeOverlayData(context, Unpooled.wrappedBuffer(peer));
             if(node.getValue1() + difT > newT) {

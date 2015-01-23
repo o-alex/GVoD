@@ -19,15 +19,15 @@ public class JavaApplication2 {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        long oldT = System.nanoTime();
-        long difT = 25l * 1000 * 1000 * 1000;
+        long oldT = System.currentTimeMillis();
+        long difT = 25l * 1000;
         while(true) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
                 Logger.getLogger(JavaApplication2.class.getName()).log(Level.SEVERE, null, ex);
             }
-            long newT = System.nanoTime();
+            long newT = System.currentTimeMillis();
             if(oldT + difT < newT) {
                 System.out.println("old:" + oldT);
                 System.out.println("new:" + newT);
