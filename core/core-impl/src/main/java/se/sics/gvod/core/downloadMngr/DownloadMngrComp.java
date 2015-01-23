@@ -86,7 +86,7 @@ public class DownloadMngrComp extends ComponentDefinition {
 
     public DownloadMngrComp(DownloadMngrInit init) {
         this.config = init.config;
-        log.info("{} video component init", config.getSelf());
+        log.info("{}:{} video component init", config.getSelf(), config.overlayId);
 
         this.hashMngr = init.hashMngr;
         this.fileMngr = init.fileMngr;
@@ -105,11 +105,11 @@ public class DownloadMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(Start event) {
-            log.info("{} starting...", config.getSelf());
+            log.info("{} {} starting...", config.getSelf(), config.overlayId);
 
             Integer downloadPos = fileMngr.contiguous(0);
             Integer hashPos = hashMngr.contiguous(0);
-            log.info("{} video pos:{}, hash pos:{}", new Object[]{config.getSelf(), downloadPos, hashPos});
+            log.info("{} {} video pos:{}, hash pos:{}", new Object[]{config.getSelf(), config.overlayId, downloadPos, hashPos});
             trigger(new UtilityUpdate(config.overlayId, downloading, downloadPos), utilityUpdate);
 
             subscribe(handleConnReady, connMngr);
@@ -139,7 +139,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         @Override
         public void handle(Ready event) {
             if (downloading) {
-                log.info("{} downloading video", config.getSelf());
+                log.info("{} {} downloading video", config.getSelf(), config.overlayId);
                 for (int i = 0; i < config.startPieces; i++) {
                     download();
                 }
@@ -149,7 +149,7 @@ public class DownloadMngrComp extends ComponentDefinition {
                 scheduleUpdateSelf();
                 subscribe(handleUpdateSelf, timer);
             } else {
-                log.info("{} seeding file", config.getSelf());
+                log.info("{} {} seeding file", config.getSelf(), config.overlayId);
             }
 
             subscribe(handleHashRequest, connMngr);
@@ -336,12 +336,12 @@ public class DownloadMngrComp extends ComponentDefinition {
         @Override
         public void handle(ScheduledUtilityUpdate event) {
             log.trace("{} handle {}", config.getSelf(), event);
-            log.info("{} internal state check: hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}, pendingBlocks:{}",
-                    new Object[]{config.getSelf(), hashMngr.isComplete(0), fileMngr.isComplete(0), pendingPieces.size(), nextPieces.size(), pendingHashes.size(), nextHashes.size(), queuedBlocks.size()});
+            log.info("{} {} internal state check: hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}, pendingBlocks:{}",
+                    new Object[]{config.getSelf(), config.overlayId, hashMngr.isComplete(0), fileMngr.isComplete(0), pendingPieces.size(), nextPieces.size(), pendingHashes.size(), nextHashes.size(), queuedBlocks.size()});
 
             int downloadPos = fileMngr.contiguous(0);
             int hashPos = hashMngr.contiguous(0);
-            log.info("{} video pos:{} hash pos:{}", new Object[]{config.getSelf(), downloadPos, hashPos});
+            log.info("{} {} video pos:{} hash pos:{}", new Object[]{config.getSelf(), config.overlayId, downloadPos, hashPos});
             //TODO Alex might need to move it to its own timeout
             checkCompleteBlocks();
             trigger(new UtilityUpdate(config.overlayId, downloading, downloadPos), utilityUpdate);
@@ -458,7 +458,7 @@ public class DownloadMngrComp extends ComponentDefinition {
     private void finishDownload() {
         Integer downloadPos = fileMngr.contiguous(0);
         Integer hashPos = hashMngr.contiguous(0);
-        log.info("{} video pos:{}, hash pos:{}", new Object[]{config.getSelf(), downloadPos, hashPos});
+        log.info("{} {} video pos:{}, hash pos:{}", new Object[]{config.getSelf(), config.overlayId, downloadPos, hashPos});
 
         //one last update
         trigger(new UtilityUpdate(config.overlayId, downloading, downloadPos), utilityUpdate);
@@ -470,7 +470,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         unsubscribe(handleDownloadSpeedUp, timer);
 
         downloading = false;
-        log.info("{} finished download", config.getSelf());
+        log.info("{} {} finished download", config.getSelf(), config.overlayId);
     }
 
     public static class DownloadMngrInit extends Init<DownloadMngrComp> {
