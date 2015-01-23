@@ -137,7 +137,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
             caracalNodes.addAll(sample.nodes);
             cancelCaracalReqTimeout(sampleTimeout);
             trigger(new CaracalReady(), myPort);
-            schedulePeriodicHeartbeatCleanup();
+//            schedulePeriodicHeartbeatCleanup();
 
             subscribe(handleHeartbeatCleanup, timer);
         }
