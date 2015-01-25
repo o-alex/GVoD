@@ -81,7 +81,8 @@ public class Launcher extends ComponentDefinition {
         try {
             Thread.sleep(2000);
         } catch (InterruptedException ex) {
-            throw new RuntimeException(ex);
+            log.error("threading problem in launcher");
+            System.exit(1);
         }
         log.info("init");
         subscribe(handleStart, control);
@@ -115,7 +116,8 @@ public class Launcher extends ComponentDefinition {
             subscribe(handlePsPortBindResponse, network.getPositive(NatNetworkControl.class));
             trigger(Start.event, network.getControl());
         } catch (GVoDConfigException.Missing ex) {
-            throw new RuntimeException(ex);
+            log.error("configuration problem in launcher - " + ex.getMessage());
+            System.exit(1);
         }
     }
 
@@ -159,70 +161,36 @@ public class Launcher extends ComponentDefinition {
             try {
                 Thread.sleep(5000);
             } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
+                log.error("threading problem in launcher");
+                System.exit(1);
             }
             if (firstCmd.download) {
                 if (!vodManager.downloadVideo(firstCmd.fileName, firstCmd.overlayId)) {
-                    throw new RuntimeException("bad first command cannot download");
+                    log.error("bad first command - cannot download - check if library contains file already");
+                    System.exit(1);
                 }
                 Integer videoPort = null;
                 do {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException ex) {
-                        throw new RuntimeException(ex);
+                        log.error("threading problem in launcher");
+                        System.exit(1);
                     }
                     videoPort = vodManager.playVideo(firstCmd.fileName);
                 } while (videoPort == null);
                 log.info("can play video:{} on port:{}", firstCmd.fileName, videoPort);
             } else {
                 if (!vodManager.pendingUpload(firstCmd.fileName)) {
-                    throw new RuntimeException("bad first command cannot cannot upload");
+                    log.error("bad first command - cannot upload - check if library contains file");
                 }
                 if (!vodManager.uploadVideo(firstCmd.fileName, firstCmd.overlayId)) {
-                    throw new RuntimeException("bad first command cannot cannot upload");
+                    log.error("bad first command - cannot upload - check if library contains file and you called pendingUpload before");
                 }
             }
         }
     }
 
-//    private void uploadVideo() {
-//        int overlayId = 10;
-//        String videoName = "video2.mp4";
-//        String libDir = "/Users/Alex/Documents/Work/Code/GVoD/video-catalog/node1";
-//        log.info("{} libDir:{}", selfAddress, libDir);
-//        try {
-//            File f = new File(libDir);
-//            f.delete();
-//            f.mkdir();
-//            File videoFile = new File(libDir + File.separator + videoName);
-//            videoFile.createNewFile();
-//            Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(videoFile)));
-//            for (int i = 0; i < 10000; i++) {
-//                writer.write("abc" + i + "\n");
-//            }
-//            writer.flush();
-//            writer.close();
-////            ((VoDManagerImpl)vodManager).loadLibrary();
-//            if(!vodManager.pendingUpload(videoName)) {
-//                throw new RuntimeException();
-//            }
-//            if(!vodManager.uploadVideo(videoName, overlayId)) {
-//                throw new RuntimeException();
-//            }
-//        } catch (IOException ex) {
-//            throw new RuntimeException(ex);
-//        }
-//    }
-//    
-//    private void downloadVideo() {
-//        int overlayId = 10;
-//        String videoName = "video2.mp4";
-////        ((VoDManagerImpl)vodManager).loadLibrary();
-//        if(!vodManager.downloadVideo(videoName, overlayId)) {
-//            throw new RuntimeException();
-//        }
-//    }
     public Handler<Start> handleStart = new Handler<Start>() {
 
         @Override

@@ -61,6 +61,7 @@ public class CaracalPSManagerComp extends ComponentDefinition {
             connect(caracal.getNegative(Timer.class), timer);
             connect(peerManager, caracal.getPositive(PeerManagerPort.class));
         } catch (GVoDConfigException.Missing ex) {
+            System.exit(1);
             throw new RuntimeException(ex);
         }
     }

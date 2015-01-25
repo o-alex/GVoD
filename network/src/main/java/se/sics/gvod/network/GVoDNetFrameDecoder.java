@@ -48,7 +48,7 @@ public class GVoDNetFrameDecoder extends BaseMsgFrameDecoder {
             context.registerAlias(GVoDNetworkSettings.MsgAliases.GVOD_NET_REQUEST.aliasedClass, GVoDNetworkSettings.MsgAliases.GVOD_NET_REQUEST.toString(), GVOD_REQUEST);
             context.registerAlias(GVoDNetworkSettings.MsgAliases.GVOD_NET_RESPONSE.aliasedClass, GVoDNetworkSettings.MsgAliases.GVOD_NET_RESPONSE.toString(), GVOD_RESPONSE);
         } catch (SerializationContext.DuplicateException ex) {
-            throw new RuntimeException(ex);
+            System.exit(1);
         }
 
         GVoDNetworkSettings.setContext(context);

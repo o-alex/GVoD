@@ -84,6 +84,7 @@ public class GetOverlaySampleOp implements Operation<CaracalOp> {
                 opMngr.finish(req.id, req.fail());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

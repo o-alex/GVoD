@@ -36,6 +36,7 @@ public class CaracalKeyFactory {
         try {
             prefix = MessageDigest.getInstance("MD5").digest(schema.getBytes());
         } catch (NoSuchAlgorithmException ex) {
+            System.exit(1);
             throw new RuntimeException(ex);
         }
     }

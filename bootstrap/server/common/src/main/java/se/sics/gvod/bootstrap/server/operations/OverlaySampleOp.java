@@ -73,8 +73,10 @@ public class OverlaySampleOp implements Operation {
                 try {
                     opResp = req.success(Helper.processOverlaySample(context, sampleResp.overlaySample));
                 } catch (Serializer.SerializerException ex) {
+                    System.exit(1);
                     throw new RuntimeException(ex);
                 } catch (SerializationContext.MissingException ex) {
+                    System.exit(1);
                     throw new RuntimeException(ex);
                 }
             } else {
@@ -82,6 +84,7 @@ public class OverlaySampleOp implements Operation {
             }
             opMngr.finish(getId(), src, opResp);
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

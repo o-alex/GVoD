@@ -128,6 +128,7 @@ public class SimPMComp extends ComponentDefinition {
         Set<byte[]> result = new HashSet<byte[]>();
         Map<Integer, byte[]> overlayPeers = overlays.get(overlayId);
         if(overlayPeers == null) {
+            System.exit(1);
             throw new RuntimeException("no overlay");
         }
         if(overlayPeers.size() <= config.sampleSize) {

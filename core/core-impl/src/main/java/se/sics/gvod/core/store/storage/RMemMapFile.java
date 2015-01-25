@@ -42,7 +42,7 @@ public class RMemMapFile implements Storage {
     @Override
     public byte[] read(long readPos, long readLength) {
         if(readPos > Integer.MAX_VALUE || readLength > Integer.MAX_VALUE) {
-            throw new RuntimeException("out of bounds");
+            System.exit(1);
         }
         if(readPos > length) {
             return new byte[0];

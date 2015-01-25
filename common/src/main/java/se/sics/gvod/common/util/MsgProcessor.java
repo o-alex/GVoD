@@ -35,6 +35,7 @@ public class MsgProcessor {
 
     public <E extends KompicsEvent> void subscribe(Handler<E> handler) {
         if (handler.eventType == null) {
+            System.exit(1);
             throw new RuntimeException("Handler did not initialize handlerType");
         }
         subscribedHandlers.put(handler.eventType, handler);

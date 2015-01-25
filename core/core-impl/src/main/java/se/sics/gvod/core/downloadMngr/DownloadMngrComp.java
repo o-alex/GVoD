@@ -249,7 +249,8 @@ public class DownloadMngrComp extends ComponentDefinition {
                     Pair<Integer, Integer> pieceIdToBlockNr = pieceIdToBlockNrPieceNr(resp.pieceId);
                     BlockMngr block = queuedBlocks.get(pieceIdToBlockNr.getValue0());
                     if (block == null) {
-                        throw new RuntimeException("block is null");
+                        log.error("logic exception block is null");
+                        System.exit(1);
                     }
                     block.writePiece(pieceIdToBlockNr.getValue1(), resp.piece);
                     pendingPieces.remove(resp.pieceId);

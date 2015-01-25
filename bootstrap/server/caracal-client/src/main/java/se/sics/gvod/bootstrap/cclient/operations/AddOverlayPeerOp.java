@@ -66,6 +66,7 @@ public class AddOverlayPeerOp implements Operation<CaracalOp> {
                 opMngr.finish(req.id, req.fail());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

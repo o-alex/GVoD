@@ -96,6 +96,7 @@ public class NetMsgSerializer {
             try {
                 dummyHack = new Address(Inet4Address.getLocalHost(), 11111, -1);
             } catch (UnknownHostException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             }
         }
@@ -126,6 +127,7 @@ public class NetMsgSerializer {
             try {
                 dummyHack = new Address(Inet4Address.getLocalHost(), 11111, -1);
             } catch (UnknownHostException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             }
         }
@@ -156,6 +158,7 @@ public class NetMsgSerializer {
             try {
                 dummyHack = new Address(Inet4Address.getLocalHost(), 11111, -1);
             } catch (UnknownHostException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             }
         }

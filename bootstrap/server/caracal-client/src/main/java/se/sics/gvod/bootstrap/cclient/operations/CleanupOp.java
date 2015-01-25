@@ -84,6 +84,7 @@ public class CleanupOp implements Operation<CaracalOp> {
                 opMngr.finish(id, null);
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

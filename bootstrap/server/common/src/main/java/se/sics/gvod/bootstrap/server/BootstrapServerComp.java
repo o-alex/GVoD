@@ -160,7 +160,8 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
     @Override
     public void finish(UUID opId, VodAddress src, GvodMsg.Response resp) {
         if (pendingOps.remove(opId) == null) {
-            throw new RuntimeException("pendingOp should not be null");
+            log.error("logic error handling operations");
+            System.exit(1);
         }
         cleanRequests(opId);
         log.debug("{} sending {}", new Object[]{config.self, resp});
@@ -177,7 +178,8 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
             OverlaySample.Response gvodResp = (OverlaySample.Response) resp;
             trigger(new NetOverlaySample.Response(config.self, src, resp.id, gvodResp), network);
         } else {
-            throw new RuntimeException("wrong message");
+            log.error("received wrong message - logic error");
+            System.exit(1);
         }
 
     }
@@ -185,7 +187,8 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
     @Override
     public void finish(UUID opId) {
         if (pendingOps.remove(opId) == null) {
-            throw new RuntimeException("pendingOp should not be null");
+            log.error("logic error handling operations");
+            System.exit(1);
         }
         cleanRequests(opId);
     }

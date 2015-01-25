@@ -76,8 +76,10 @@ public class AddOverlayOp implements Operation {
                 try {
                     bytes = context.getSerializer(FileMetadata.class).encode(context, Unpooled.buffer(), req.fileMeta).array();
                 } catch (Serializer.SerializerException ex) {
+                    System.exit(1);
                     throw new RuntimeException(ex);
                 } catch (SerializationContext.MissingException ex) {
+                    System.exit(1);
                     throw new RuntimeException(ex);
                 }
                 opMngr.sendPeerManagerReq(getId(), new PMAddFileMetadata.Request(UUID.randomUUID(), req.overlayId, bytes));
@@ -92,6 +94,7 @@ public class AddOverlayOp implements Operation {
                 opMngr.finish(getId(), src, req.fail());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

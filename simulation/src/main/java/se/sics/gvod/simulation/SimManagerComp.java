@@ -94,8 +94,10 @@ public class SimManagerComp extends ComponentDefinition {
                 trigger(Start.event, bootstrapServer.control());
                 trigger(Start.event, peerManager.control());
             } catch (GVoDConfigException.Missing ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             } catch (UnknownHostException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             }
         }
@@ -150,8 +152,10 @@ public class SimManagerComp extends ComponentDefinition {
                 trigger(Start.event, peerManager.control());
             } catch (GVoDConfigException.Missing ex) {
                 log.error("error loading vod peer configuration");
+                System.exit(1);
                 throw new RuntimeException(ex);
             } catch (UnknownHostException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             }
         }
@@ -199,9 +203,11 @@ public class SimManagerComp extends ComponentDefinition {
             VoDManager vodMngr = nodeHost.getVoDManager();
             vodMngr.reloadLibrary();
             if(!vodMngr.pendingUpload(cmd.videoName)) {
+                System.exit(1);
                 throw new RuntimeException();
             }
             if(!vodMngr.uploadVideo(cmd.videoName, cmd.overlayId)) {
+                System.exit(1);
                 throw new RuntimeException();
             }
         }

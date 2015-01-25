@@ -108,6 +108,7 @@ public class HashUtil {
         try {
             md = MessageDigest.getInstance(hashAlg);
         } catch (NoSuchAlgorithmException ex) {
+            System.exit(1);
             throw new RuntimeException(ex);
         }
         return Arrays.equals(hash, md.digest(piece));

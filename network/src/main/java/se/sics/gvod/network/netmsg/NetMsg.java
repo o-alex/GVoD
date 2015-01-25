@@ -67,6 +67,7 @@ public class NetMsg {
             try {
                 return context.getCode(this.getClass()).getValue0();
             } catch (SerializationContext.MissingException ex) {
+                System.exit(1);
                 throw new RuntimeException();
             }
         }
@@ -108,6 +109,7 @@ public class NetMsg {
             try {
                 return context.getCode(this.getClass()).getValue0();
             } catch (SerializationContext.MissingException ex) {
+                System.exit(1);
                 throw new RuntimeException();
             }
         }
@@ -143,6 +145,7 @@ public class NetMsg {
             try {
                 return context.getCode(this.getClass()).getValue0();
             } catch (SerializationContext.MissingException ex) {
+                System.exit(1);
                 throw new RuntimeException();
             }
         }

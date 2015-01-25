@@ -58,8 +58,10 @@ public class NetContentMsg {
                 serializer.encode(context, buf, this);
                 return buf;
             } catch (SerializationContext.MissingException ex) {
+                System.exit(1);
                 throw new MessageEncodingException("missing serializer for " + this.getClass());
             } catch (Serializer.SerializerException ex) {
+                System.exit(1);
                 throw new MessageEncodingException("cannot properly serializer " + this.getClass() + " check serializer");
             }
         }
@@ -73,9 +75,11 @@ public class NetContentMsg {
                 size += serializer.getSize(context, this);
                 return size;
             } catch (SerializationContext.MissingException ex) {
-                throw new RuntimeException(ex);
+                System.exit(1);
+                return 1;
             } catch (Serializer.SerializerException ex) {
-                throw new RuntimeException(ex);
+                System.exit(1);
+                return 1;
             }
         }
 
@@ -121,8 +125,10 @@ public class NetContentMsg {
                 size += serializer.getSize(context, this);
                 return size;
             } catch (SerializationContext.MissingException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             } catch (Serializer.SerializerException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             }
         }
@@ -168,8 +174,10 @@ public class NetContentMsg {
                 size += serializer.getSize(context, this);
                 return size;
             } catch (SerializationContext.MissingException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             } catch (Serializer.SerializerException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             }
         }

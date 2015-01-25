@@ -77,8 +77,10 @@ public class BootstrapGlobalOp implements Operation {
                     opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), bytes));
                     resp = req.success(Helper.processOverlaySample(context, phase1Resp.overlaySample).keySet());
                 } catch (Serializer.SerializerException ex) {
+                    System.exit(1);
                     throw new RuntimeException(ex);
                 } catch (SerializationContext.MissingException ex) {
+                    System.exit(1);
                     throw new RuntimeException(ex);
                 }
                 opMngr.finish(getId(), src, resp);
@@ -86,6 +88,7 @@ public class BootstrapGlobalOp implements Operation {
                 opMngr.finish(getId(), src, req.fail());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

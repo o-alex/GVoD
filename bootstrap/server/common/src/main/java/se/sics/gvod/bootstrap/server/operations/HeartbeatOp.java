@@ -74,8 +74,10 @@ public class HeartbeatOp implements Operation {
                 pendingJoins.add(joinOverlay.id);
             }
         } catch (Serializer.SerializerException ex) {
+            System.exit(1);
             throw new RuntimeException(ex);
         } catch (SerializationContext.MissingException ex) {
+            System.exit(1);
             throw new RuntimeException(ex);
         }
     }
@@ -93,6 +95,7 @@ public class HeartbeatOp implements Operation {
                 opMngr.finish(getId());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

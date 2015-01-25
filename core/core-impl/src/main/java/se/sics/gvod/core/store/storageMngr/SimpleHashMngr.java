@@ -53,7 +53,7 @@ public class SimpleHashMngr implements HashMngr {
     @Override
     public int writeHash(int hashNr, byte[] hash) {
         if(hash.length > hashSize) {
-            throw new RuntimeException("bad hash size");
+            System.exit(1);
         }
         pieceTracker.addPiece(hashNr);
         return storage.write(hashNr*hashSize, hash);

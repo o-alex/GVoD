@@ -50,7 +50,7 @@ public class Main {
         try {
             Kompics.waitForTermination();
         } catch (InterruptedException ex) {
-            throw new RuntimeException(ex.getMessage());
+            System.exit(1);
         }
     }
 

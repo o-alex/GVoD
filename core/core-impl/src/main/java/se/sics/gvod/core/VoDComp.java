@@ -124,9 +124,11 @@ public class VoDComp extends ComponentDefinition {
                 int blockSize = config.piecesPerBlock * config.pieceSize;
                 HashUtil.makeHashes(videoFilePath, hashFilePath, config.hashAlg, blockSize);
             } catch (HashUtil.HashBuilderException ex) {
-                throw new RuntimeException(ex);
+                log.error("error while hashing file " + req.videoName);
+                System.exit(1);
             } catch (IOException ex) {
-                throw new RuntimeException(ex);
+                log.error("error writting hash file to disk for " + req.videoName);
+                System.exit(1);
             }
             FileMetadata fileMeta = new FileMetadata(req.videoName, (int) videoFile.length(), config.pieceSize, config.hashAlg, (int) hashFile.length());
             trigger(new AddOverlay.Request(req.id, req.overlayId, fileMeta), bootstrap);
@@ -150,20 +152,22 @@ public class VoDComp extends ComponentDefinition {
         public void handle(AddOverlay.Response resp) {
             log.trace("{} - {}", new Object[]{config.selfAddress, resp});
 
+            Pair<Pair<String, Integer>, FileMetadata> fileInfo = pendingUploads.remove(resp.id);
+
             if (resp.status == ReqStatus.SUCCESS) {
                 try {
-                    Pair<Pair<String, Integer>, FileMetadata> fileInfo = pendingUploads.remove(resp.id);
                     Pair<FileMngr, HashMngr> videoMngrs = getUploadVideoMngrs(fileInfo.getValue0().getValue0(), fileInfo.getValue1());
                     startVideoComp(resp.overlayId, fileInfo.getValue1(), videoMngrs, false);
                 } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                } catch (HashUtil.HashBuilderException ex) {
-                    throw new RuntimeException(ex);
+                    log.error("error writting to disk for video " + fileInfo.getValue0().getValue0());
+                    System.exit(1);
                 } catch (GVoDConfigException.Missing ex) {
-                    throw new RuntimeException(ex);
+                    log.error("configuration problem in VoDComp " + ex.getMessage());
+                    System.exit(1);
                 }
             } else {
-                throw new RuntimeException();
+                log.error("error in response message of upload video " + fileInfo.getValue0().getValue0());
+                System.exit(1);
             }
         }
     };
@@ -174,41 +178,47 @@ public class VoDComp extends ComponentDefinition {
         public void handle(JoinOverlay.Response resp) {
             log.trace("{} - {}", new Object[]{config.selfAddress, resp});
 
+            Pair<String, Integer> fileInfo = pendingDownloads.remove(resp.id);
+
             if (resp.status == ReqStatus.SUCCESS) {
                 try {
-                    Pair<String, Integer> fileInfo = pendingDownloads.remove(resp.id);
                     Pair<FileMngr, HashMngr> videoMngrs = getDownloadVideoMngrs(fileInfo.getValue0(), resp.fileMeta);
                     startVideoComp(resp.overlayId, resp.fileMeta, videoMngrs, true);
                 } catch (IOException ex) {
-                    throw new RuntimeException(ex);
+                    log.error("error writting to disk for video " + fileInfo.getValue0());
+                    System.exit(1);
                 } catch (HashUtil.HashBuilderException ex) {
-                    throw new RuntimeException(ex);
+                    log.error("error creating hash file for video " + fileInfo.getValue0());
+                    System.exit(1);
                 } catch (GVoDConfigException.Missing ex) {
-                    throw new RuntimeException(ex);
+                    log.error("configuration problem in VoDComp " + ex.getMessage());
+                    System.exit(1);
                 }
             } else {
-                throw new RuntimeException();
+                log.error("error in response message of upload video " + fileInfo.getValue0());
+                System.exit(1);
             }
         }
     };
 
     private void startVideoComp(int overlayId, FileMetadata fileMeta, Pair<FileMngr, HashMngr> hashedFileMngr, boolean download) {
-        int hashSize;
+        int hashSize = 0;
         try {
             hashSize = HashUtil.getHashSize(fileMeta.hashAlg);
         } catch (GVoDConfigException.Missing ex) {
             log.error("{} unknown hash function:{}", config.selfAddress, fileMeta.hashAlg);
-            throw new RuntimeException(ex);
+            System.exit(1);
         }
         log.info("{} - videoName:{} videoFileSize:{}, hashFileSize:{}, hashSize:{}", new Object[]{config.selfAddress, fileMeta.fileName, fileMeta.fileSize, fileMeta.hashFileSize, hashSize});
-        DownloadMngrConfig downloadMngrConfig;
-        ConnMngrConfig connMngrConfig;
+        DownloadMngrConfig downloadMngrConfig = null;
+        ConnMngrConfig connMngrConfig = null;
 
         try {
             downloadMngrConfig = config.getDownloadMngrConfig(overlayId).finalise();
             connMngrConfig = config.getConnMngrConfig(overlayId).finalise();
         } catch (GVoDConfigException.Missing ex) {
-            throw new RuntimeException(ex);
+            log.error("configuration problem in VoDComp " + ex.getMessage());
+            System.exit(1);
         }
 
         Component connMngr = create(ConnMngrComp.class, new ConnMngrComp.ConnMngrInit(connMngrConfig));
@@ -229,7 +239,7 @@ public class VoDComp extends ComponentDefinition {
 
         connect(connMngr.getNegative(UtilityUpdatePort.class), downloadMngr.getPositive(UtilityUpdatePort.class));
         connect(utilityUpdate, downloadMngr.getPositive(UtilityUpdatePort.class));
-        
+
         connect(playMngr.getNegative(Timer.class), timer);
         connect(playMngr.getNegative(DownloadMngrPort.class), downloadMngr.getPositive(DownloadMngrPort.class));
 
@@ -237,11 +247,11 @@ public class VoDComp extends ComponentDefinition {
         trigger(Start.event, connMngr.control());
         trigger(Start.event, downloadMngr.control());
         trigger(Start.event, playMngr.control());
-        
-        trigger(new PlayReady(UUID.randomUUID(), (VideoPlayerComp)playMngr.getComponent()), myPort);
+
+        trigger(new PlayReady(UUID.randomUUID(), (VideoPlayerComp) playMngr.getComponent()), myPort);
     }
 
-    private Pair<FileMngr, HashMngr> getUploadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
+    private Pair<FileMngr, HashMngr> getUploadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, GVoDConfigException.Missing {
 
         String videoName = video.substring(0, video.indexOf("."));
         String videoExt = video.substring(video.indexOf("."));

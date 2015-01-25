@@ -57,6 +57,7 @@ public class ScenarioGen {
             f.mkdir();
             experimentDir = f.getPath();
         } catch (IOException ex) {
+            System.exit(1);
             throw new RuntimeException(ex);
         }
     }
@@ -116,6 +117,7 @@ public class ScenarioGen {
                         writer.close();
                         return new UploadVideoCmd(nodeId, fileNames.get(overlayId), overlayId);
                     } catch (IOException ex) {
+                        System.exit(1);
                         throw new RuntimeException(ex);
                     }
                 }

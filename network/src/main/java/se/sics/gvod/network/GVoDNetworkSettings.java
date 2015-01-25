@@ -138,9 +138,9 @@ public class GVoDNetworkSettings {
             context.multiplexAlias(MsgAliases.GVOD_NET_RESPONSE.toString(), NetJoinOverlay.Response.class, (byte) 0x06);
             context.multiplexAlias(MsgAliases.GVOD_NET_RESPONSE.toString(), NetOverlaySample.Response.class, (byte) 0x07);
         } catch (SerializationContext.DuplicateException ex) {
-            throw new RuntimeException(ex);
+            System.exit(1);
         } catch (SerializationContext.MissingException ex) {
-            throw new RuntimeException(ex);
+            System.exit(1);
         }
 
     }
@@ -178,9 +178,9 @@ public class GVoDNetworkSettings {
             context.registerAlias(OtherAliases.HEADER_FIELD.aliasedClass, OtherAliases.HEADER_FIELD.toString(), (byte) 0x00);
             context.multiplexAlias(OtherAliases.HEADER_FIELD.toString(), OverlayHeaderField.class, (byte) 0x01);
         } catch (SerializationContext.DuplicateException ex) {
-            throw new RuntimeException(ex);
+            System.exit(1);
         } catch (SerializationContext.MissingException ex) {
-            throw new RuntimeException(ex);
+            System.exit(1);
         }
     }
 

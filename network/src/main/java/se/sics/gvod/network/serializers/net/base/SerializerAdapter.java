@@ -57,8 +57,10 @@ public class SerializerAdapter {
                 msg.rewritePublicSource(src);
                 return msg;
             } catch (Serializer.SerializerException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             } catch (SerializationContext.MissingException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             }
         }
@@ -88,8 +90,10 @@ public class SerializerAdapter {
                 msg.rewritePublicSource(src);
                 return msg;
             } catch (Serializer.SerializerException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             } catch (SerializationContext.MissingException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             }
         }
@@ -118,8 +122,10 @@ public class SerializerAdapter {
                 msg.rewritePublicSource(src);
                 return msg;
             } catch (Serializer.SerializerException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             } catch (SerializationContext.MissingException ex) {
+                System.exit(1);
                 throw new RuntimeException(ex);
             }
         }

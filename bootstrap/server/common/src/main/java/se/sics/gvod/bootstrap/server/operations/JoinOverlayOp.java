@@ -65,14 +65,17 @@ public class JoinOverlayOp implements Operation {
                 try {
                     opMngr.finish(getId(), src, req.success(context.getSerializer(FileMetadata.class).decode(context, Unpooled.wrappedBuffer(fileResp.fileMetadata))));
                 } catch (Serializer.SerializerException ex) {
+                    System.exit(1);
                     throw new RuntimeException(ex);
                 } catch (SerializationContext.MissingException ex) {
+                    System.exit(1);
                     throw new RuntimeException(ex);
                 }
             } else {
                 opMngr.finish(getId(), src, req.fail());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

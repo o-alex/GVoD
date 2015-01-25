@@ -263,7 +263,8 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
     @Override
     public void finish(UUID id, PeerManagerMsg.Response resp) {
         if (pendingOps.remove(id) == null) {
-            throw new RuntimeException("pendingOp should not be null");
+            log.error("logic error in handling operations");
+            System.exit(1);
         }
         cleanRequests(id);
         if (resp == null) {
@@ -279,8 +280,12 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
     @Override
     public void sendCaracalReq(UUID opId, Key forwardTo, CaracalOp req) {
         pendingCaracalOps.put(req.id, opId);
-//        Address caracalServer = caracalNodes.get(rand.nextInt(caracalNodes.size()));
-        Address caracalServer = config.caracalServer;
+        Address caracalServer;
+        if (caracalNodes.size() > 0) {
+            caracalServer = caracalNodes.get(rand.nextInt(caracalNodes.size())); //get random caracal node from the samples
+        } else {
+            caracalServer = config.caracalServer;
+        }
         CaracalMsg cmsg = new CaracalMsg(config.self, caracalServer, req);
         log.debug("{} sending:{} to:{}", new Object[]{config.self, req, caracalServer});
         trigger(new ForwardMessage(config.self, caracalServer, forwardTo, cmsg), network);

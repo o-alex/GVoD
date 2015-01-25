@@ -91,7 +91,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         File dir = new File(config.libDir);
         if (!dir.isDirectory()) {
             log.error("library path is invalid");
-            throw new RuntimeException("bad library path");
+            System.exit(1);
         }
 
         FileFilter mp4Filter = new FileFilter() {
@@ -156,7 +156,8 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
+                log.error("threading problem in VoDManagerImpl");
+                System.exit(1);
             }
         } while (!videoPlayers.containsKey(videoName));
         return true;
@@ -205,7 +206,8 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         try {
             JwHttpServer.startOrUpdate(new InetSocketAddress(videoPort), fileName, handler);
         } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            log.error("http server error");
+            System.exit(1);
         }
     }
 
@@ -229,7 +231,8 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
                     ss.close();
                 } catch (IOException e) {
                     /* should not be thrown */
-                    throw new RuntimeException(e);
+                    log.error("error while picking port");
+                    System.exit(1);
                 }
             }
         }
@@ -256,7 +259,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     private Pair<String, Integer> parseUrl(String torrentUrl) {
         String[] parts = torrentUrl.split("/");
         if (parts.length < 3) {
-            throw new RuntimeException("malformed url");
+            System.exit(1);
         }
         String videoName = parts[parts.length - 1];
         Integer videoId = Integer.parseInt(parts[parts.length - 2]);

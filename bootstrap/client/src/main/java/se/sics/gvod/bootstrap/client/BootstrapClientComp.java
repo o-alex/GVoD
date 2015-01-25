@@ -185,7 +185,8 @@ public class BootstrapClientComp extends ComponentDefinition {
             trigger(resp.content, myPort);
             FileMetadata fileMeta = pendingAddOverlay.remove(resp.content.overlayId);
             if (fileMeta == null) {
-                throw new RuntimeException("missing");
+                log.error("fileMeta missing");
+                System.exit(1);
             }
             int downloadPos = fileMeta.fileSize / fileMeta.pieceSize + 1;
             overlaysUtility.put(resp.content.overlayId, downloadPos);
