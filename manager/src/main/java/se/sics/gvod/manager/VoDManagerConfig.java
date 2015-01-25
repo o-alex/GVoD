@@ -27,11 +27,9 @@ import se.sics.gvod.net.VodAddress;
 public class VoDManagerConfig {
     public final String libDir;
     public final VodAddress selfAddress;
-    public final int mediaPort;
     
-    public VoDManagerConfig(VodAddress selfAddress, String libDir, int mediaPort) {
+    public VoDManagerConfig(VodAddress selfAddress, String libDir) {
         this.selfAddress = selfAddress;
         this.libDir = libDir;
-        this.mediaPort = mediaPort;
     }
 }

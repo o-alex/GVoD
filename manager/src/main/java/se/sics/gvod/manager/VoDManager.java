@@ -42,5 +42,5 @@ public interface VoDManager {
     
     public boolean isInitialized();
 
-    public String downloadVideoFromUrl(String torrentUrl);
+//    public String downloadVideoFromUrl(String torrentUrl);
 }

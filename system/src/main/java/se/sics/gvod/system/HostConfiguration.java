@@ -41,8 +41,6 @@ public class HostConfiguration {
     public final VodAddress server;
     public final byte[] seed;
     public final String libDir;
-    public final int controlPort = 58024;
-    public final int mediaPort = 58026;
 
     private HostConfiguration(Config config, VodAddress self, VodAddress server, byte[] seed, String libDir) {
         this.config = config;

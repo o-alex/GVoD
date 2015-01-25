@@ -244,28 +244,28 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         return true;
     }
 
-    @Override
-    public String downloadVideoFromUrl(String torrentUrl) {
-        log.info("received {}", torrentUrl);
-        String videoUrl = "PLAY http://127.0.0.1:" + config.mediaPort + "/?view=";
-        log.info("sending {}", videoUrl);
-
-        Pair<String, Integer> video = parseUrl(torrentUrl);
-        downloadVideo(video.getValue0(), video.getValue1());
-
-        return videoUrl + video.getValue0();
-    }
-
-    private Pair<String, Integer> parseUrl(String torrentUrl) {
-        String[] parts = torrentUrl.split("/");
-        if (parts.length < 3) {
-            System.exit(1);
-        }
-        String videoName = parts[parts.length - 1];
-        Integer videoId = Integer.parseInt(parts[parts.length - 2]);
-        return Pair.with(videoName, videoId);
-
-    }
+//    @Override
+//    public String downloadVideoFromUrl(String torrentUrl) {
+//        log.info("received {}", torrentUrl);
+//        String videoUrl = "PLAY http://127.0.0.1:" + config.mediaPort + "/?view=";
+//        log.info("sending {}", videoUrl);
+//
+//        Pair<String, Integer> video = parseUrl(torrentUrl);
+//        downloadVideo(video.getValue0(), video.getValue1());
+//
+//        return videoUrl + video.getValue0();
+//    }
+//
+//    private Pair<String, Integer> parseUrl(String torrentUrl) {
+//        String[] parts = torrentUrl.split("/");
+//        if (parts.length < 3) {
+//            System.exit(1);
+//        }
+//        String videoName = parts[parts.length - 1];
+//        Integer videoId = Integer.parseInt(parts[parts.length - 2]);
+//        return Pair.with(videoName, videoId);
+//
+//    }
 
     public static class VoDManagerInit extends Init<VoDManagerImpl> {
 
