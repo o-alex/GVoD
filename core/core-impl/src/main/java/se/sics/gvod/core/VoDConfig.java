@@ -36,16 +36,14 @@ public class VoDConfig {
     public final int piecesPerBlock;
     public final String libDir;
     public final String hashAlg;
-    public final int mediaPort;
 
-    private VoDConfig(Config config, VodAddress selfAddress, int piecesPerBlock, int pieceSize, String libDir, String hashAlg, int mediaPort) {
+    private VoDConfig(Config config, VodAddress selfAddress, int piecesPerBlock, int pieceSize, String libDir, String hashAlg) {
         this.config = config;
         this.selfAddress = selfAddress;
         this.pieceSize = pieceSize;
         this.piecesPerBlock = piecesPerBlock;
         this.libDir = libDir;
         this.hashAlg = hashAlg;
-        this.mediaPort = mediaPort;
     }
 
     public DownloadMngrConfig.Builder getDownloadMngrConfig(int overlayId) {
@@ -73,8 +71,7 @@ public class VoDConfig {
                 int pieceSize = config.getInt("vod.video.pieceSize");
                 int piecesPerBlock = config.getInt("vod.video.piecesPerBlock");
                 String hashAlg = config.getString("vod.hashAlg");
-                int mediaPort = config.getInt("vod.video.mediaPort");
-                return new VoDConfig(config, selfAddress, piecesPerBlock, pieceSize, libDir, hashAlg, mediaPort);
+                return new VoDConfig(config, selfAddress, piecesPerBlock, pieceSize, libDir, hashAlg);
             } catch (ConfigException.Missing ex) {
                 throw new GVoDConfigException.Missing(ex);
             }
