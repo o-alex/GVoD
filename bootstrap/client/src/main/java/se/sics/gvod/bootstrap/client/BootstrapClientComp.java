@@ -249,7 +249,7 @@ public class BootstrapClientComp extends ComponentDefinition {
                 return;
             } else {
                 log.error("{} caracal timed out - shutting down", config.self);
-                Kompics.shutdown();
+                System.exit(1);
             }
         }
         

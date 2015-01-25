@@ -127,7 +127,7 @@ public class Launcher extends ComponentDefinition {
             config = configBuilder.setSelfAddress(selfAddress).setSeed(bseed).finalise();
         } catch (GVoDConfigException.Missing ex) {
             log.error(" bad configuration");
-            Kompics.shutdown();
+            System.exit(1);
         }
         //TODO
         //should create and start only on open nodes
@@ -218,8 +218,7 @@ public class Launcher extends ComponentDefinition {
                         + "already running, or that port is being used by a different program. Go"
                         + "to settings to change the port in use. Status: ", resp.getPort(),
                         resp.getStatus());
-                Kompics.shutdown();
-                System.exit(-1);
+                System.exit(1);
             } else {
                 phase3(resp.boundAddress);
             }

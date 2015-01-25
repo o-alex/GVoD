@@ -131,7 +131,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
             schemaData = SchemaData.deserialise(sample.schemaData);
             if (schemaData.getId("gvod.heartbeat") == null || schemaData.getId("gvod.metadata") == null) {
                 log.error("{} caracal sample response does not contain gvod schemas - cannot communicate - shutdown");
-                Kompics.shutdown();
+                System.exit(1);
             }
             log.info("{} schema prefixes - heartbeat:{} metadata:{}", new Object[]{config.self, ByteArrayFormatter.toHexString(schemaData.getId("gvod.heartbeat")), ByteArrayFormatter.toHexString(schemaData.getId("gvod.metadata"))});
             caracalNodes.addAll(sample.nodes);
@@ -149,7 +149,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
         public void handle(CaracalSampleTimeout event) {
             if (sampleTimeout != null) {
                 log.warn("{} caracal unreachable or still booting up - shutting down gvod", config.self);
-                Kompics.shutdown();
+                System.exit(1);
             } else {
                 log.debug("{} late sample timeout", config.self);
             }
@@ -281,11 +281,11 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
     public void sendCaracalReq(UUID opId, Key forwardTo, CaracalOp req) {
         pendingCaracalOps.put(req.id, opId);
         Address caracalServer;
-        if (caracalNodes.size() > 0) {
-            caracalServer = caracalNodes.get(rand.nextInt(caracalNodes.size())); //get random caracal node from the samples
-        } else {
+//        if (caracalNodes.size() > 0) {
+//            caracalServer = caracalNodes.get(rand.nextInt(caracalNodes.size())); //get random caracal node from the samples
+//        } else {
             caracalServer = config.caracalServer;
-        }
+//        }
         CaracalMsg cmsg = new CaracalMsg(config.self, caracalServer, req);
         log.debug("{} sending:{} to:{}", new Object[]{config.self, req, caracalServer});
         trigger(new ForwardMessage(config.self, caracalServer, forwardTo, cmsg), network);
