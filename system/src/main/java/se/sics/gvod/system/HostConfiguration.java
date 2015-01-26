@@ -170,9 +170,11 @@ public class HostConfiguration {
 
         public HostConfiguration finalise() throws GVoDConfigException.Missing {
             try {
-                if(selfAddress == null) {
-                    throw new GVoDConfigException.Missing("self Address");
-                }
+                selfAddress = new Address(
+                        Inet4Address.getByName(config.getString("vod.server.address.ip")),
+                        config.getInt("vod.address.port"),
+                        config.getInt("vod.address.id")
+                );
 
                 Address serverAddress = new Address(
                         Inet4Address.getByName(config.getString("bootstrap.server.address.ip")),
