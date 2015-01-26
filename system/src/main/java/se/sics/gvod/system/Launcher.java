@@ -110,12 +110,8 @@ public class Launcher extends ComponentDefinition {
     private void phase2(InetAddress selfIp) {
         try {
             log.info("phase 2 - ip:{} - binding port:{}", selfIp, configBuilder.getPort());
-            try {
-                selfAddress = new Address(Inet4Address.getByName(configBuilder.getIp()), configBuilder.getPort(), configBuilder.getId());
-            } catch (UnknownHostException ex) {
-                log.error("could not bind to" + selfAddress);
-                System.exit(1);
-            }
+                System.out.println(selfIp);
+                selfAddress = new Address(selfIp, configBuilder.getPort(), configBuilder.getId());
 
             network = create(NettyNetwork.class, new NettyInit(seed, true, GVoDNetFrameDecoder.class));
             connect(network.getNegative(Timer.class), timer.getPositive(Timer.class));
@@ -131,7 +127,7 @@ public class Launcher extends ComponentDefinition {
     private void phase3(Address selfAddress) {
         log.info("phase 3 - starting with Address: {}", selfAddress);
         try {
-            config = configBuilder.setSeed(bseed).finalise();
+            config = configBuilder.setSelfAddress(selfAddress).setSeed(bseed).finalise();
         } catch (GVoDConfigException.Missing ex) {
             log.error(" bad configuration" + ex.getMessage());
             System.exit(1);
@@ -209,7 +205,7 @@ public class Launcher extends ComponentDefinition {
     public Handler<GetIpResponse> handleGetIpResponse = new Handler<GetIpResponse>() {
         @Override
         public void handle(GetIpResponse resp) {
-            phase2(resp.getIpAddress());
+            phase2(resp.getTenDotIpAddress(1));
             BootstrapPortBind.Request pb1 = new BootstrapPortBind.Request(selfAddress, Transport.UDP);
             pb1.setResponse(new BootstrapPortBind.Response(pb1));
             trigger(pb1, network.getPositive(NatNetworkControl.class));
