@@ -133,7 +133,7 @@ public class Launcher extends ComponentDefinition {
         try {
             config = configBuilder.setSeed(bseed).finalise();
         } catch (GVoDConfigException.Missing ex) {
-            log.error(" bad configuration");
+            log.error(" bad configuration" + ex.getMessage());
             System.exit(1);
         }
         //TODO
