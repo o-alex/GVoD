@@ -151,10 +151,17 @@ public class HostConfiguration {
             }
         }
         
-        public ExecBuilder setSelfAddress(Address selfAddress) {
-            this.selfAddress = selfAddress;
-            return this;
+        public String getIp() throws GVoDConfigException.Missing {
+            try {
+             return config.getString("bootstrap.server.address.ip");
+            } catch(ConfigException.Missing ex) {
+                throw new GVoDConfigException.Missing(ex);
+            }
         }
+//        public ExecBuilder setSelfAddress(Address selfAddress) {
+//            this.selfAddress = selfAddress;
+//            return this;
+//        }
 
         public ExecBuilder setSeed(byte[] seed) {
             this.seed = seed;

@@ -18,7 +18,9 @@
  */
 package se.sics.gvod.system;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,7 +110,12 @@ public class Launcher extends ComponentDefinition {
     private void phase2(InetAddress selfIp) {
         try {
             log.info("phase 2 - ip:{} - binding port:{}", selfIp, configBuilder.getPort());
-            selfAddress = new Address(selfIp, configBuilder.getPort(), configBuilder.getId());
+            try {
+                selfAddress = new Address(Inet4Address.getByName(configBuilder.getIp()), configBuilder.getPort(), configBuilder.getId());
+            } catch (UnknownHostException ex) {
+                log.error("could not bind to" + selfAddress);
+                System.exit(1);
+            }
 
             network = create(NettyNetwork.class, new NettyInit(seed, true, GVoDNetFrameDecoder.class));
             connect(network.getNegative(Timer.class), timer.getPositive(Timer.class));
@@ -124,7 +131,7 @@ public class Launcher extends ComponentDefinition {
     private void phase3(Address selfAddress) {
         log.info("phase 3 - starting with Address: {}", selfAddress);
         try {
-            config = configBuilder.setSelfAddress(selfAddress).setSeed(bseed).finalise();
+            config = configBuilder.setSeed(bseed).finalise();
         } catch (GVoDConfigException.Missing ex) {
             log.error(" bad configuration");
             System.exit(1);
