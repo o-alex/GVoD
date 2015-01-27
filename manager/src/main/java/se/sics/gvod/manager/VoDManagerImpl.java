@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.common.utility.UtilityUpdatePort;
@@ -62,14 +61,13 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
     private final Map<String, FileStatus> videos;
     private final Map<String, VideoPlayer> videoPlayers;
-//    private final Map<String, Integer> videoPorts;
     private Integer videoPort = null;
+    private InetSocketAddress httpAddr;
 
     public VoDManagerImpl(VoDManagerInit init) {
         this.config = init.config;
         this.videos = new ConcurrentHashMap<String, FileStatus>();
         this.videoPlayers = new ConcurrentHashMap<String, VideoPlayer>();
-//        this.videoPorts = new ConcurrentHashMap<String, Integer>();
         reloadLibrary();
 
         subscribe(handlePlayReady, vodPort);
@@ -135,7 +133,6 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         FileStatus videoStatus = videos.get(videoName);
         if (videoStatus == null || !videoStatus.equals(FileStatus.PENDING)) {
             log.warn("{} video not pending upload - cannot initiate upload", new Object[]{config.selfAddress, videoName, config.libDir});
-//            videos.put(videoName, FileStatus.NONE);
             return false;
         }
         log.info("{} video {} found - uploading", config.selfAddress, videoName);
@@ -173,14 +170,14 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
             log.info("setting up player for video:{}", videoName);
         }
 
-//        Integer mediaPort = videoPorts.get(videoName);
         if (videoPort == null) {
             do {
                 videoPort = tryPort(10000 + rand.nextInt(40000));
             } while (videoPort == -1);
-            setupPlayerHttpConnection(videoPlayer, videoName);
-//            videoPorts.put(videoName, mediaPort);
         }
+        httpAddr = new InetSocketAddress(videoPort);
+        setupPlayerHttpConnection(videoPlayer, videoName);
+
         return videoPort;
     }
 
@@ -204,7 +201,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         String fileName = "/" + videoName + "/";
         BaseHandler handler = new Mp4Handler(playMngr);
         try {
-            JwHttpServer.startOrUpdate(new InetSocketAddress(videoPort), fileName, handler);
+            JwHttpServer.startOrUpdate(httpAddr, fileName, handler);
         } catch (IOException ex) {
             log.error("http server error");
             System.exit(1);
@@ -243,29 +240,6 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     public boolean isInitialized() {
         return true;
     }
-
-//    @Override
-//    public String downloadVideoFromUrl(String torrentUrl) {
-//        log.info("received {}", torrentUrl);
-//        String videoUrl = "PLAY http://127.0.0.1:" + config.mediaPort + "/?view=";
-//        log.info("sending {}", videoUrl);
-//
-//        Pair<String, Integer> video = parseUrl(torrentUrl);
-//        downloadVideo(video.getValue0(), video.getValue1());
-//
-//        return videoUrl + video.getValue0();
-//    }
-//
-//    private Pair<String, Integer> parseUrl(String torrentUrl) {
-//        String[] parts = torrentUrl.split("/");
-//        if (parts.length < 3) {
-//            System.exit(1);
-//        }
-//        String videoName = parts[parts.length - 1];
-//        Integer videoId = Integer.parseInt(parts[parts.length - 2]);
-//        return Pair.with(videoName, videoId);
-//
-//    }
 
     public static class VoDManagerInit extends Init<VoDManagerImpl> {
 
