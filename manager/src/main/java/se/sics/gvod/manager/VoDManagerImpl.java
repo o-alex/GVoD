@@ -25,8 +25,10 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +63,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
     private final Map<String, FileStatus> videos;
     private final Map<String, VideoPlayer> videoPlayers;
+    private final Set<String> videoPaths;
     private Integer videoPort = null;
     private InetSocketAddress httpAddr;
 
@@ -68,6 +71,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         this.config = init.config;
         this.videos = new ConcurrentHashMap<String, FileStatus>();
         this.videoPlayers = new ConcurrentHashMap<String, VideoPlayer>();
+        this.videoPaths = new HashSet<String>();
         reloadLibrary();
 
         subscribe(handlePlayReady, vodPort);
@@ -138,15 +142,27 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         log.info("{} video {} found - uploading", config.selfAddress, videoName);
         videos.put(videoName, FileStatus.UPLOADING);
         trigger(new UploadVideo.Request(videoName, overlayId), vodPort);
+        do {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException ex) {
+                log.error("threading problem in VoDManagerImpl");
+                System.exit(1);
+            }
+        } while (!videoPlayers.containsKey(videoName));
         return true;
     }
 
     @Override
     public boolean downloadVideo(String videoName, int overlayId) {
         FileStatus videoStatus = videos.get(videoName);
-        if (videoStatus != null) {
+        if (videoStatus == FileStatus.DOWNLOADING || videoStatus == FileStatus.UPLOADING) {
+            return true;
+        }
+        if (videoStatus == FileStatus.PENDING) {
             return false;
         }
+        log.info("{} video {} downloading", config.selfAddress, videoName);
         videos.put(videoName, FileStatus.DOWNLOADING);
         trigger(new DownloadVideo.Request(videoName, overlayId), vodPort);
         do {
@@ -161,20 +177,30 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     }
 
     @Override
-    public Integer playVideo(String videoName) {
-        VideoPlayer videoPlayer = videoPlayers.get(videoName);
-        if (videoPlayer == null) {
-            log.info("player for video:{} is not ready yet", videoName);
-            return null;
-        } else {
-            log.info("setting up player for video:{}", videoName);
-        }
-
+    public Integer playVideo(String videoName, int overlayId) {
         if (videoPort == null) {
             do {
                 videoPort = tryPort(10000 + rand.nextInt(40000));
             } while (videoPort == -1);
         }
+        
+        if (!videos.containsKey(videoName)) {
+            if (!downloadVideo(videoName, overlayId)) {
+                return null;
+            }
+        }
+        
+        VideoPlayer videoPlayer = videoPlayers.get(videoName);
+        if (videoPlayer == null) {
+            log.error("logic error on video manager - video player");
+            System.exit(1);
+        }
+
+        if(videoPaths.contains(videoName)) {
+            return videoPort;
+        }
+        
+        log.info("setting up player for video:{}", videoName);
         httpAddr = new InetSocketAddress(videoPort);
         setupPlayerHttpConnection(videoPlayer, videoName);
 

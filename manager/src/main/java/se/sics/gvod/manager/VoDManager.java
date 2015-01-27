@@ -36,7 +36,7 @@ public interface VoDManager {
 
     public boolean downloadVideo(String videoName, int overlayId);
     
-    public Integer playVideo(String videoName);
+    public Integer playVideo(String videoName, int overlayId);
     
     public void stopVideo(String videoName);
     

@@ -18,11 +18,8 @@
  */
 package se.sics.gvod.system;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.List;
-import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
@@ -46,7 +43,6 @@ import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
-import se.sics.kompics.Kompics;
 import se.sics.kompics.Start;
 import se.sics.kompics.nat.utils.getip.IpAddrStatus;
 import se.sics.kompics.nat.utils.getip.ResolveIp;
@@ -226,7 +222,7 @@ public class Launcher extends ComponentDefinition {
                         log.error("threading problem in launcher");
                         System.exit(1);
                     }
-                    videoPort = vodManager.playVideo(firstCmd.fileName);
+                    videoPort = vodManager.playVideo(firstCmd.fileName, firstCmd.overlayId);
                 } while (videoPort == null);
                 log.info("can play video:{} on port:{}", firstCmd.fileName, videoPort);
             } else {
