@@ -178,6 +178,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
     @Override
     public Integer playVideo(String videoName, int overlayId) {
+        log.info("received play");
         if (videoPort == null) {
             do {
                 videoPort = tryPort(10000 + rand.nextInt(40000));
@@ -197,18 +198,22 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         }
 
         if(videoPaths.contains(videoName)) {
+            log.info("return play");
             return videoPort;
         }
         
         log.info("setting up player for video:{}", videoName);
         httpAddr = new InetSocketAddress(videoPort);
         setupPlayerHttpConnection(videoPlayer, videoName);
-
+        videoPaths.add(videoName);
+        
+        log.info("return play");
         return videoPort;
     }
 
     @Override
     public void stopVideo(String videoName) {
+        log.info("received stop");
         VideoPlayer videoPlayer = videoPlayers.get(videoName);
         if (videoPlayer == null) {
             log.info("player for video:{} is not ready yet - weird stop message", videoName);
