@@ -65,6 +65,8 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
         @Override
         public void handle(Start e) {
             log.info("{} starting...", config.overlayId);
+            subscribe(handleTryRead, timer);
+            subscribe(handleReadResponse, videoStore);
         }
     };
 
@@ -151,8 +153,8 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
             this.playPos = readPos;
             this.responseBody = responseBody;
 
-            subscribe(handleTryRead, timer);
-            subscribe(handleReadResponse, videoStore);
+//            subscribe(handleTryRead, timer);
+//            subscribe(handleReadResponse, videoStore);
 
             scheduleTryRead(1);
         }
@@ -166,8 +168,8 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
                 return;
             }
             log.info("{} stop", config.overlayId);
-            unsubscribe(handleTryRead, timer);
-            unsubscribe(handleReadResponse, videoStore);
+//            unsubscribe(handleTryRead, timer);
+//            unsubscribe(handleReadResponse, videoStore);
             playPos = -1;
         }
     }
