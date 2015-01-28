@@ -94,6 +94,7 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
                 }
                 if (resp.status.equals(ReqStatus.SUCCESS)) {
                     try {
+                        log.debug("{} sending data from:{} size:{}", new Object[]{config.overlayId, playPos, resp.block.length});
                         responseBody.write(resp.block);
                         responseBody.flush();
                     } catch (IOException ex) {
