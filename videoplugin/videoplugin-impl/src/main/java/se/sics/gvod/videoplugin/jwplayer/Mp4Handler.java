@@ -153,7 +153,7 @@ public class Mp4Handler extends BaseHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String requestMethod = exchange.getRequestMethod();
-
+        System.out.println("!!!!");
         processing.set(true);
 
         DataOutputStream dataOut = null;
@@ -281,7 +281,6 @@ public class Mp4Handler extends BaseHandler {
 
 //GVOD writes the video to the responseBody when the video is playable
 //, i.e., we have sufficient prebuffer and the download speed is above the content's bitrate.
-
                 playMngr.play(mDatOffset, responseBody);
             }
         } catch (IOException ex) {

@@ -27,6 +27,7 @@ import java.io.OutputStream;
 public interface VideoPlayer {
     public long getLength();
     public void stop();
+    public void play();
     public String getVideoName();
     public void play(long readPos, OutputStream responseBody);
 }

@@ -21,6 +21,7 @@ package se.sics.gvod.videoplugin;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.UUID;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.common.msg.ReqStatus;
@@ -49,9 +50,11 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
     private VideoPlayerConfig config;
     private TimeoutId nextReadTId;
     private OutputStream responseBody;
+    private UUID responseId;
 
     private boolean writeHeader;
     private long playPos;
+    private Object lock = new Object();
 
     public VideoPlayerComp(VideoPlayerInit init) {
         this.config = init.config;
@@ -74,8 +77,9 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
         @Override
         public void handle(VideoPlayerTimeout.TryRead timeout) {
-            synchronized (config) {
+            synchronized (lock) {
                 if (playPos == -1) {
+                    log.debug("late timeout");
                     return;
                 }
                 log.debug("{} timeout {}", config.overlayId, timeout.getTimeoutId());
@@ -88,8 +92,12 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
         @Override
         public void handle(Data.DResponse resp) {
-            synchronized (config) {
-                if (playPos == -1) {
+            synchronized (lock) {
+                if (playPos == -1 || responseBody == null) {
+                    return;
+                }
+                if (responseId == null || !resp.id.equals(responseId)) {
+                    log.debug("late response");
                     return;
                 }
                 if (resp.status.equals(ReqStatus.SUCCESS)) {
@@ -97,10 +105,14 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
                         log.debug("{} sending data from:{} size:{}", new Object[]{config.overlayId, playPos, resp.block.length});
                         responseBody.write(resp.block);
                         responseBody.flush();
+                        log.debug("sent");
                     } catch (IOException ex) {
                         log.warn("{} player seems to have died... reseting connection", config.overlayId);
                         playPos = -1;
                         responseBody = null;
+                        return;
+                    } catch (RuntimeException ex) {
+                        log.error(ex.getMessage());
                         return;
                     }
 
@@ -108,8 +120,13 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
                     if (playPos == config.videoLength) {
                         log.info("{} video ended");
                         playPos = -1;
+                        try {
+                            responseBody.close();
+                        } catch (IOException ex) {
+                            log.error(ex.getMessage());
+                        }
                     } else {
-                        tryNextPiece();
+                        scheduleTryRead(1 / 10);
                     }
                 } else {
                     scheduleTryRead(1);
@@ -120,7 +137,8 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
     private void tryNextPiece() {
         log.debug("{} requesting data from:{}", config.overlayId, playPos);
-        trigger(new Data.DRequest(UUID.randomUUID(), config.overlayId, playPos, config.readBlockSize), videoStore);
+        responseId = UUID.randomUUID();
+        trigger(new Data.DRequest(responseId, config.overlayId, playPos, config.readBlockSize), videoStore);
     }
 
     private void scheduleTryRead(float fractionPeriod) {
@@ -144,8 +162,26 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
     }
 
     @Override
+    public void play() {
+        log.debug("play waiting");
+        synchronized (lock) {
+            if (playPos != -1) {
+                log.info("{} already playing video", config.overlayId);
+                return;
+            }
+            log.info("{} play at {}", config.overlayId, 0);
+            this.playPos = 0;
+
+//            subscribe(handleTryRead, timer);
+//            subscribe(handleReadResponse, videoStore);
+            scheduleTryRead(1 / 10);
+        }
+    }
+
+    @Override
     public void play(long readPos, OutputStream responseBody) {
-        synchronized (config) {
+        log.debug("play waiting");
+        synchronized (lock) {
             if (playPos != -1) {
                 log.info("{} already playing video", config.overlayId);
                 return;
@@ -156,14 +192,14 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 
 //            subscribe(handleTryRead, timer);
 //            subscribe(handleReadResponse, videoStore);
-
-            scheduleTryRead(1);
+            scheduleTryRead(1 / 10);
         }
     }
 
     @Override
     public void stop() {
-        synchronized (config) {
+        log.info("stop waiting");
+        synchronized (lock) {
             if (playPos == -1) {
                 log.info("{} already stopped", config.overlayId);
                 return;
@@ -172,6 +208,8 @@ public class VideoPlayerComp extends ComponentDefinition implements VideoPlayer 
 //            unsubscribe(handleTryRead, timer);
 //            unsubscribe(handleReadResponse, videoStore);
             playPos = -1;
+            responseId = null;
+
         }
     }
 

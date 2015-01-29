@@ -184,29 +184,30 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
                 videoPort = tryPort(10000 + rand.nextInt(40000));
             } while (videoPort == -1);
         }
-        
+
         if (!videos.containsKey(videoName)) {
             if (!downloadVideo(videoName, overlayId)) {
                 return null;
             }
         }
-        
+
         VideoPlayer videoPlayer = videoPlayers.get(videoName);
         if (videoPlayer == null) {
             log.error("logic error on video manager - video player");
             System.exit(1);
         }
 
-        if(videoPaths.contains(videoName)) {
+        if (videoPaths.contains(videoName)) {
             log.info("return play");
+//            videoPlayer.play();
             return videoPort;
         }
-        
+
         log.info("setting up player for video:{}", videoName);
         httpAddr = new InetSocketAddress(videoPort);
         setupPlayerHttpConnection(videoPlayer, videoName);
         videoPaths.add(videoName);
-        
+
         log.info("return play");
         return videoPort;
     }
@@ -221,6 +222,13 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         } else {
             log.info("stopping play for video:{}", videoName);
             videoPlayer.stop();
+//            videoPaths.remove(videoName);
+//            if (videoPaths.contains(videoName)) {
+//                String fileName = "/" + videoName + "/";
+//                JwHttpServer.removeContext(videoName);
+//                videoPaths.remove(videoName);
+//            }
+            log.info("return stop");
             //TODO Alex close player http server in order not to keep ports used.
             return;
         }

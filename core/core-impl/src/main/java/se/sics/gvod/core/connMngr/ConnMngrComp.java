@@ -137,7 +137,7 @@ public class ConnMngrComp extends ComponentDefinition {
                     CancelTimeout ct = new CancelTimeout(connUpdateTId);
                     trigger(ct, timer);
 
-                    pendingDownloadingData = null;
+                    pendingDownloadingData = new HashMap<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>>();
                 }
                 selfDesc = new LocalVodDescriptor(new VodDescriptor(event.downloadPos), event.downloading);
             }

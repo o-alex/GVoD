@@ -467,8 +467,8 @@ public class DownloadMngrComp extends ComponentDefinition {
         //cancel timeouts
         cancelSpeedUp();
         cancelUpdateSelf();
-        unsubscribe(handleUpdateSelf, timer);
-        unsubscribe(handleDownloadSpeedUp, timer);
+//        unsubscribe(handleUpdateSelf, timer);
+//        unsubscribe(handleDownloadSpeedUp, timer);
 
         downloading = false;
         log.info("{} {} finished download", config.getSelf(), config.overlayId);
