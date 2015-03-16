@@ -38,10 +38,6 @@ import se.sics.gvod.common.utility.UtilityUpdate;
 import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.core.downloadMngr.msg.ScheduledSpeedUp;
 import se.sics.gvod.core.downloadMngr.msg.ScheduledUtilityUpdate;
-import se.sics.gvod.core.store.storageMngr.BlockMngr;
-import se.sics.gvod.core.store.storageMngr.FileMngr;
-import se.sics.gvod.core.store.storageMngr.HashMngr;
-import se.sics.gvod.core.store.storageMngr.StorageMngrFactory;
 import se.sics.gvod.timer.CancelPeriodicTimeout;
 import se.sics.gvod.timer.CancelTimeout;
 import se.sics.gvod.timer.SchedulePeriodicTimeout;
@@ -55,6 +51,10 @@ import se.sics.kompics.Init;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
+import se.sics.p2ptoolbox.util.managedStore.BlockMngr;
+import se.sics.p2ptoolbox.util.managedStore.FileMngr;
+import se.sics.p2ptoolbox.util.managedStore.HashMngr;
+import se.sics.p2ptoolbox.util.managedStore.StorageMngrFactory;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>

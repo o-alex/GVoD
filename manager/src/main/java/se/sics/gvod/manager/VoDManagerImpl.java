@@ -38,14 +38,14 @@ import se.sics.gvod.core.VoDPort;
 import se.sics.gvod.core.msg.DownloadVideo;
 import se.sics.gvod.core.msg.PlayReady;
 import se.sics.gvod.core.msg.UploadVideo;
-import se.sics.gvod.videoplugin.VideoPlayer;
-import se.sics.gvod.videoplugin.jwplayer.BaseHandler;
-import se.sics.gvod.videoplugin.jwplayer.JwHttpServer;
-import se.sics.gvod.videoplugin.jwplayer.Mp4Handler;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
 import se.sics.kompics.Positive;
+import se.sics.p2ptoolbox.videostream.VideoStreamManager;
+import se.sics.p2ptoolbox.videostream.http.BaseHandler;
+import se.sics.p2ptoolbox.videostream.http.JwHttpServer;
+import se.sics.p2ptoolbox.videostream.http.RangeCapableMp4Handler;
 
 /**
  *
@@ -62,7 +62,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     private final Random rand = new Random();
 
     private final Map<String, FileStatus> videos;
-    private final Map<String, VideoPlayer> videoPlayers;
+    private final Map<String, VideoStreamManager> vsMngrs;
     private final Set<String> videoPaths;
     private Integer videoPort = null;
     private InetSocketAddress httpAddr;
@@ -70,7 +70,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     public VoDManagerImpl(VoDManagerInit init) {
         this.config = init.config;
         this.videos = new ConcurrentHashMap<String, FileStatus>();
-        this.videoPlayers = new ConcurrentHashMap<String, VideoPlayer>();
+        this.vsMngrs = new ConcurrentHashMap<String, VideoStreamManager>();
         this.videoPaths = new HashSet<String>();
         reloadLibrary();
 
@@ -81,8 +81,8 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
         @Override
         public void handle(PlayReady event) {
-            log.info("video:{} ready to play", event.videoPlayer.getVideoName());
-            videoPlayers.put(event.videoPlayer.getVideoName(), event.videoPlayer);
+            log.info("video:{} ready to play", event.videoName);
+            vsMngrs.put(event.videoName, event.vsMngr);
         }
     };
 
@@ -149,7 +149,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
                 log.error("threading problem in VoDManagerImpl");
                 System.exit(1);
             }
-        } while (!videoPlayers.containsKey(videoName));
+        } while (!vsMngrs.containsKey(videoName));
         return true;
     }
 
@@ -172,7 +172,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
                 log.error("threading problem in VoDManagerImpl");
                 System.exit(1);
             }
-        } while (!videoPlayers.containsKey(videoName));
+        } while (!vsMngrs.containsKey(videoName));
         return true;
     }
 
@@ -191,7 +191,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
             }
         }
 
-        VideoPlayer videoPlayer = videoPlayers.get(videoName);
+        VideoStreamManager videoPlayer = vsMngrs.get(videoName);
         if (videoPlayer == null) {
             log.error("logic error on video manager - video player");
             System.exit(1);
@@ -215,30 +215,22 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     @Override
     public void stopVideo(String videoName) {
         log.info("received stop");
-        VideoPlayer videoPlayer = videoPlayers.get(videoName);
-        if (videoPlayer == null) {
+        VideoStreamManager vsMngr = vsMngrs.get(videoName);
+        if (vsMngr == null) {
             log.info("player for video:{} is not ready yet - weird stop message", videoName);
             return;
         } else {
             log.info("stopping play for video:{}", videoName);
-            videoPlayer.stop();
-//            videoPaths.remove(videoName);
-//            if (videoPaths.contains(videoName)) {
-//                String fileName = "/" + videoName + "/";
-//                JwHttpServer.removeContext(videoName);
-//                videoPaths.remove(videoName);
-//            }
+            vsMngr.stop();
             log.info("return stop");
-            //TODO Alex close player http server in order not to keep ports used.
             return;
         }
     }
 
-    private void setupPlayerHttpConnection(VideoPlayer playMngr, String videoName) {
-        String httpPath = "http://127.0.0.1:" + videoPort + "/" + videoName + "/" + videoName;
-        log.info("{} starting player http connection {}", new Object[]{config.selfAddress, httpPath});
+    private void setupPlayerHttpConnection(VideoStreamManager vsMngr, String videoName) {
+        log.info("{} starting player http connection http://127.0.0.1:{}/{}/{}", new Object[]{config.selfAddress, videoPort, videoName, videoName});
         String fileName = "/" + videoName + "/";
-        BaseHandler handler = new Mp4Handler(playMngr);
+        BaseHandler handler = new RangeCapableMp4Handler(vsMngr);
         try {
             JwHttpServer.startOrUpdate(httpAddr, fileName, handler);
         } catch (IOException ex) {

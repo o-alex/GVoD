@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import org.javatuples.Pair;
-import org.javatuples.Quartet;
+import org.javatuples.Triplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
@@ -45,21 +45,21 @@ import se.sics.gvod.core.downloadMngr.DownloadMngrComp;
 import se.sics.gvod.core.downloadMngr.DownloadMngrConfig;
 import se.sics.gvod.core.connMngr.ConnMngrConfig;
 import se.sics.gvod.core.connMngr.ConnMngrPort;
-import se.sics.gvod.core.downloadMngr.DownloadMngrPort;
 import se.sics.gvod.core.msg.DownloadVideo;
 import se.sics.gvod.core.msg.PlayReady;
 import se.sics.gvod.core.msg.UploadVideo;
-import se.sics.gvod.core.store.storageMngr.FileMngr;
-import se.sics.gvod.core.store.storageMngr.HashMngr;
-import se.sics.gvod.core.store.storageMngr.StorageMngrFactory;
 import se.sics.gvod.timer.Timer;
-import se.sics.gvod.videoplugin.VideoPlayerComp;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
+import se.sics.p2ptoolbox.util.managedStore.FileMngr;
+import se.sics.p2ptoolbox.util.managedStore.HashMngr;
+import se.sics.p2ptoolbox.util.managedStore.StorageMngrFactory;
+import se.sics.p2ptoolbox.videostream.VideoStreamManager;
+import se.sics.p2ptoolbox.videostream.VideoStreamMngrImpl;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -80,7 +80,7 @@ public class VoDComp extends ComponentDefinition {
 
     private final VoDConfig config;
 
-    private final Map<Integer, Quartet<Component, Component, Component, Component>> videoComps;
+    private final Map<Integer, Triplet<Component, Component, Component>> videoComps;
 
     private final Map<UUID, Pair<Pair<String, Integer>, FileMetadata>> pendingUploads;
     private final Map<UUID, Pair<String, Integer>> pendingDownloads;
@@ -88,7 +88,7 @@ public class VoDComp extends ComponentDefinition {
     public VoDComp(VoDInit init) {
         this.config = init.config;
         log.info("{} lib folder: {}", config.selfAddress, config.libDir);
-        this.videoComps = new HashMap<Integer, Quartet<Component, Component, Component, Component>>();
+        this.videoComps = new HashMap<Integer, Triplet<Component, Component, Component>>();
         this.pendingDownloads = new HashMap<UUID, Pair<String, Integer>>();
         this.pendingUploads = new HashMap<UUID, Pair<Pair<String, Integer>, FileMetadata>>();
 
@@ -224,8 +224,7 @@ public class VoDComp extends ComponentDefinition {
         Component connMngr = create(ConnMngrComp.class, new ConnMngrComp.ConnMngrInit(connMngrConfig));
         Component downloadMngr = create(DownloadMngrComp.class, new DownloadMngrComp.DownloadMngrInit(downloadMngrConfig, hashedFileMngr.getValue0(), hashedFileMngr.getValue1(), download));
         Component croupier = create(CroupierComp.class, new CroupierComp.CroupierInit(overlayId, config.selfAddress));
-        Component playMngr = create(VideoPlayerComp.class, new VideoPlayerComp.VideoPlayerInit(new VideoPlayerComp.VideoPlayerConfig(fileMeta.fileName, overlayId, fileMeta.fileSize, 1000, 1024 * 1024)));
-        videoComps.put(overlayId, Quartet.with(connMngr, downloadMngr, croupier, playMngr));
+        videoComps.put(overlayId, Triplet.with(connMngr, downloadMngr, croupier));
 
         connect(croupier.getNegative(Timer.class), timer);
         connect(croupier.getNegative(BootstrapClientPort.class), bootstrap);
@@ -240,15 +239,19 @@ public class VoDComp extends ComponentDefinition {
         connect(connMngr.getNegative(UtilityUpdatePort.class), downloadMngr.getPositive(UtilityUpdatePort.class));
         connect(utilityUpdate, downloadMngr.getPositive(UtilityUpdatePort.class));
 
-        connect(playMngr.getNegative(Timer.class), timer);
-        connect(playMngr.getNegative(DownloadMngrPort.class), downloadMngr.getPositive(DownloadMngrPort.class));
 
         trigger(Start.event, croupier.control());
         trigger(Start.event, connMngr.control());
         trigger(Start.event, downloadMngr.control());
-        trigger(Start.event, playMngr.control());
 
-        trigger(new PlayReady(UUID.randomUUID(), (VideoPlayerComp) playMngr.getComponent()), myPort);
+        VideoStreamManager vsMngr = null;
+        try {
+            vsMngr = new VideoStreamMngrImpl(hashedFileMngr.getValue0(), fileMeta.pieceSize, (long)fileMeta.fileSize);
+        } catch (IOException ex) {
+            log.error("IOException trying to read video:{} \n {}", fileMeta.fileName, ex.getStackTrace());
+            System.exit(1);
+        }
+        trigger(new PlayReady(UUID.randomUUID(), fileMeta.fileName, overlayId, vsMngr), myPort);
     }
 
     private Pair<FileMngr, HashMngr> getUploadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, GVoDConfigException.Missing {

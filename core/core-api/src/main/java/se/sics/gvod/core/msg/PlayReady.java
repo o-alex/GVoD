@@ -21,22 +21,26 @@ package se.sics.gvod.core.msg;
 
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.videoplugin.VideoPlayer;
+import se.sics.p2ptoolbox.videostream.VideoStreamManager;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class PlayReady extends GvodMsg.OneWay {
-    public final VideoPlayer videoPlayer;
+    public final String videoName;
+    public final int overlayId;
+    public final VideoStreamManager vsMngr;
     
-    public PlayReady(UUID id, VideoPlayer videoPlayer) {
+    public PlayReady(UUID id, String videoName, int overlayId, VideoStreamManager vsMngr) {
         super(id);
-        this.videoPlayer = videoPlayer;
+        this.videoName = videoName;
+        this.overlayId = overlayId;
+        this.vsMngr = vsMngr;
     }
     
     @Override
     public PlayReady copy() {
-        return new PlayReady(id, videoPlayer);
+        return new PlayReady(id, videoName, overlayId, vsMngr);
     }
     
 }

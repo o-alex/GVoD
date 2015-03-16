@@ -32,9 +32,14 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>se.sics.gvod</groupId>
-            <artifactId>videoplugin-impl</artifactId>
-            <version>${project.version}</version>
+            <groupId>se.sics.p2ptoolbox.util</groupId>
+            <artifactId>util</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>se.sics.p2ptoolbox.videostream</groupId>
+            <artifactId>core</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
           
         <dependency>

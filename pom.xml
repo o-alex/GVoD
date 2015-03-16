@@ -15,7 +15,6 @@
         <module>network</module>
     <module>croupier-fake</module>
     <module>core</module>
-    <module>videoplugin</module>
   </modules>
     
     <properties>
