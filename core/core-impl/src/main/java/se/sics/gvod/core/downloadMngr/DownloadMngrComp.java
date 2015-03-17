@@ -194,7 +194,7 @@ public class DownloadMngrComp extends ComponentDefinition {
 
             switch (resp.status) {
                 case SUCCESS:
-                    log.debug("{} received hashes:{} missing hashes:{}", new Object[]{config.getSelf(), resp.hashes.keySet(), resp.missingHashes});
+                    log.info("{} received hashes:{} missing hashes:{}", new Object[]{config.getSelf(), resp.hashes.keySet(), resp.missingHashes});
 
                     for (Map.Entry<Integer, byte[]> hash : resp.hashes.entrySet()) {
                         hashMngr.writeHash(hash.getKey(), hash.getValue());
@@ -215,6 +215,7 @@ public class DownloadMngrComp extends ComponentDefinition {
                     log.debug("{} download slow down");
                     pendingPieces.removeAll(resp.missingHashes);
                     nextPieces.addAll(0, resp.missingHashes);
+                    activeSlots--;
                     cancelSpeedUp();
                     scheduleSpeedUp(10);
                     return;
@@ -332,11 +333,14 @@ public class DownloadMngrComp extends ComponentDefinition {
                 log.debug("{} late timeout {}", config.getSelf(), speedUpTId);
                 return;
             }
-            if(playPos.get() == -1) {
-                return;
+            int speedup = activeSlots / 10;
+            for (int i = 0; i < speedup; i++) {
+                activeSlots++;
+                if (!download()) {
+                    break;
+                }
             }
-            activeSlots++;
-            download();
+
             scheduleSpeedUp(1);
         }
 
@@ -349,7 +353,8 @@ public class DownloadMngrComp extends ComponentDefinition {
             log.trace("{} handle {}", config.getSelf(), event);
             log.info("{} {} internal state check: hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}, pendingBlocks:{}",
                     new Object[]{config.getSelf(), config.overlayId, hashMngr.isComplete(0), fileMngr.isComplete(0), pendingPieces.size(), nextPieces.size(), pendingHashes.size(), nextHashes.size(), queuedBlocks.size()});
-
+            log.info("active slots:{}, usedSlots:{}", new Object[]{activeSlots, pendingHashes.size() + pendingPieces.size()});
+            log.info("waiting hashes:{} pieces{}", nextHashes.size(), nextPieces.size());
             int playPieceNr = playPos.get();
             playPieceNr = (playPieceNr == -1 ? 0 : playPieceNr);
             int playBlockNr = pieceIdToBlockNrPieceNr(playPieceNr).getValue0();
@@ -366,23 +371,25 @@ public class DownloadMngrComp extends ComponentDefinition {
         int currentPlayPiece = playPos.get();
         log.debug("requested play position:{}, active slots:{}, usedSlots:{}", new Object[]{currentPlayPiece, activeSlots, pendingHashes.size() + pendingPieces.size()});
         if (nextHashes.isEmpty() && nextPieces.isEmpty()) {
-            if(currentPlayPiece == -1) {
-                currentPlayPiece = 0;
-            }
-            if(fileMngr.isComplete(currentPlayPiece)) {
-                if(activeSlots > config.startPieces / 5 + 1) {
-                    activeSlots--;
-                    return true;
-                }
-                currentPlayPiece = 0;
-                playPos.set(-1);
-            }
+//            if s
+//            if (fileMngr.isComplete(currentPlayPiece)) {
+//                if (activeSlots > config.startPieces / 5 + 1) {
+//                    cancelSpeedUp();
+//                    scheduleSpeedUp(10);
+//                    activeSlots--;
+//                }
+//                currentPlayPiece = 0;
+////                playPos.set(-1);
+//            }
             if (fileMngr.isComplete(0)) {
                 finishDownload();
                 return false;
             } else {
-                int blockNr = pieceIdToBlockNrPieceNr(currentPlayPiece).getValue0(); 
+                int blockNr = pieceIdToBlockNrPieceNr(0).getValue0();
                 if (!getNewPieces(blockNr)) {
+                    activeSlots--;
+                    cancelSpeedUp();
+                    scheduleSpeedUp(10);
                     log.debug("{} no new pieces", config.getSelf());
                     return false;
                 }
@@ -391,6 +398,9 @@ public class DownloadMngrComp extends ComponentDefinition {
 
         if (!downloadHash()) {
             if (!downloadData()) {
+                activeSlots--;
+                cancelSpeedUp();
+                scheduleSpeedUp(10);
                 return false;
             }
         }
@@ -398,11 +408,12 @@ public class DownloadMngrComp extends ComponentDefinition {
     }
 
     private boolean getNewPieces(int currentBlockNr) {
-        
+        currentBlockNr = 0;
+        log.info("getting new pieces from block:{}", currentBlockNr);
         int filePos = fileMngr.contiguous(currentBlockNr);
-        int hashPos = hashMngr.contiguous(currentBlockNr);
+        int hashPos = hashMngr.contiguous(0);
 
-        if (filePos + config.minHashAhead > hashPos) {
+        if (filePos + 5*config.minHashAhead > hashPos + pendingHashes.size()) {
             Set<Integer> except = new HashSet<Integer>();
             except.addAll(pendingHashes);
             except.addAll(nextHashes);
@@ -411,19 +422,19 @@ public class DownloadMngrComp extends ComponentDefinition {
             nextHashes.addAll(newNextHashes);
         }
 
-        Integer nextBlockNr = fileMngr.nextBlock(0, queuedBlocks.keySet());
-        if (nextBlockNr == null) {
-            log.debug("next block is null, blockNr:{}", filePos);
-            return false;
-        }
-        //last block might have less nr of pieces than default
-        int blockSize = fileMngr.blockSize(nextBlockNr);
-        BlockMngr blankBlock = StorageMngrFactory.getSimpleBlockMngr(blockSize, config.pieceSize);
-        queuedBlocks.put(nextBlockNr, blankBlock);
-        for (int i = 0; i < blankBlock.nrPieces(); i++) {
-            int pieceId = nextBlockNr * config.piecesPerBlock + i;
-            nextPieces.add(pieceId);
-        }
+            Integer nextBlockNr = fileMngr.nextBlock(currentBlockNr, queuedBlocks.keySet());
+            if (nextBlockNr == null) {
+                log.debug("next block is null, blockNr:{}", filePos);
+                return false;
+            }
+            //last block might have less nr of pieces than default
+            int blockSize = fileMngr.blockSize(nextBlockNr);
+            BlockMngr blankBlock = StorageMngrFactory.getSimpleBlockMngr(blockSize, config.pieceSize);
+            queuedBlocks.put(nextBlockNr, blankBlock);
+            for (int i = 0; i < blankBlock.nrPieces(); i++) {
+                int pieceId = nextBlockNr * config.piecesPerBlock + i;
+                nextPieces.add(pieceId);
+            }
         return true;
     }
 
