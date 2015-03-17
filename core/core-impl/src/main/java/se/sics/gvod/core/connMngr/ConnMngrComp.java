@@ -418,7 +418,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 partnerReq = new HashMap<UUID, Pair<Download.HashRequest, TimeoutId>>();
                 pendingDownloadingHash.put(uploader.getKey(), partnerReq);
             }
-            partnerReq.put(req.id, Pair.with(req, scheduleDownloadRequestTimeout(uploader.getKey(), req.id)));
+            partnerReq.put(req.id, Pair.with(req, scheduleHashRequestTimeout(uploader.getKey(), req.id)));
             trigger(new NetDownload.HashRequest(config.getSelf(), uploader.getKey(), req.id, config.overlayId, req), network);
         }
 
@@ -579,6 +579,15 @@ public class ConnMngrComp extends ComponentDefinition {
         return t.getTimeoutId();
     }
 
+    private TimeoutId scheduleHashRequestTimeout(VodAddress target, UUID reqId) {
+        ScheduleTimeout st = new ScheduleTimeout(config.reqTimeoutPeriod);
+        Timeout t = new DownloadHashTimeout(st, target, reqId);
+        st.setTimeoutEvent(t);
+        trigger(st, timer);
+        log.trace("{} schedule req:{} timeout:{}", new Object[]{config.getSelf(), reqId, t.getTimeoutId()});
+        return t.getTimeoutId();
+    }
+    
     private TimeoutId scheduleDownloadRequestTimeout(VodAddress target, UUID reqId) {
         ScheduleTimeout st = new ScheduleTimeout(config.reqTimeoutPeriod);
         Timeout t = new DownloadDataTimeout(st, target, reqId);
