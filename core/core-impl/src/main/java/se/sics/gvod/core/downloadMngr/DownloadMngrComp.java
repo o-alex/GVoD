@@ -333,7 +333,11 @@ public class DownloadMngrComp extends ComponentDefinition {
                 log.debug("{} late timeout {}", config.getSelf(), speedUpTId);
                 return;
             }
-            int speedup = activeSlots / 10;
+            int speedup = activeSlots / 20 + 1;
+            if(activeSlots + speedup > 10*config.startPieces) {
+                scheduleSpeedUp(1);
+                return;
+            }
             for (int i = 0; i < speedup; i++) {
                 activeSlots++;
                 if (!download()) {
