@@ -92,8 +92,11 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
         File dir = new File(config.libDir);
         if (!dir.isDirectory()) {
-            log.error("library path is invalid");
-            System.exit(1);
+            dir.mkdirs();
+            if (!dir.isDirectory()) {
+                log.error("library path is invalid");
+                System.exit(1);
+            }
         }
 
         FileFilter mp4Filter = new FileFilter() {

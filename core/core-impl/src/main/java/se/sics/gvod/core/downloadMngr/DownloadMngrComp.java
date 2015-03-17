@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,8 @@ public class DownloadMngrComp extends ComponentDefinition {
     private Positive<ConnMngrPort> connMngr = requires(ConnMngrPort.class);
 
     private final DownloadMngrConfig config;
+    private final AtomicInteger playPos; //set by videoStreamManager, read here
+    private int activeSlots;
 
     private final HashMngr hashMngr;
     private final FileMngr fileMngr;
@@ -88,6 +91,8 @@ public class DownloadMngrComp extends ComponentDefinition {
         this.config = init.config;
         log.info("{}:{} video component init", config.getSelf(), config.overlayId);
 
+        this.playPos = init.playPos;
+        this.activeSlots = config.startPieces;
         this.hashMngr = init.hashMngr;
         this.fileMngr = init.fileMngr;
         this.downloading = init.downloader;
@@ -140,7 +145,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         public void handle(Ready event) {
             if (downloading) {
                 log.info("{} {} downloading video", config.getSelf(), config.overlayId);
-                for (int i = 0; i < config.startPieces; i++) {
+                for (int i = 0; i < activeSlots; i++) {
                     download();
                 }
                 scheduleSpeedUp(1);
@@ -267,6 +272,7 @@ public class DownloadMngrComp extends ComponentDefinition {
                     log.debug("{} download slow down");
                     pendingPieces.remove(resp.pieceId);
                     nextPieces.add(0, resp.pieceId);
+                    activeSlots--;
                     cancelSpeedUp();
                     scheduleSpeedUp(10);
                     return;
@@ -326,6 +332,10 @@ public class DownloadMngrComp extends ComponentDefinition {
                 log.debug("{} late timeout {}", config.getSelf(), speedUpTId);
                 return;
             }
+            if(playPos.get() == -1) {
+                return;
+            }
+            activeSlots++;
             download();
             scheduleSpeedUp(1);
         }
@@ -340,7 +350,10 @@ public class DownloadMngrComp extends ComponentDefinition {
             log.info("{} {} internal state check: hashComplete:{} fileComplete:{} pending pieces:{} nextPieces:{} pendingHashes:{}, nextHashes:{}, pendingBlocks:{}",
                     new Object[]{config.getSelf(), config.overlayId, hashMngr.isComplete(0), fileMngr.isComplete(0), pendingPieces.size(), nextPieces.size(), pendingHashes.size(), nextHashes.size(), queuedBlocks.size()});
 
-            int downloadPos = fileMngr.contiguous(0);
+            int playPieceNr = playPos.get();
+            playPieceNr = (playPieceNr == -1 ? 0 : playPieceNr);
+            int playBlockNr = pieceIdToBlockNrPieceNr(playPieceNr).getValue0();
+            int downloadPos = fileMngr.contiguous(playBlockNr);
             int hashPos = hashMngr.contiguous(0);
             log.info("{} {} video pos:{} hash pos:{}", new Object[]{config.getSelf(), config.overlayId, downloadPos, hashPos});
             //TODO Alex might need to move it to its own timeout
@@ -350,12 +363,26 @@ public class DownloadMngrComp extends ComponentDefinition {
     };
 
     private boolean download() {
+        int currentPlayPiece = playPos.get();
+        log.debug("requested play position:{}, active slots:{}, usedSlots:{}", new Object[]{currentPlayPiece, activeSlots, pendingHashes.size() + pendingPieces.size()});
         if (nextHashes.isEmpty() && nextPieces.isEmpty()) {
+            if(currentPlayPiece == -1) {
+                currentPlayPiece = 0;
+            }
+            if(fileMngr.isComplete(currentPlayPiece)) {
+                if(activeSlots > config.startPieces / 5 + 1) {
+                    activeSlots--;
+                    return true;
+                }
+                currentPlayPiece = 0;
+                playPos.set(-1);
+            }
             if (fileMngr.isComplete(0)) {
                 finishDownload();
                 return false;
             } else {
-                if (!getNewPieces()) {
+                int blockNr = pieceIdToBlockNrPieceNr(currentPlayPiece).getValue0(); 
+                if (!getNewPieces(blockNr)) {
                     log.debug("{} no new pieces", config.getSelf());
                     return false;
                 }
@@ -370,9 +397,10 @@ public class DownloadMngrComp extends ComponentDefinition {
         return true;
     }
 
-    private boolean getNewPieces() {
-        int filePos = fileMngr.contiguous(0);
-        int hashPos = hashMngr.contiguous(0);
+    private boolean getNewPieces(int currentBlockNr) {
+        
+        int filePos = fileMngr.contiguous(currentBlockNr);
+        int hashPos = hashMngr.contiguous(currentBlockNr);
 
         if (filePos + config.minHashAhead > hashPos) {
             Set<Integer> except = new HashSet<Integer>();
@@ -480,12 +508,14 @@ public class DownloadMngrComp extends ComponentDefinition {
         public final HashMngr hashMngr;
         public final FileMngr fileMngr;
         public final boolean downloader;
+        public final AtomicInteger playPos;
 
-        public DownloadMngrInit(DownloadMngrConfig config, FileMngr fileMngr, HashMngr hashMngr, boolean downloader) {
+        public DownloadMngrInit(DownloadMngrConfig config, FileMngr fileMngr, HashMngr hashMngr, boolean downloader, AtomicInteger playPos) {
             this.config = config;
             this.hashMngr = hashMngr;
             this.fileMngr = fileMngr;
             this.downloader = downloader;
+            this.playPos = playPos;
         }
     }
 }

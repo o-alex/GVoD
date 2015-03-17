@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 import org.slf4j.Logger;
@@ -222,7 +223,8 @@ public class VoDComp extends ComponentDefinition {
         }
 
         Component connMngr = create(ConnMngrComp.class, new ConnMngrComp.ConnMngrInit(connMngrConfig));
-        Component downloadMngr = create(DownloadMngrComp.class, new DownloadMngrComp.DownloadMngrInit(downloadMngrConfig, hashedFileMngr.getValue0(), hashedFileMngr.getValue1(), download));
+        AtomicInteger playPos = new AtomicInteger(0);
+        Component downloadMngr = create(DownloadMngrComp.class, new DownloadMngrComp.DownloadMngrInit(downloadMngrConfig, hashedFileMngr.getValue0(), hashedFileMngr.getValue1(), download, playPos));
         Component croupier = create(CroupierComp.class, new CroupierComp.CroupierInit(overlayId, config.selfAddress));
         videoComps.put(overlayId, Triplet.with(connMngr, downloadMngr, croupier));
 
@@ -246,7 +248,7 @@ public class VoDComp extends ComponentDefinition {
 
         VideoStreamManager vsMngr = null;
         try {
-            vsMngr = new VideoStreamMngrImpl(hashedFileMngr.getValue0(), fileMeta.pieceSize, (long)fileMeta.fileSize);
+            vsMngr = new VideoStreamMngrImpl(hashedFileMngr.getValue0(), fileMeta.pieceSize, (long)fileMeta.fileSize, playPos);
         } catch (IOException ex) {
             log.error("IOException trying to read video:{} \n {}", fileMeta.fileName, ex.getStackTrace());
             System.exit(1);
