@@ -145,21 +145,19 @@ public class DownloadMngrComp extends ComponentDefinition {
     private Handler<Ready> handleConnReady = new Handler<Ready>() {
         @Override
         public void handle(Ready event) {
-            
-            
+
             if (downloading) {
                 log.info("{} {} downloading video", config.getSelf(), config.overlayId);
                 subscribe(handleDownloadSpeedUp, timer);
                 subscribe(handleUpdateSelf, timer);
-                
+
                 for (int i = 0; i < config.startPieces; i++) {
                     download();
                 }
                 scheduleSpeedUp(1);
-                
 
                 scheduleUpdateSelf();
-                
+
             } else {
                 log.info("{} {} seeding file", config.getSelf(), config.overlayId);
             }
@@ -288,7 +286,7 @@ public class DownloadMngrComp extends ComponentDefinition {
         Set<Integer> completedBlocks = new HashSet<Integer>();
         for (Map.Entry<Integer, BlockMngr> block : queuedBlocks.entrySet()) {
             int blockNr = block.getKey();
-            if(blockNr == 387) {
+            if (blockNr == 387) {
                 System.out.println(fileMngr.contiguous(blockNr));
             }
             if (!block.getValue().isComplete()) {
@@ -361,7 +359,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             int playBlockNr = pieceIdToBlockNrPieceNr(playPieceNr).getValue0();
             int playPos = fileMngr.contiguous(playBlockNr);
             int hashPos = hashMngr.contiguous(0);
-            log.info("{} play pos:{} videoPPos:{} videoDPos:{} hash pos:{}", 
+            log.info("{} play pos:{} videoPPos:{} videoDPos:{} hash pos:{}",
                     new Object[]{config.overlayId, playBlockNr, playPos, fileMngr.contiguous(0), hashPos});
             //TODO Alex might need to move it to its own timeout
             checkCompleteBlocks();
@@ -383,10 +381,9 @@ public class DownloadMngrComp extends ComponentDefinition {
             } else {
                 int blockNr = pieceIdToBlockNrPieceNr(currentPlayPiece).getValue0();
                 if (!getNewPieces(blockNr)) {
-                    cancelSpeedUp();
-                    scheduleSpeedUp(10);
-                    log.debug("{} no new pieces", config.getSelf());
-                    return false;
+                    if (!getNewPieces(0)) {
+                        return false;
+                    }
                 }
             }
         }
@@ -406,14 +403,14 @@ public class DownloadMngrComp extends ComponentDefinition {
         int filePos = fileMngr.contiguous(currentBlockNr);
         int hashPos = hashMngr.contiguous(0);
 
-        if (filePos + 5*config.minHashAhead > hashPos + pendingHashes.size()) {
+        if (filePos + 5 * config.minHashAhead > hashPos + pendingHashes.size()) {
             Set<Integer> except = new HashSet<Integer>();
             except.addAll(pendingHashes);
             except.addAll(nextHashes);
             Set<Integer> newNextHashes = hashMngr.nextHashes(config.hashesPerMsg, 0, except);
             log.debug("hashPos:{} pendingHashes:{} nextHashes:{} newNextHashes:{}", new Object[]{hashPos, pendingHashes, nextHashes, newNextHashes});
             nextHashes.addAll(newNextHashes);
-            if(!nextHashes.isEmpty()) {
+            if (!nextHashes.isEmpty()) {
                 return true;
             }
         }
@@ -431,7 +428,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             int pieceId = nextBlockNr * config.piecesPerBlock + i;
             nextPieces.add(pieceId);
         }
-        return true;
+        return nextPieces.isEmpty();
     }
 
     private boolean downloadData() {
