@@ -179,10 +179,10 @@ public class ConnMngrComp extends ComponentDefinition {
     private void printComponentStatus() {
         log.info("connections - downloaders:{} uploaders:{}", downloadersConn.size(), uploadersConn.size());
         for (Map.Entry<VodAddress, Map<UUID, Pair<Download.HashRequest, TimeoutId>>> e : pendingDownloadingHash.entrySet()) {
-            log.info("uploader:{} hash req:{}", e.getValue().size());
+            log.info("uploader:{} hash req:{}", e.getKey(), e.getValue().size());
         }
         for (Map.Entry<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>> e : pendingDownloadingData.entrySet()) {
-            log.info("uploader:{} data req:{}", e.getValue().size());
+            log.info("uploader:{} data req:{}", e.getKey(), e.getValue().size());
         }
     }
 
@@ -407,10 +407,10 @@ public class ConnMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(Download.HashRequest req) {
-            log.trace("{} handle local {}", config.getSelf(), req);
+            log.info("{} handle local {}", config.getSelf(), req);
             Map.Entry<VodAddress, UploaderVodDescriptor> uploader = getUploader(req.targetPos);
             if (uploader == null) {
-                log.debug("{} no candidate for position {}", new Object[]{config.getSelf(), req.targetPos});
+                log.info("{} no candidate for position {}", new Object[]{config.getSelf(), req.targetPos});
                 trigger(req.busy(), myPort);
                 return;
             }
@@ -421,6 +421,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 partnerReq = new HashMap<UUID, Pair<Download.HashRequest, TimeoutId>>();
                 pendingDownloadingHash.put(uploader.getKey(), partnerReq);
             }
+            log.info("{} sending hash req:{}", new Object[]{config.getSelf(), req.hashes});
             partnerReq.put(req.id, Pair.with(req, scheduleDownloadHashTimeout(uploader.getKey(), req.id)));
             trigger(new NetDownload.HashRequest(config.getSelf(), uploader.getKey(), req.id, config.overlayId, req), network);
         }
@@ -483,16 +484,16 @@ public class ConnMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(NetDownload.HashResponse resp) {
-            log.debug("{} handle net {} {}", new Object[]{config.getSelf(), resp, resp.content.status});
+            log.info("{} handle net {} {}", new Object[]{config.getSelf(), resp, resp.content.status});
             Map<UUID, Pair<Download.HashRequest, TimeoutId>> aux = pendingDownloadingHash.get(resp.getVodSource());
             if (aux == null) {
-                log.debug("{} hash posibly late", config.getSelf());
+                log.info("{} hash posibly late", config.getSelf());
                 //TODO Alex fix this;
                 return;
             }
             Pair<Download.HashRequest, TimeoutId> req = aux.remove(resp.content.id);
             if (req == null) {
-                log.debug("{} data posibly late", config.getSelf());
+                log.info("{} data posibly late", config.getSelf());
                 //TODO Alex fix this;
                 return;
             }
@@ -501,8 +502,9 @@ public class ConnMngrComp extends ComponentDefinition {
                 up.freeSlot();
             }
 
+            log.info("{} received hashes:{} missing:{}", new Object[]{config.getSelf(), resp.content.hashes.keySet(), resp.content.missingHashes});
             aux.remove(resp.content.id);
-            cancelDownloadDataTimeout(req.getValue0().id, req.getValue1());
+            cancelDownloadHashTimeout(req.getValue0().id, req.getValue1());
             trigger(resp.content, myPort);
         }
     };
@@ -538,18 +540,19 @@ public class ConnMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(DownloadHashTimeout timeout) {
-            log.trace("{} handle {}", config.getSelf(), timeout);
+            log.info("{} handle {}", config.getSelf(), timeout);
 
             Map<UUID, Pair<Download.HashRequest, TimeoutId>> targetHashTraffic = pendingDownloadingHash.get(timeout.target);
             if (targetHashTraffic == null) {
-                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
+                log.info("{} Hash timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
                 return;
             }
             Pair<Download.HashRequest, TimeoutId> req = targetHashTraffic.get(timeout.reqId);
             if (req == null) {
-                log.debug("{} timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
+                log.info("{} Hash timeout:{} for req:{} from:{} - possibly late", new Object[]{config.getSelf(), timeout.getTimeoutId(), timeout.reqId, timeout.target});
                 return;
             }
+            log.info("{} timeout hashes:{}", new Object[]{config.getSelf(), req.getValue0().hashes});
             uploadersConn.get(timeout.target).freeSlot();
             trigger(req.getValue0().timeout(), myPort);
 
@@ -612,6 +615,13 @@ public class ConnMngrComp extends ComponentDefinition {
     }
 
     private void cancelDownloadDataTimeout(UUID reqId, TimeoutId tid) {
+        log.trace("{} canceling timeout:{} for req:{}", new Object[]{config.getSelf(), tid, reqId});
+        CancelTimeout ct = new CancelTimeout(tid);
+        trigger(ct, timer);
+
+    }
+    
+    private void cancelDownloadHashTimeout(UUID reqId, TimeoutId tid) {
         log.trace("{} canceling timeout:{} for req:{}", new Object[]{config.getSelf(), tid, reqId});
         CancelTimeout ct = new CancelTimeout(tid);
         trigger(ct, timer);
