@@ -194,7 +194,7 @@ public class DownloadMngrComp extends ComponentDefinition {
 
             switch (resp.status) {
                 case SUCCESS:
-                    log.info("{} SUCCESS hashes:{} missing hashes:{}", new Object[]{config.getSelf(), resp.hashes.keySet(), resp.missingHashes});
+                    log.debug("{} SUCCESS hashes:{} missing hashes:{}", new Object[]{config.getSelf(), resp.hashes.keySet(), resp.missingHashes});
 
                     for (Map.Entry<Integer, byte[]> hash : resp.hashes.entrySet()) {
                         hashMngr.writeHash(hash.getKey(), hash.getValue());
@@ -206,13 +206,13 @@ public class DownloadMngrComp extends ComponentDefinition {
                     download();
                     return;
                 case TIMEOUT:
-                    log.info("{} TIMEOUT hashes:{}", config.getSelf(), resp.missingHashes);
+                    log.debug("{} TIMEOUT hashes:{}", config.getSelf(), resp.missingHashes);
                     pendingHashes.removeAll(resp.missingHashes);
                     nextHashes.addAll(0, resp.missingHashes);
                     download();
                     return;
                 case BUSY:
-                    log.info("{} BUSY hashes:{}", config.getSelf(), resp.missingHashes);
+                    log.debug("{} BUSY hashes:{}", config.getSelf(), resp.missingHashes);
                     pendingHashes.removeAll(resp.missingHashes);
                     nextHashes.addAll(0, resp.missingHashes);
                     cancelSpeedUp();
@@ -249,7 +249,7 @@ public class DownloadMngrComp extends ComponentDefinition {
 
             switch (resp.status) {
                 case SUCCESS:
-                    log.info("{} SUCCESS piece:{}", new Object[]{config.getSelf(), resp.pieceId});
+                    log.debug("{} SUCCESS piece:{}", new Object[]{config.getSelf(), resp.pieceId});
 
                     Pair<Integer, Integer> pieceIdToBlockNr = pieceIdToBlockNrPieceNr(resp.pieceId);
                     BlockMngr block = queuedBlocks.get(pieceIdToBlockNr.getValue0());
@@ -263,13 +263,13 @@ public class DownloadMngrComp extends ComponentDefinition {
                     return;
                 case TIMEOUT:
                 case MISSING:
-                    log.info("{} MISSING/TIMEOUTE piece:{} {}", new Object[]{config.getSelf(), resp.pieceId, resp.status});
+                    log.debug("{} MISSING/TIMEOUTE piece:{} {}", new Object[]{config.getSelf(), resp.pieceId, resp.status});
                     pendingPieces.remove(resp.pieceId);
                     nextPieces.add(0, resp.pieceId);
                     download();
                     return;
                 case BUSY:
-                    log.info("{} BUSY download slow down");
+                    log.debug("{} BUSY download slow down");
                     pendingPieces.remove(resp.pieceId);
                     nextPieces.add(0, resp.pieceId);
                     cancelSpeedUp();
