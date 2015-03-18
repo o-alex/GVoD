@@ -184,6 +184,12 @@ public class ConnMngrComp extends ComponentDefinition {
         for (Map.Entry<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>> e : pendingDownloadingData.entrySet()) {
             log.info("uploader:{} data req:{}", e.getKey(), e.getValue().size());
         }
+        for(Map.Entry<VodAddress, UploaderVodDescriptor> e : uploadersConn.entrySet()) {
+            log.info("uploader:{} used slots:{}", e.getKey(), e.getValue().slots());
+        }
+        for(Map.Entry<VodAddress, DownloaderVodDescriptor> e : downloadersConn.entrySet()) {
+            log.info("downloader:{} used slots:{}", e.getKey(), e.getValue().slots());
+        }
     }
 
     // CONNECTION MANAGEMENT

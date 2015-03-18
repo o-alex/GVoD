@@ -63,6 +63,10 @@ public class UploaderVodDescriptor {
         return true;
     }
     
+    public int slots() {
+        return freeSlots;
+    }
+    
     public void useSlot() {
         freeSlots--;
     }
