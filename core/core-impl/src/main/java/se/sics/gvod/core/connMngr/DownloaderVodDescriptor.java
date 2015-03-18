@@ -50,6 +50,7 @@ public class DownloaderVodDescriptor {
     }
     
     public boolean isViable() {
-        return freeSlots > 0;
+//        return freeSlots > 0;
+        return true;
     }
 }

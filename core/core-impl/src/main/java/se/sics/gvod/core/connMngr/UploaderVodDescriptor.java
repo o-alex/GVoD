@@ -54,12 +54,12 @@ public class UploaderVodDescriptor {
     }
     
     public boolean isViable(int blockPos) {
-        if(freeSlots == 0) {
-            return false;
-        }
-        if(desc.downloadPos < blockPos) {
-            return false;
-        }
+//        if(freeSlots == 0) {
+//            return false;
+//        }
+//        if(desc.downloadPos < blockPos) {
+//            return false;
+//        }
         return true;
     }
     
