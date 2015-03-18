@@ -428,7 +428,7 @@ public class DownloadMngrComp extends ComponentDefinition {
             int pieceId = nextBlockNr * config.piecesPerBlock + i;
             nextPieces.add(pieceId);
         }
-        return nextPieces.isEmpty();
+        return !nextPieces.isEmpty();
     }
 
     private boolean downloadData() {
