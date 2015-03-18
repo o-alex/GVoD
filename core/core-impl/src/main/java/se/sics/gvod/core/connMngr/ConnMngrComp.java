@@ -87,7 +87,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
     public ConnMngrComp(ConnMngrInit init) {
         this.config = init.config;
-        log.info("{} starting ...", config.getSelf());
+        log.info("{} initiating ...", config.getSelf());
 
         this.selfDesc = null;
         this.downloadersConn = new HashMap<VodAddress, DownloaderVodDescriptor>();
@@ -107,6 +107,7 @@ public class ConnMngrComp extends ComponentDefinition {
         @Override
         public void handle(UtilityUpdate event) {
             log.info("{} updating self descriptor", config.getSelf(), selfDesc);
+            printComponentStatus();
 
             if (selfDesc == null) {
                 selfDesc = new LocalVodDescriptor(new VodDescriptor(event.downloadPos), event.downloading);
@@ -126,18 +127,19 @@ public class ConnMngrComp extends ComponentDefinition {
                     uploadersConn = new HashMap<VodAddress, UploaderVodDescriptor>();
                     pendingUploadersConn = new HashMap<VodAddress, VodDescriptor>();
 
-                    log.debug("{} cleaning timeouts", config.getSelf());
-                    for (Map<UUID, Pair<Download.DataRequest, TimeoutId>> partnerTIds : pendingDownloadingData.values()) {
-                        for (Pair<Download.DataRequest, TimeoutId> downReq : partnerTIds.values()) {
-                            CancelTimeout ct = new CancelTimeout(downReq.getValue1());
-                            trigger(ct, timer);
-                        }
-                    }
-
-                    CancelTimeout ct = new CancelTimeout(connUpdateTId);
-                    trigger(ct, timer);
-
-                    pendingDownloadingData = new HashMap<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>>();
+                    //TODO Alex do proper cleanups
+//                    log.debug("{} cleaning timeouts", config.getSelf());
+//                    for (Map<UUID, Pair<Download.DataRequest, TimeoutId>> partnerTIds : pendingDownloadingData.values()) {
+//                        for (Pair<Download.DataRequest, TimeoutId> downReq : partnerTIds.values()) {
+//                            CancelTimeout ct = new CancelTimeout(downReq.getValue1());
+//                            trigger(ct, timer);
+//                        }
+//                    }
+//
+//                    CancelTimeout ct = new CancelTimeout(connUpdateTId);
+//                    trigger(ct, timer);
+//
+//                    pendingDownloadingData = new HashMap<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>>();
                 }
                 selfDesc = new LocalVodDescriptor(new VodDescriptor(event.downloadPos), event.downloading);
             }
@@ -145,8 +147,7 @@ public class ConnMngrComp extends ComponentDefinition {
     };
 
     private void start() {
-
-        log.debug("{} starting...", config.getSelf());
+        log.info("{} starting...", config.getSelf());
         if (selfDesc.downloading) {
             connUpdateTId = scheduleConnectionUpdate();
         } else {
@@ -173,7 +174,16 @@ public class ConnMngrComp extends ComponentDefinition {
         subscribe(handleNetHashResponse, network);
         subscribe(handleNetDataRequest, network);
         subscribe(handleNetDataResponse, network);
+    }
 
+    private void printComponentStatus() {
+        log.info("connections - downloaders:{} uploaders:{}", downloadersConn.size(), uploadersConn.size());
+        for (Map.Entry<VodAddress, Map<UUID, Pair<Download.HashRequest, TimeoutId>>> e : pendingDownloadingHash.entrySet()) {
+            log.info("uploader:{} hash req:{}", e.getValue().size());
+        }
+        for (Map.Entry<VodAddress, Map<UUID, Pair<Download.DataRequest, TimeoutId>>> e : pendingDownloadingData.entrySet()) {
+            log.info("uploader:{} data req:{}", e.getValue().size());
+        }
     }
 
     // CONNECTION MANAGEMENT
@@ -181,11 +191,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(CroupierSample event) {
-            log.debug("{} internal state check downloadersConn:{} pendingUploadersConn:{} uploadersConn:{} pendingDownData:{} pendinfDownHash:{} pendingUpData:{} pendingUpHash:{}", 
-                    new Object[]{config.getSelf(), downloadersConn.size(), pendingUploadersConn.size(), uploadersConn.size(), pendingDownloadingData.size(), 
-                        pendingDownloadingHash.size(), pendingUploadingData.size(), pendingUploadingHash.size()});
-            
-            log.info("{} handle new samples {}", config.getSelf(), event.sample);
+            log.debug("{} handle new samples {}", config.getSelf(), event.sample);
 
             for (Map.Entry<VodAddress, VodDescriptor> e : event.sample.entrySet()) {
                 if (e.getValue().downloadPos < selfDesc.vodDesc.downloadPos) {
@@ -206,7 +212,7 @@ public class ConnMngrComp extends ComponentDefinition {
 
         @Override
         public void handle(ScheduleConnUpdate event) {
-            log.trace("{} handle {}", config.getSelf(), event);
+            log.debug("{} handle {}", config.getSelf(), event);
             for (VodAddress partner : downloadersConn.keySet()) {
                 Connection.Update upd = new Connection.Update(UUID.randomUUID(), selfDesc.vodDesc);
                 trigger(new NetConnection.Update(config.getSelf(), partner, upd.id, config.overlayId, upd), network);
@@ -268,30 +274,30 @@ public class ConnMngrComp extends ComponentDefinition {
 
     private Handler<NetConnection.Update> handleConnectionUpdate = new Handler<NetConnection.Update>() {
 
-                @Override
-                public void handle(NetConnection.Update event) {
-                    log.trace("{} handle {}", new Object[]{config.getSelf(), event.getVodSource()});
+        @Override
+        public void handle(NetConnection.Update event) {
+            log.trace("{} handle {}", new Object[]{config.getSelf(), event.getVodSource()});
 
-                    if (downloadersConn.containsKey(event.getVodSource())) {
-                        downloadersConn.get(event.getVodSource()).updateDesc(event.content.desc);
-                    }
+            if (downloadersConn.containsKey(event.getVodSource())) {
+                downloadersConn.get(event.getVodSource()).updateDesc(event.content.desc);
+            }
 
-                    if (uploadersConn.containsKey(event.getVodSource())) {
-                        uploadersConn.get(event.getVodSource()).updateDesc(event.content.desc);
-                    }
-                }
-            };
+            if (uploadersConn.containsKey(event.getVodSource())) {
+                uploadersConn.get(event.getVodSource()).updateDesc(event.content.desc);
+            }
+        }
+    };
 
     private Handler<NetConnection.Close> handleConnectionClose = new Handler<NetConnection.Close>() {
 
-                @Override
-                public void handle(NetConnection.Close event) {
-                    log.debug("{} handle {}", new Object[]{config.getSelf(), event});
-                    downloadersConn.remove(event.getVodSource());
-                    pendingUploadersConn.remove(event.getVodSource());
-                    uploadersConn.remove(event.getVodSource());
-                }
-            };
+        @Override
+        public void handle(NetConnection.Close event) {
+            log.debug("{} handle {}", new Object[]{config.getSelf(), event});
+            downloadersConn.remove(event.getVodSource());
+            pendingUploadersConn.remove(event.getVodSource());
+            uploadersConn.remove(event.getVodSource());
+        }
+    };
 
     //DOWNLOAD MANAGEMENT - partener load management
     private Handler<Download.DataRequest> handleLocalDataRequest = new Handler<Download.DataRequest>() {
@@ -313,7 +319,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 partnerReq = new HashMap<UUID, Pair<Download.DataRequest, TimeoutId>>();
                 pendingDownloadingData.put(uploader.getKey(), partnerReq);
             }
-            partnerReq.put(req.id, Pair.with(req, scheduleDownloadRequestTimeout(uploader.getKey(), req.id)));
+            partnerReq.put(req.id, Pair.with(req, scheduleDownloadDataTimeout(uploader.getKey(), req.id)));
             trigger(new NetDownload.DataRequest(config.getSelf(), uploader.getKey(), req.id, config.overlayId, req), network);
         }
 
@@ -321,32 +327,32 @@ public class ConnMngrComp extends ComponentDefinition {
 
     private Handler<NetDownload.DataRequest> handleNetDataRequest = new Handler<NetDownload.DataRequest>() {
 
-                @Override
-                public void handle(NetDownload.DataRequest req) {
-                    log.trace("{} handling network {}", new Object[]{config.getSelf(), req});
-                    log.debug("{} requested unique pieces {}", pendingUploadingData.size());
+        @Override
+        public void handle(NetDownload.DataRequest req) {
+            log.trace("{} handling network {}", new Object[]{config.getSelf(), req});
+            log.debug("{} requested unique pieces {}", pendingUploadingData.size());
 
-                    DownloaderVodDescriptor downDesc = downloadersConn.get(req.getVodSource());
-                    if (downDesc == null) {
-                        log.debug("{} no connection open, dropping req {} from {}", new Object[]{config.getSelf(), req, req.getVodSource()});
-                        return;
-                    }
-                    if (!downDesc.isViable()) {
-                        //TODO should not happen yet, but will need to be treated later, when downloader has no more slots available
-                        log.info("{} no more slots for peer:{}", config.getSelf(), req.getVodSource());
-                        return;
-                    }
-                    downDesc.useSlot();
+            DownloaderVodDescriptor downDesc = downloadersConn.get(req.getVodSource());
+            if (downDesc == null) {
+                log.debug("{} no connection open, dropping req {} from {}", new Object[]{config.getSelf(), req, req.getVodSource()});
+                return;
+            }
+            if (!downDesc.isViable()) {
+                //TODO should not happen yet, but will need to be treated later, when downloader has no more slots available
+                log.info("{} no more slots for peer:{}", config.getSelf(), req.getVodSource());
+                return;
+            }
+            downDesc.useSlot();
 
-                    Set<VodAddress> requesters = pendingUploadingData.get(req.content.pieceId);
-                    if (requesters == null) {
-                        requesters = new HashSet<VodAddress>();
-                        pendingUploadingData.put(req.content.pieceId, requesters);
-                        trigger(req.content, myPort);
-                    }
-                    requesters.add(req.getVodSource());
-                }
-            };
+            Set<VodAddress> requesters = pendingUploadingData.get(req.content.pieceId);
+            if (requesters == null) {
+                requesters = new HashSet<VodAddress>();
+                pendingUploadingData.put(req.content.pieceId, requesters);
+                trigger(req.content, myPort);
+            }
+            requesters.add(req.getVodSource());
+        }
+    };
 
     private Handler<Download.DataResponse> handleLocalDataResponse = new Handler<Download.DataResponse>() {
 
@@ -374,37 +380,34 @@ public class ConnMngrComp extends ComponentDefinition {
 
     private Handler<NetDownload.DataResponse> handleNetDataResponse = new Handler<NetDownload.DataResponse>() {
 
-                @Override
-                public void handle(NetDownload.DataResponse resp) {
-                    log.trace("{} handle net {}", new Object[]{config.getSelf(), resp});
-                    UploaderVodDescriptor up = uploadersConn.get(resp.getVodSource());
-                    if (up != null) {
-                        up.freeSlot();
-                    }
+        @Override
+        public void handle(NetDownload.DataResponse resp) {
+            log.trace("{} handle net {}", new Object[]{config.getSelf(), resp});
+            UploaderVodDescriptor up = uploadersConn.get(resp.getVodSource());
 
-                    Map<UUID, Pair<Download.DataRequest, TimeoutId>> aux = pendingDownloadingData.get(resp.getVodSource());
-                    if(aux == null) {
-                        log.debug("{} data posibly late", config.getSelf());
-                        //TODO Alex fix this;
-                        return;
-                    }
-                    Pair<Download.DataRequest, TimeoutId> req = aux.remove(resp.content.id);
-                    if(req == null) {
-                        log.debug("{} data posibly late", config.getSelf());
-                        //TODO Alex fix this;
-                        return;
-                    }
-                    cancelDownloadReqTimeout(req.getValue0().id, req.getValue1());
-                    trigger(resp.content, myPort);
-                }
-            };
+            Map<UUID, Pair<Download.DataRequest, TimeoutId>> aux = pendingDownloadingData.get(resp.getVodSource());
+            if (aux == null) {
+                log.debug("{} data posibly late", config.getSelf());
+                //TODO Alex fix this;
+                return;
+            }
+            Pair<Download.DataRequest, TimeoutId> req = aux.remove(resp.content.id);
+            if (req == null) {
+                log.debug("{} data posibly late", config.getSelf());
+                //TODO Alex fix this;
+                return;
+            }
+            up.freeSlot();
+            cancelDownloadDataTimeout(req.getValue0().id, req.getValue1());
+            trigger(resp.content, myPort);
+        }
+    };
 
     private Handler<Download.HashRequest> handleLocalHashRequest = new Handler<Download.HashRequest>() {
 
         @Override
         public void handle(Download.HashRequest req) {
             log.trace("{} handle local {}", config.getSelf(), req);
-
             Map.Entry<VodAddress, UploaderVodDescriptor> uploader = getUploader(req.targetPos);
             if (uploader == null) {
                 log.debug("{} no candidate for position {}", new Object[]{config.getSelf(), req.targetPos});
@@ -418,7 +421,7 @@ public class ConnMngrComp extends ComponentDefinition {
                 partnerReq = new HashMap<UUID, Pair<Download.HashRequest, TimeoutId>>();
                 pendingDownloadingHash.put(uploader.getKey(), partnerReq);
             }
-            partnerReq.put(req.id, Pair.with(req, scheduleHashRequestTimeout(uploader.getKey(), req.id)));
+            partnerReq.put(req.id, Pair.with(req, scheduleDownloadHashTimeout(uploader.getKey(), req.id)));
             trigger(new NetDownload.HashRequest(config.getSelf(), uploader.getKey(), req.id, config.overlayId, req), network);
         }
 
@@ -426,31 +429,31 @@ public class ConnMngrComp extends ComponentDefinition {
 
     private Handler<NetDownload.HashRequest> handleNetHashRequest = new Handler<NetDownload.HashRequest>() {
 
-                @Override
-                public void handle(NetDownload.HashRequest req) {
-                    log.trace("{} handling network {}", new Object[]{config.getSelf(), req});
+        @Override
+        public void handle(NetDownload.HashRequest req) {
+            log.trace("{} handling network {}", new Object[]{config.getSelf(), req});
 
-                    DownloaderVodDescriptor downDesc = downloadersConn.get(req.getVodSource());
-                    if (downDesc == null) {
-                        log.debug("{} no connection open, dropping req {} from {}", new Object[]{config.getSelf(), req, req.getVodSource()});
-                        return;
-                    }
-                    if (!downDesc.isViable()) {
-                        //TODO should not happen yet, but will need to be treated later, when downloader has no more slots available
-                        log.info("{} no more slots for peer:{}", config.getSelf(), req.getVodSource());
-                        return;
-                    }
-                    downDesc.useSlot();
+            DownloaderVodDescriptor downDesc = downloadersConn.get(req.getVodSource());
+            if (downDesc == null) {
+                log.debug("{} no connection open, dropping req {} from {}", new Object[]{config.getSelf(), req, req.getVodSource()});
+                return;
+            }
+            if (!downDesc.isViable()) {
+                //TODO should not happen yet, but will need to be treated later, when downloader has no more slots available
+                log.info("{} no more slots for peer:{}", config.getSelf(), req.getVodSource());
+                return;
+            }
+            downDesc.useSlot();
 
-                    Set<VodAddress> requesters = pendingUploadingHash.get(req.content.targetPos);
-                    if (requesters == null) {
-                        requesters = new HashSet<VodAddress>();
-                        pendingUploadingHash.put(req.content.targetPos, requesters);
-                        trigger(req.content, myPort);
-                    }
-                    requesters.add(req.getVodSource());
-                }
-            };
+            Set<VodAddress> requesters = pendingUploadingHash.get(req.content.targetPos);
+            if (requesters == null) {
+                requesters = new HashSet<VodAddress>();
+                pendingUploadingHash.put(req.content.targetPos, requesters);
+                trigger(req.content, myPort);
+            }
+            requesters.add(req.getVodSource());
+        }
+    };
 
     private Handler<Download.HashResponse> handleLocalHashResponse = new Handler<Download.HashResponse>() {
 
@@ -478,20 +481,31 @@ public class ConnMngrComp extends ComponentDefinition {
 
     private Handler<NetDownload.HashResponse> handleNetHashResponse = new Handler<NetDownload.HashResponse>() {
 
-                @Override
-                public void handle(NetDownload.HashResponse resp) {
-                    log.debug("{} handle net {} {}", new Object[]{config.getSelf(), resp, resp.content.status});
-                    UploaderVodDescriptor up = uploadersConn.get(resp.getVodSource());
-                    if (up != null) {
-                        up.freeSlot();
-                    }
+        @Override
+        public void handle(NetDownload.HashResponse resp) {
+            log.debug("{} handle net {} {}", new Object[]{config.getSelf(), resp, resp.content.status});
+            Map<UUID, Pair<Download.HashRequest, TimeoutId>> aux = pendingDownloadingHash.get(resp.getVodSource());
+            if (aux == null) {
+                log.debug("{} hash posibly late", config.getSelf());
+                //TODO Alex fix this;
+                return;
+            }
+            Pair<Download.HashRequest, TimeoutId> req = aux.remove(resp.content.id);
+            if (req == null) {
+                log.debug("{} data posibly late", config.getSelf());
+                //TODO Alex fix this;
+                return;
+            }
+            UploaderVodDescriptor up = uploadersConn.get(resp.getVodSource());
+            if (up != null) {
+                up.freeSlot();
+            }
 
-                    Pair<Download.HashRequest, TimeoutId> req = pendingDownloadingHash.get(resp.getVodSource()).remove(resp.content.id);
-                    cancelDownloadReqTimeout(req.getValue0().id, req.getValue1());
-
-                    trigger(resp.content, myPort);
-                }
-            };
+            aux.remove(resp.content.id);
+            cancelDownloadDataTimeout(req.getValue0().id, req.getValue1());
+            trigger(resp.content, myPort);
+        }
+    };
 
     private Handler<DownloadDataTimeout> handleDownloadDataTimeout = new Handler<DownloadDataTimeout>() {
 
@@ -579,7 +593,7 @@ public class ConnMngrComp extends ComponentDefinition {
         return t.getTimeoutId();
     }
 
-    private TimeoutId scheduleHashRequestTimeout(VodAddress target, UUID reqId) {
+    private TimeoutId scheduleDownloadHashTimeout(VodAddress target, UUID reqId) {
         ScheduleTimeout st = new ScheduleTimeout(config.reqTimeoutPeriod);
         Timeout t = new DownloadHashTimeout(st, target, reqId);
         st.setTimeoutEvent(t);
@@ -587,8 +601,8 @@ public class ConnMngrComp extends ComponentDefinition {
         log.trace("{} schedule req:{} timeout:{}", new Object[]{config.getSelf(), reqId, t.getTimeoutId()});
         return t.getTimeoutId();
     }
-    
-    private TimeoutId scheduleDownloadRequestTimeout(VodAddress target, UUID reqId) {
+
+    private TimeoutId scheduleDownloadDataTimeout(VodAddress target, UUID reqId) {
         ScheduleTimeout st = new ScheduleTimeout(config.reqTimeoutPeriod);
         Timeout t = new DownloadDataTimeout(st, target, reqId);
         st.setTimeoutEvent(t);
@@ -597,10 +611,11 @@ public class ConnMngrComp extends ComponentDefinition {
         return t.getTimeoutId();
     }
 
-    private void cancelDownloadReqTimeout(UUID reqId, TimeoutId tid) {
+    private void cancelDownloadDataTimeout(UUID reqId, TimeoutId tid) {
         log.trace("{} canceling timeout:{} for req:{}", new Object[]{config.getSelf(), tid, reqId});
         CancelTimeout ct = new CancelTimeout(tid);
         trigger(ct, timer);
+
     }
 
     public static class ConnMngrInit extends Init<ConnMngrComp> {
