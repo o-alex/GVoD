@@ -458,34 +458,34 @@ public class DownloadMngrComp extends ComponentDefinition {
     }
 
     private void scheduleSpeedUp(int periodFactor) {
-        ScheduleTimeout st = new ScheduleTimeout(periodFactor * config.speedupPeriod);
-        Timeout t = new ScheduledSpeedUp(st);
-        st.setTimeoutEvent(t);
-        speedUpTId = t.getTimeoutId();
-        log.debug("{} scheduling speedup timeout {}", config.getSelf(), speedUpTId);
-        trigger(st, timer);
+//        ScheduleTimeout st = new ScheduleTimeout(periodFactor * config.speedupPeriod);
+//        Timeout t = new ScheduledSpeedUp(st);
+//        st.setTimeoutEvent(t);
+//        speedUpTId = t.getTimeoutId();
+//        log.debug("{} scheduling speedup timeout {}", config.getSelf(), speedUpTId);
+//        trigger(st, timer);
     }
 
     private void cancelSpeedUp() {
-        log.debug("{} canceling speedup timeout {}", config.getSelf(), speedUpTId);
-        CancelTimeout cancelSpeedUp = new CancelTimeout(speedUpTId);
-        trigger(cancelSpeedUp, timer);
+//        log.debug("{} canceling speedup timeout {}", config.getSelf(), speedUpTId);
+//        CancelTimeout cancelSpeedUp = new CancelTimeout(speedUpTId);
+//        trigger(cancelSpeedUp, timer);
     }
 
     private void scheduleUpdateSelf() {
-//        long updateSelfPeriod = config.descriptorUpdate; //get proper value later
-//        SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(updateSelfPeriod, updateSelfPeriod);
-//        Timeout t = new ScheduledUtilityUpdate(spt);
-//        updateSelfTId = t.getTimeoutId();
-//        spt.setTimeoutEvent(t);
-//        log.debug("{} scheduling periodic timeout {}", config.getSelf(), t);
-//        trigger(spt, timer);
+        long updateSelfPeriod = config.descriptorUpdate; //get proper value later
+        SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(updateSelfPeriod, updateSelfPeriod);
+        Timeout t = new ScheduledUtilityUpdate(spt);
+        updateSelfTId = t.getTimeoutId();
+        spt.setTimeoutEvent(t);
+        log.debug("{} scheduling periodic timeout {}", config.getSelf(), t);
+        trigger(spt, timer);
     }
 
     private void cancelUpdateSelf() {
-//        log.debug("{} canceling periodic timeout {}", config.getSelf(), updateSelfTId);
-//        CancelPeriodicTimeout cpt = new CancelPeriodicTimeout(updateSelfTId);
-//        trigger(cpt, timer);
+        log.debug("{} canceling periodic timeout {}", config.getSelf(), updateSelfTId);
+        CancelPeriodicTimeout cpt = new CancelPeriodicTimeout(updateSelfTId);
+        trigger(cpt, timer);
     }
 
     private void finishDownload() {
