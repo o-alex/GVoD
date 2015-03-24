@@ -18,6 +18,7 @@
  */
 package se.sics.gvod.manager;
 
+import com.google.common.util.concurrent.SettableFuture;
 import se.sics.gvod.manager.util.FileStatus;
 import java.util.Map;
 
@@ -26,21 +27,19 @@ import java.util.Map;
  */
 public interface VoDManager {
     
-    public Map<String, FileStatus> getFiles();
+    public void getFiles(SettableFuture<Map<String, FileStatus>> myFuture);
     
-    public void reloadLibrary();
+    public void reloadLibrary(SettableFuture<Boolean> myFuture);
     
-    public boolean pendingUpload(String videoName);
+    public void pendingUpload(String videoName, SettableFuture<Boolean> myFuture);
     
-    public boolean uploadVideo(String videoName, int overlayId);
+    public void uploadVideo(String videoName, int overlayId, SettableFuture<Boolean> myFuture);
 
-    public boolean downloadVideo(String videoName, int overlayId);
+    public void downloadVideo(String videoName, int overlayId, SettableFuture<Boolean> myFuture);
     
-    public Integer playVideo(String videoName, int overlayId);
+    public void playVideo(String videoName, int overlayId, SettableFuture<Integer> myFuture);
     
-    public void stopVideo(String videoName);
+    public void stopVideo(String videoName, SettableFuture<Boolean> myFuture);
     
     public boolean isInitialized();
-
-//    public String downloadVideoFromUrl(String torrentUrl);
 }

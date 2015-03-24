@@ -18,10 +18,13 @@
  */
 package se.sics.gvod.simulation;
 
+import com.google.common.util.concurrent.SettableFuture;
 import com.typesafe.config.ConfigFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
@@ -54,8 +57,9 @@ import se.sics.kompics.p2p.experiment.dsl.events.TerminateExperiment;
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class SimManagerComp extends ComponentDefinition {
+
     private final static int port = 11122;
-    private final static byte[] seed = new byte[]{1,2,3,4};
+    private final static byte[] seed = new byte[]{1, 2, 3, 4};
 
     private static final Logger log = LoggerFactory.getLogger(SimManagerComp.class);
 
@@ -85,7 +89,7 @@ public class SimManagerComp extends ComponentDefinition {
             log.info("bootstrap server - id {} - starting...", start.id);
             try {
                 VodAddress selfAddress = new VodAddress(new Address(InetAddress.getLocalHost(), port, start.id), -1);
-                Component bootstrapServer = create(BootstrapServerComp.class, new BootstrapServerComp.BootstrapServerInit(new BootstrapServerConfig(ConfigFactory.load(),selfAddress, seed)));
+                Component bootstrapServer = create(BootstrapServerComp.class, new BootstrapServerComp.BootstrapServerInit(new BootstrapServerConfig(ConfigFactory.load(), selfAddress, seed)));
                 Component peerManager = create(SimPMComp.class, new SimPMComp.SimPMInit(new SimPMConfig.Builder(ConfigFactory.load(), seed, selfAddress.getPeerAddress()).finalise()));
 
                 connect(bootstrapServer.getNegative(VodNetwork.class), network);
@@ -131,7 +135,6 @@ public class SimManagerComp extends ComponentDefinition {
 //            trigger(Stop.event, vodPeerHost.control());
 //        }
 //    };
-
     public Handler<StartVodPeerCmd> handleStartVodPeer = new Handler<StartVodPeerCmd>() {
 
         @Override
@@ -189,26 +192,42 @@ public class SimManagerComp extends ComponentDefinition {
 //            trigger(Stop.event, vodPeerHost.control());
 //        }
 //    };
-
     public Handler<UploadVideoCmd> handleUploadVideo = new Handler<UploadVideoCmd>() {
 
         @Override
         public void handle(UploadVideoCmd cmd) {
-            log.trace("{}", cmd);
-            Component node = systemComp.get(cmd.nodeId);
-            if (node == null) {
-                return;
-            }
-            se.sics.gvod.system.HostManagerComp nodeHost = (se.sics.gvod.system.HostManagerComp) node.getComponent();
-            VoDManager vodMngr = nodeHost.getVoDManager();
-            vodMngr.reloadLibrary();
-            if(!vodMngr.pendingUpload(cmd.videoName)) {
+            try {
+                log.trace("{}", cmd);
+                Component node = systemComp.get(cmd.nodeId);
+                if (node == null) {
+                    return;
+                }
+                se.sics.gvod.system.HostManagerComp nodeHost = (se.sics.gvod.system.HostManagerComp) node.getComponent();
+                VoDManager vodMngr = nodeHost.getVoDManager();
+                SettableFuture<Boolean> reloadFuture = SettableFuture.create();
+                vodMngr.reloadLibrary(reloadFuture);
+                if (!reloadFuture.get()) {
+                    log.error("error reloading library");
+                    System.exit(1);
+                }
+                SettableFuture<Boolean> pendingUpFuture = SettableFuture.create();
+                vodMngr.pendingUpload(cmd.videoName, pendingUpFuture);
+                if (!pendingUpFuture.get()) {
+                    log.error("error preparing upload:{}", cmd.videoName);
+                    System.exit(1);
+                }
+                SettableFuture<Boolean> uploadFuture = SettableFuture.create();
+                vodMngr.uploadVideo(cmd.videoName, cmd.overlayId, uploadFuture);
+                if (!uploadFuture.get()) {
+                    log.error("error uploading:{}", cmd.videoName);
+                    System.exit(1);
+                }
+            } catch (InterruptedException ex) {
+                log.error("future error");
                 System.exit(1);
-                throw new RuntimeException();
-            }
-            if(!vodMngr.uploadVideo(cmd.videoName, cmd.overlayId)) {
+            } catch (ExecutionException ex) {
+                log.error("future error");
                 System.exit(1);
-                throw new RuntimeException();
             }
         }
     };
@@ -224,7 +243,20 @@ public class SimManagerComp extends ComponentDefinition {
             }
             se.sics.gvod.system.HostManagerComp nodeHost = (se.sics.gvod.system.HostManagerComp) node.getComponent();
             VoDManager vodMngr = nodeHost.getVoDManager();
-            vodMngr.downloadVideo(cmd.videoName, cmd.overlayId);
+            SettableFuture<Boolean> downloadFuture = SettableFuture.create();
+            vodMngr.downloadVideo(cmd.videoName, cmd.overlayId, downloadFuture);
+            try {
+                if(!downloadFuture.get()) {
+                    log.error("error downloading:{}", cmd.videoName);
+                    System.exit(1);
+                }
+            } catch (InterruptedException ex) {
+                log.error("future error");
+                System.exit(1);
+            } catch (ExecutionException ex) {
+                log.error("future error");
+                System.exit(1);
+            }
         }
     };
 

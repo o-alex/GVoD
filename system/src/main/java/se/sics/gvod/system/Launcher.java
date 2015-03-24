@@ -18,8 +18,11 @@
  */
 package se.sics.gvod.system;
 
+import com.google.common.util.concurrent.SettableFuture;
 import java.net.InetAddress;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.address.Address;
@@ -112,19 +115,19 @@ public class Launcher extends ComponentDefinition {
             phase2();
         }
     };
-    
+
     private void phase2() {
-            log.info("phase 2 - ip:{} - binding port:{}", selfAddress.getIp(), selfAddress.getPort());
+        log.info("phase 2 - ip:{} - binding port:{}", selfAddress.getIp(), selfAddress.getPort());
 
-            network = create(NettyNetwork.class, new NettyInit(seed, true, GVoDNetFrameDecoder.class));
-            connect(network.getNegative(Timer.class), timer.getPositive(Timer.class));
+        network = create(NettyNetwork.class, new NettyInit(seed, true, GVoDNetFrameDecoder.class));
+        connect(network.getNegative(Timer.class), timer.getPositive(Timer.class));
 
-            subscribe(handlePsPortBindResponse, network.getPositive(NatNetworkControl.class));
-            trigger(Start.event, network.getControl());
-            
-            BootstrapPortBind.Request pb1 = new BootstrapPortBind.Request(selfAddress, Transport.UDP);
-            pb1.setResponse(new BootstrapPortBind.Response(pb1));
-            trigger(pb1, network.getPositive(NatNetworkControl.class));
+        subscribe(handlePsPortBindResponse, network.getPositive(NatNetworkControl.class));
+        trigger(Start.event, network.getControl());
+
+        BootstrapPortBind.Request pb1 = new BootstrapPortBind.Request(selfAddress, Transport.UDP);
+        pb1.setResponse(new BootstrapPortBind.Response(pb1));
+        trigger(pb1, network.getPositive(NatNetworkControl.class));
     }
 
     private void resolveLocalAddress(InetAddress boundIp, List<IpAddrStatus> localAddresses) {
@@ -150,7 +153,7 @@ public class Launcher extends ComponentDefinition {
         System.exit(1);
         throw new RuntimeException();
     }
-    
+
     public Handler<BootstrapPortBind.Response> handlePsPortBindResponse = new Handler<BootstrapPortBind.Response>() {
 
         @Override
@@ -209,29 +212,47 @@ public class Launcher extends ComponentDefinition {
                 log.error("threading problem in launcher");
                 System.exit(1);
             }
-            if (firstCmd.download) {
-                if (!vodManager.downloadVideo(firstCmd.fileName, firstCmd.overlayId)) {
-                    log.error("bad first command - cannot download - check if library contains file already");
-                    System.exit(1);
-                }
-                Integer videoPort = null;
-                do {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ex) {
-                        log.error("threading problem in launcher");
+            try {
+                if (firstCmd.download) {
+                    SettableFuture<Boolean> downloadFuture = SettableFuture.create();
+                    vodManager.downloadVideo(firstCmd.fileName, firstCmd.overlayId, downloadFuture);
+                    if (!downloadFuture.get()) {
+                        log.error("bad first command - cannot download - check if library contains file already");
                         System.exit(1);
                     }
-                    videoPort = vodManager.playVideo(firstCmd.fileName, firstCmd.overlayId);
-                } while (videoPort == null);
-                log.info("can play video:{} on port:{}", firstCmd.fileName, videoPort);
-            } else {
-                if (!vodManager.pendingUpload(firstCmd.fileName)) {
-                    log.error("bad first command - cannot upload - check if library contains file");
+                    Integer videoPort = null;
+                    do {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ex) {
+                            log.error("threading problem in launcher");
+                            System.exit(1);
+                        }
+                        SettableFuture<Integer> playFuture = SettableFuture.create();
+                        vodManager.playVideo(firstCmd.fileName, firstCmd.overlayId, playFuture);
+                        videoPort = playFuture.get();
+                    } while (videoPort == null);
+                    log.info("can play video:{} on port:{}", firstCmd.fileName, videoPort);
+
+                } else {
+                    SettableFuture<Boolean> pendingUpFuture = SettableFuture.create();
+                    vodManager.pendingUpload(firstCmd.fileName, pendingUpFuture);
+                    if (!pendingUpFuture.get()) {
+                        log.error("bad first command - cannot upload - check if library contains file");
+                        System.exit(1);
+                    }
+                    SettableFuture<Boolean> uploadFuture = SettableFuture.create();
+                    vodManager.uploadVideo(firstCmd.fileName, firstCmd.overlayId, uploadFuture);
+                    if (!uploadFuture.get()) {
+                        log.error("bad first command - cannot upload - check if library contains file and you called pendingUpload before");
+                    }
                 }
-                if (!vodManager.uploadVideo(firstCmd.fileName, firstCmd.overlayId)) {
-                    log.error("bad first command - cannot upload - check if library contains file and you called pendingUpload before");
-                }
+            } catch (InterruptedException ex) {
+                log.error("future internal logic error");
+                System.exit(1);
+            } catch (ExecutionException ex) {
+                log.error("future internal logic error");
+                System.exit(1);
             }
         }
     }
@@ -243,7 +264,6 @@ public class Launcher extends ComponentDefinition {
             trigger(new GetIpRequest(false), resolveIp.getPositive(ResolveIpPort.class));
         }
     };
-
 
     private static class BootstrapPortBind {
 

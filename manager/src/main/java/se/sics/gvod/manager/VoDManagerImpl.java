@@ -18,13 +18,13 @@
  */
 package se.sics.gvod.manager;
 
+import com.google.common.util.concurrent.SettableFuture;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
@@ -87,7 +87,11 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     };
 
     @Override
-    public void reloadLibrary() {
+    public void reloadLibrary(SettableFuture<Boolean> myFuture) {
+        myFuture.set(reloadLibrary());
+    }
+    
+    private boolean reloadLibrary() {
         log.info("loading library folder:{}", config.libDir);
 
         File dir = new File(config.libDir);
@@ -115,32 +119,37 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
                 videos.put(video.getName(), FileStatus.NONE);
             }
         }
-    }
-
-    @Override
-    public Map<String, FileStatus> getFiles() {
-        log.info("returning library content");
-        return new HashMap<String, FileStatus>(videos);
-    }
-
-    @Override
-    public boolean pendingUpload(String videoName) {
-        FileStatus videoStatus = videos.get(videoName);
-        if (videoStatus == null || !videoStatus.equals(FileStatus.NONE)) {
-            log.warn("{} video {} not found in library {}", new Object[]{config.selfAddress, videoName, config.libDir});
-            return false;
-        }
-        log.info("{} video {} found - pending upload", config.selfAddress, videoName);
-        videos.put(videoName, FileStatus.PENDING);
         return true;
     }
 
     @Override
-    public boolean uploadVideo(String videoName, int overlayId) {
+    public void getFiles(SettableFuture<Map<String, FileStatus>> myFuture) {
+        log.info("returning library content");
+        reloadLibrary();
+        myFuture.set(videos);
+    }
+
+    @Override
+    public void pendingUpload(String videoName, SettableFuture<Boolean> myFuture) {
+        FileStatus videoStatus = videos.get(videoName);
+        if (videoStatus == null || !videoStatus.equals(FileStatus.NONE)) {
+            log.warn("{} video {} not found in library {}", new Object[]{config.selfAddress, videoName, config.libDir});
+            myFuture.set(false);
+            return;
+        }
+        log.info("{} video {} found - pending upload", config.selfAddress, videoName);
+        videos.put(videoName, FileStatus.PENDING);
+        myFuture.set(true);
+        return;
+    }
+
+    @Override
+    public void uploadVideo(String videoName, int overlayId, SettableFuture<Boolean> myFuture) {
         FileStatus videoStatus = videos.get(videoName);
         if (videoStatus == null || !videoStatus.equals(FileStatus.PENDING)) {
             log.warn("{} video not pending upload - cannot initiate upload", new Object[]{config.selfAddress, videoName, config.libDir});
-            return false;
+            myFuture.set(false);
+            return;
         }
         log.info("{} video {} found - uploading", config.selfAddress, videoName);
         videos.put(videoName, FileStatus.UPLOADING);
@@ -153,11 +162,16 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
                 System.exit(1);
             }
         } while (!vsMngrs.containsKey(videoName));
-        return true;
+        myFuture.set(true);
+        return;
     }
 
     @Override
-    public boolean downloadVideo(String videoName, int overlayId) {
+    public void downloadVideo(String videoName, int overlayId, SettableFuture<Boolean> myFuture) {
+        myFuture.set(downloadVideo(videoName, overlayId));
+    }
+    
+    private boolean downloadVideo(String videoName, int overlayId) {
         FileStatus videoStatus = videos.get(videoName);
         if (videoStatus == FileStatus.DOWNLOADING || videoStatus == FileStatus.UPLOADING) {
             return true;
@@ -180,7 +194,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     }
 
     @Override
-    public Integer playVideo(String videoName, int overlayId) {
+    public void playVideo(String videoName, int overlayId, SettableFuture<Integer> myFuture) {
         log.info("received play");
         if (videoPort == null) {
             do {
@@ -190,7 +204,8 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
         if (!videos.containsKey(videoName)) {
             if (!downloadVideo(videoName, overlayId)) {
-                return null;
+                myFuture.set(null);
+                return;
             }
         }
 
@@ -202,8 +217,8 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
         if (videoPaths.contains(videoName)) {
             log.info("return play");
-//            videoPlayer.play();
-            return videoPort;
+            myFuture.set(videoPort);
+            return;
         }
 
         log.info("setting up player for video:{}", videoName);
@@ -212,20 +227,23 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         videoPaths.add(videoName);
 
         log.info("return play");
-        return videoPort;
+        myFuture.set(videoPort);
+        return;
     }
 
     @Override
-    public void stopVideo(String videoName) {
+    public void stopVideo(String videoName, SettableFuture<Boolean> myFuture) {
         log.info("received stop");
         VideoStreamManager vsMngr = vsMngrs.get(videoName);
         if (vsMngr == null) {
             log.info("player for video:{} is not ready yet - weird stop message", videoName);
+            myFuture.set(true);
             return;
         } else {
             log.info("stopping play for video:{}", videoName);
             vsMngr.stop();
             log.info("return stop");
+            myFuture.set(true);
             return;
         }
     }
