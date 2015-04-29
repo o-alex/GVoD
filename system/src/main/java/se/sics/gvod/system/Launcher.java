@@ -95,7 +95,6 @@ public class Launcher extends ComponentDefinition {
 
         timer = create(JavaTimer.class, Init.NONE);
         network = create(NettyNetwork.class, new NettyInit(selfAddress));
-        connect(network.getNegative(Timer.class), timer.getPositive(Timer.class));
 
         try {
             config = configBuilder.setSelfAddress(selfAddress).setSeed(bseed).finalise();
@@ -108,7 +107,6 @@ public class Launcher extends ComponentDefinition {
         caracalPSManager = create(CaracalPSManagerComp.class, new CaracalPSManagerComp.CaracalPSManagerInit(config.getCaracalPSManagerConfig()));
         connect(caracalPSManager.getNegative(Timer.class), timer.getPositive(Timer.class));
 
-        trigger(Start.event, caracalPSManager.control());
         subscribe(handleCaracalReady, caracalPSManager.getPositive(PeerManagerPort.class));
     }
 
