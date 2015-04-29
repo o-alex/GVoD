@@ -18,57 +18,55 @@
  */
 package se.sics.gvod.network.serializers.bootstrap;
 
+import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.Heartbeat;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer.SerializerException;
-import se.sics.gvod.network.serializers.base.GvodMsgSerializer;
+import se.sics.kompics.network.netty.serialization.Serializer;
+import se.sics.kompics.network.netty.serialization.Serializers;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class HeartbeatSerializer {
 
-    public static class OneWay extends GvodMsgSerializer.AbsOneWay<Heartbeat.OneWay> {
+    public static class OneWay implements Serializer {
 
-        @Override
-        public Heartbeat.OneWay decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
+        private final int id;
 
-            Map<Integer, Integer> overlayUtilities = new HashMap<Integer, Integer>();
-            int nrOverlays = buf.readInt();
-            for (int i = 0; i < nrOverlays; i++) {
-                overlayUtilities.put(buf.readInt(), buf.readInt());
-            }
-
-            return new Heartbeat.OneWay((UUID)shellObj.get(ID_F), overlayUtilities);
+        public OneWay(int id) {
+            this.id = id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, Heartbeat.OneWay obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
+        public int identifier() {
+            return id;
+        }
+
+        @Override
+        public void toBinary(Object o, ByteBuf buf) {
+            Heartbeat.OneWay obj = (Heartbeat.OneWay) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
             buf.writeInt(obj.overlayUtilities.size());
             for (Map.Entry<Integer, Integer> e : obj.overlayUtilities.entrySet()) {
                 buf.writeInt(e.getKey());
                 buf.writeInt(e.getValue());
             }
-            return buf;
         }
 
         @Override
-        public int getSize(SerializationContext context, Heartbeat.OneWay obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += Integer.SIZE / 8; //nr of overlays
-            for (Map.Entry<Integer, Integer> e : obj.overlayUtilities.entrySet()) {
-                size += Integer.SIZE / 8; //overlayId
-                size += Integer.SIZE / 8; //utility
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            ReqStatus status = (ReqStatus) Serializers.lookupSerializer(ReqStatus.class).fromBinary(buf, hint);
+            Map<Integer, Integer> overlayUtilities = new HashMap<Integer, Integer>();
+            int nrOverlays = buf.readInt();
+            for (int i = 0; i < nrOverlays; i++) {
+                overlayUtilities.put(buf.readInt(), buf.readInt());
             }
-            return size;
+            return new Heartbeat.OneWay(mId, overlayUtilities);
         }
-
     }
 }

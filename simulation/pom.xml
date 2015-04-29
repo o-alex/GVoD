@@ -4,11 +4,10 @@
     <parent>
         <groupId>se.sics.gvod</groupId>
         <artifactId>GVoD</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <name>Simulation</name>
+    <name>GVoD Simulation</name>
     <artifactId>simulation</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     
     <dependencies>
@@ -34,11 +33,6 @@
         </dependency>
         
         <dependency>
-            <groupId>se.sics.kompics</groupId>
-            <artifactId>kompics-core</artifactId>
-            <version>${kompics.version}</version>
-        </dependency>
-        <dependency>
             <groupId>se.sics.kompics.basic</groupId>
             <artifactId>kompics-component-netty-network</artifactId>
             <version>${kompics.version}</version>
@@ -49,18 +43,6 @@
             <artifactId>kompics-simulation</artifactId>
             <version>${kompics.version}</version>
             <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>se.sics.kompics.p2p</groupId>
-            <artifactId>kompics-experiment-scenario-dsl</artifactId>
-            <version>${kompics.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <artifactId>kompics-component-netty-network</artifactId>
-            <groupId>se.sics.kompics.basic</groupId>
-            <type>jar</type>
-            <version>${kompics.version}</version>
         </dependency>
     </dependencies>
 </project>

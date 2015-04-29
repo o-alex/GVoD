@@ -18,7 +18,9 @@
  */
 package se.sics.gvod.bootstrap.server.operations;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.Arrays;
 import java.util.UUID;
 import se.sics.gvod.bootstrap.server.PeerOpManager;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
@@ -27,9 +29,8 @@ import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.AddOverlay;
 import se.sics.gvod.common.util.FileMetadata;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
+import se.sics.kompics.network.netty.serialization.Serializers;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -41,16 +42,14 @@ public class AddOverlayOp implements Operation {
     }
 
     private final PeerOpManager opMngr;
-    private final SerializationContext context;
     private final AddOverlay.Request req;
-    private final VodAddress src;
+    private final DecoratedAddress src;
     
     private Phase phase;
     
 
-    public AddOverlayOp(PeerOpManager opMngr, SerializationContext context, AddOverlay.Request req, VodAddress src) {
+    public AddOverlayOp(PeerOpManager opMngr, AddOverlay.Request req, DecoratedAddress src) {
         this.opMngr = opMngr;
-        this.context = context;
         this.req = req;
         this.src = src;
     }
@@ -72,16 +71,9 @@ public class AddOverlayOp implements Operation {
             PMGetOverlaySample.Response phase1Resp = (PMGetOverlaySample.Response) peerResp;
             if (phase1Resp.status == ReqStatus.SUCCESS) {
                 phase = Phase.ADD_FILE_METADATA;
-                byte[] bytes;
-                try {
-                    bytes = context.getSerializer(FileMetadata.class).encode(context, Unpooled.buffer(), req.fileMeta).array();
-                } catch (Serializer.SerializerException ex) {
-                    System.exit(1);
-                    throw new RuntimeException(ex);
-                } catch (SerializationContext.MissingException ex) {
-                    System.exit(1);
-                    throw new RuntimeException(ex);
-                }
+                ByteBuf buf = Unpooled.buffer();
+                Serializers.lookupSerializer(FileMetadata.class).toBinary(req.fileMeta, buf);
+                byte[] bytes = Arrays.copyOf(buf.array(), buf.readableBytes());
                 opMngr.sendPeerManagerReq(getId(), new PMAddFileMetadata.Request(UUID.randomUUID(), req.overlayId, bytes));
             } else {
                 opMngr.finish(getId(), src, req.fail());

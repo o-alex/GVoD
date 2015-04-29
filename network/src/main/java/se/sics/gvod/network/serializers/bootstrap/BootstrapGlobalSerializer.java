@@ -18,92 +18,92 @@
  */
 package se.sics.gvod.network.serializers.bootstrap;
 
+import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.BootstrapGlobal;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
-import se.sics.gvod.network.serializers.base.GvodMsgSerializer;
+import se.sics.kompics.network.netty.serialization.Serializer;
+import se.sics.kompics.network.netty.serialization.Serializers;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class BootstrapGlobalSerializer {
 
-    public static class Request extends GvodMsgSerializer.AbsRequest<BootstrapGlobal.Request> {
+    public static class Request implements Serializer {
 
-        @Override
-        public BootstrapGlobal.Request decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            return new BootstrapGlobal.Request((UUID) shellObj.get(ID_F));
+        private final int id;
+
+        public Request(int id) {
+            this.id = id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, BootstrapGlobal.Request obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
-            return buf;
+        public int identifier() {
+            return id;
         }
 
         @Override
-        public int getSize(SerializationContext context, BootstrapGlobal.Request obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            return size;
+        public void toBinary(Object o, ByteBuf buf) {
+            BootstrapGlobal.Request obj = (BootstrapGlobal.Request) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+        }
+
+        @Override
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            return new BootstrapGlobal.Request(mId);
         }
     }
 
-    public static class Response extends GvodMsgSerializer.AbsResponse<BootstrapGlobal.Response> {
+    public static class Response implements Serializer {
+        private final int id;
 
-        @Override
-        public BootstrapGlobal.Response decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            int overlaySampleSize = buf.readInt();
-            if (overlaySampleSize == -1) {
-                return new BootstrapGlobal.Response((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), null);
-            }
-
-            Set<VodAddress> overlaySample = new HashSet<VodAddress>();
-            Serializer<VodAddress> vodAddressSerializer = context.getSerializer(VodAddress.class);
-            for (int i = 0; i < overlaySampleSize; i++) {
-                overlaySample.add(vodAddressSerializer.decode(context, buf));
-            }
-            return new BootstrapGlobal.Response((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), overlaySample);
+        public Response(int id) {
+            this.id = id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, BootstrapGlobal.Response obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
+        public int identifier() {
+            return id;
+        }
+
+        @Override
+        public void toBinary(Object o, ByteBuf buf) {
+            BootstrapGlobal.Response obj = (BootstrapGlobal.Response) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+            Serializers.lookupSerializer(ReqStatus.class).toBinary(obj.status, buf);
             if (obj.systemSample == null) {
                 buf.writeInt(-1);
-                return buf;
+                return;
             }
             buf.writeInt(obj.systemSample.size());
-            Serializer<VodAddress> vodAddressSerializer = context.getSerializer(VodAddress.class);
-            for (VodAddress sample : obj.systemSample) {
-                vodAddressSerializer.encode(context, buf, sample);
+            Serializer decoratedAddressSerializer = Serializers.lookupSerializer(DecoratedAddress.class);
+            for(DecoratedAddress node : obj.systemSample) {
+                decoratedAddressSerializer.toBinary(node, buf);
             }
-            return buf;
         }
 
         @Override
-        public int getSize(SerializationContext context, BootstrapGlobal.Response obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += Integer.SIZE / 8; //sampleSize
-
-            if (obj.systemSample != null) {
-                Serializer<VodAddress> vodAddressSerializer = context.getSerializer(VodAddress.class);
-                for (VodAddress sample : obj.systemSample) {
-                    size += vodAddressSerializer.getSize(context, sample);
-                }
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            ReqStatus status = (ReqStatus) Serializers.lookupSerializer(ReqStatus.class).fromBinary(buf, hint);
+            int overlaySampleSize = buf.readInt();
+            if (overlaySampleSize == -1) {
+                return new BootstrapGlobal.Response(mId, status, null);
             }
-            return size;
+
+            Set<DecoratedAddress> overlaySample = new HashSet<DecoratedAddress>();
+            Serializer decoratedAddressSerializer = Serializers.lookupSerializer(DecoratedAddress.class);
+            for (int i = 0; i < overlaySampleSize; i++) {
+                DecoratedAddress node = (DecoratedAddress) decoratedAddressSerializer.fromBinary(buf, hint);
+                overlaySample.add(node);
+            }
+            return new BootstrapGlobal.Response(mId, status, overlaySample);
         }
     }
 }

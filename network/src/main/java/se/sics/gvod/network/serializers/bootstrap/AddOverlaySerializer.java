@@ -18,75 +18,76 @@
  */
 package se.sics.gvod.network.serializers.bootstrap;
 
+import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.AddOverlay;
 import se.sics.gvod.common.util.FileMetadata;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
-import se.sics.gvod.network.serializers.base.GvodMsgSerializer;
+import se.sics.kompics.network.netty.serialization.Serializer;
+import se.sics.kompics.network.netty.serialization.Serializers;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class AddOverlaySerializer {
 
-    public static class Request extends GvodMsgSerializer.AbsRequest<AddOverlay.Request> {
+    public static class Request implements Serializer {
 
-        @Override
-        public AddOverlay.Request decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            int overlayId = buf.readInt();
-            FileMetadata fileMeta = context.getSerializer(FileMetadata.class).decode(context, buf);
+        private final int id;
 
-            return new AddOverlay.Request((UUID) shellObj.get(ID_F), overlayId, fileMeta);
+        public Request(int id) {
+            this.id = id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, AddOverlay.Request obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
+        public int identifier() {
+            return id;
+        }
+
+        @Override
+        public void toBinary(Object o, ByteBuf buf) {
+            AddOverlay.Request obj = (AddOverlay.Request) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
             buf.writeInt(obj.overlayId);
-            context.getSerializer(FileMetadata.class).encode(context, buf, obj.fileMeta);
-            return buf;
+            Serializers.lookupSerializer(FileMetadata.class).toBinary(obj.fileMeta, buf);
         }
 
         @Override
-        public int getSize(SerializationContext context, AddOverlay.Request obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += Integer.SIZE / 8; //overlayId
-            size += context.getSerializer(FileMetadata.class).getSize(context, obj.fileMeta);
-            return size;
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            int overlayId = buf.readInt();
+            FileMetadata fileMeta = (FileMetadata) Serializers.lookupSerializer(FileMetadata.class).fromBinary(buf, hint);
+            return new AddOverlay.Request(mId, overlayId, fileMeta);
         }
-
     }
 
-    public static class Response extends GvodMsgSerializer.AbsResponse<AddOverlay.Response> {
+    public static class Response implements Serializer {
 
-        @Override
-        public AddOverlay.Response decode(SerializationContext context, ByteBuf buf) throws Serializer.SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            int overlayId = buf.readInt();
-            return new AddOverlay.Response((UUID)shellObj.get(ID_F), (ReqStatus)shellObj.get(STATUS_F), overlayId);
+        private final int id;
+
+        public Response(int id) {
+            this.id = id;
+        }
+
+        public int identifier() {
+            return id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, AddOverlay.Response obj) throws Serializer.SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
+        public void toBinary(Object o, ByteBuf buf) {
+            AddOverlay.Response obj = (AddOverlay.Response) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+            Serializers.lookupSerializer(ReqStatus.class).toBinary(obj.status, buf);
             buf.writeInt(obj.overlayId);
-            return buf;
         }
 
         @Override
-        public int getSize(SerializationContext context, AddOverlay.Response obj) throws Serializer.SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += Integer.SIZE / 8; //overlayId
-            return size;
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID)Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            ReqStatus status = (ReqStatus)Serializers.lookupSerializer(ReqStatus.class).fromBinary(buf, hint);
+            int overlayId = buf.readInt();
+            return new AddOverlay.Response(mId, status, overlayId);
         }
-
     }
 }

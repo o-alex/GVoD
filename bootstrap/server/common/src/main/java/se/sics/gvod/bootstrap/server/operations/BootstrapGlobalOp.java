@@ -26,10 +26,7 @@ import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.BootstrapGlobal;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
-import se.sics.gvod.network.serializers.util.SerializerHelper;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -42,15 +39,13 @@ public class BootstrapGlobalOp implements Operation {
     }
 
     private final PeerOpManager opMngr;
-    private final SerializationContext context;
     private final BootstrapGlobal.Request req;
-    private final VodAddress src;
+    private final DecoratedAddress src;
     private Phase phase;
     private BootstrapGlobal.Response resp;
 
-    public BootstrapGlobalOp(PeerOpManager opMngr, SerializationContext context, BootstrapGlobal.Request req, VodAddress src) {
+    public BootstrapGlobalOp(PeerOpManager opMngr, BootstrapGlobal.Request req, DecoratedAddress src) {
         this.opMngr = opMngr;
-        this.context = context;
         this.req = req;
         this.src = src;
     }
@@ -71,18 +66,9 @@ public class BootstrapGlobalOp implements Operation {
         if (phase == Phase.GET_SYSTEM_SAMPLE && peerResp instanceof PMGetOverlaySample.Response) {
             PMGetOverlaySample.Response phase1Resp = (PMGetOverlaySample.Response) peerResp;
             if (phase1Resp.status == ReqStatus.SUCCESS) {
-                byte[] bytes;
-                try {
-                    bytes = SerializerHelper.serializeOverlayData(context, src, System.currentTimeMillis(), 0);
-                    opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), bytes));
-                    resp = req.success(Helper.processOverlaySample(context, phase1Resp.overlaySample).keySet());
-                } catch (Serializer.SerializerException ex) {
-                    System.exit(1);
-                    throw new RuntimeException(ex);
-                } catch (SerializationContext.MissingException ex) {
-                    System.exit(1);
-                    throw new RuntimeException(ex);
-                }
+                byte[] bytes = Helper.serializeOverlayData(src, 0);
+                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getId(), bytes));
+                resp = req.success(Helper.processOverlaySample(phase1Resp.overlaySample).keySet());
                 opMngr.finish(getId(), src, resp);
             } else {
                 opMngr.finish(getId(), src, req.fail());

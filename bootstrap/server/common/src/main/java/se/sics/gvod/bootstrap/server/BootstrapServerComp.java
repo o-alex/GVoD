@@ -39,21 +39,18 @@ import se.sics.gvod.common.msg.peerMngr.BootstrapGlobal;
 import se.sics.gvod.common.msg.peerMngr.Heartbeat;
 import se.sics.gvod.common.msg.peerMngr.JoinOverlay;
 import se.sics.gvod.common.msg.peerMngr.OverlaySample;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.net.VodNetwork;
-import se.sics.gvod.network.GVoDNetFrameDecoder;
-import se.sics.gvod.network.GVoDNetworkSettings;
-import se.sics.gvod.network.netmsg.NetContentMsg;
-import se.sics.gvod.network.netmsg.bootstrap.NetAddOverlay;
-import se.sics.gvod.network.netmsg.bootstrap.NetBootstrapGlobal;
-import se.sics.gvod.network.netmsg.bootstrap.NetHeartbeat;
-import se.sics.gvod.network.netmsg.bootstrap.NetJoinOverlay;
-import se.sics.gvod.network.netmsg.bootstrap.NetOverlaySample;
-import se.sics.gvod.network.serializers.SerializationContext;
+import se.sics.kompics.ClassMatchedHandler;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
 import se.sics.kompics.Positive;
+import se.sics.kompics.network.Network;
+import se.sics.kompics.network.Transport;
+import se.sics.p2ptoolbox.util.network.ContentMsg;
+import se.sics.p2ptoolbox.util.network.impl.BasicContentMsg;
+import se.sics.p2ptoolbox.util.network.impl.BasicHeader;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedHeader;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -62,11 +59,10 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
 
     private static final Logger log = LoggerFactory.getLogger(BootstrapServerComp.class);
 
-    private Positive<VodNetwork> network = requires(VodNetwork.class);
+    private Positive<Network> network = requires(Network.class);
     private Positive<PeerManagerPort> peerManager = requires(PeerManagerPort.class);
 
     private final BootstrapServerConfig config;
-    private final SerializationContext context;
 
     private final Map<UUID, Operation> pendingOps;
     private final Map<UUID, UUID> pendingPeerReqs;
@@ -74,7 +70,6 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
     public BootstrapServerComp(BootstrapServerInit init) {
         log.debug("init");
         this.config = init.config;
-        this.context = init.context;
         this.pendingOps = new HashMap<UUID, Operation>();
         this.pendingPeerReqs = new HashMap<UUID, UUID>();
 
@@ -86,57 +81,62 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
         subscribe(handlePeerManagerResponse, peerManager);
     }
 
-    public Handler<NetBootstrapGlobal.Request> handleBootstrapGlobalRequest = new Handler<NetBootstrapGlobal.Request>() {
+    ClassMatchedHandler handleBootstrapGlobalRequest = 
+            new ClassMatchedHandler<BootstrapGlobal.Request, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, BootstrapGlobal.Request>>() {
 
         @Override
-        public void handle(NetBootstrapGlobal.Request req) {
-            log.debug("{} received {}", config.self, req);
-            Operation op = new BootstrapGlobalOp(BootstrapServerComp.this, context, req.content, req.getVodSource());
-            pendingOps.put(req.content.id, op);
+        public void handle(BootstrapGlobal.Request content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, BootstrapGlobal.Request> container) {
+            log.debug("{} net received:{}", config.self, content);
+            Operation op = new BootstrapGlobalOp(BootstrapServerComp.this, content, container.getHeader().getSource());
+            pendingOps.put(content.id, op);
             op.start();
         }
     };
 
-    public Handler<NetAddOverlay.Request> handleAddOverlayRequest = new Handler<NetAddOverlay.Request>() {
+    ClassMatchedHandler handleAddOverlayRequest = 
+            new ClassMatchedHandler<AddOverlay.Request, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, AddOverlay.Request>>() {
 
         @Override
-        public void handle(NetAddOverlay.Request req) {
-            log.debug("{} received{}", config.self, req);
-            Operation op = new AddOverlayOp(BootstrapServerComp.this, context, req.content, req.getVodSource());
-            pendingOps.put(req.content.id, op);
+        public void handle(AddOverlay.Request content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, AddOverlay.Request> container) {
+            log.debug("{} net received:{}", config.self, content);
+            Operation op = new AddOverlayOp(BootstrapServerComp.this, content, container.getHeader().getSource());
+            pendingOps.put(content.id, op);
             op.start();
         }
     };
 
-    public Handler<NetJoinOverlay.Request> handleJoinOverlayRequest = new Handler<NetJoinOverlay.Request>() {
+    ClassMatchedHandler handleJoinOverlayRequest = 
+            new ClassMatchedHandler<JoinOverlay.Request, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, JoinOverlay.Request>>() {
 
         @Override
-        public void handle(NetJoinOverlay.Request req) {
-            log.debug("{} received {}", config.self, req);
-            Operation op = new JoinOverlayOp(BootstrapServerComp.this, context, req.content, req.getVodSource());
-            pendingOps.put(req.content.id, op);
+        public void handle(JoinOverlay.Request content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, JoinOverlay.Request> container) {
+            log.debug("{} net received:{}", config.self, content);
+            Operation op = new JoinOverlayOp(BootstrapServerComp.this, content, container.getHeader().getSource());
+            pendingOps.put(content.id, op);
             op.start();
         }
     };
 
-    public Handler<NetOverlaySample.Request> handleOverlaySampleRequest = new Handler<NetOverlaySample.Request>() {
+    ClassMatchedHandler handleOverlaySampleRequest = 
+            new ClassMatchedHandler<OverlaySample.Request, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, OverlaySample.Request>>() {
 
         @Override
-        public void handle(NetOverlaySample.Request req) {
-            log.debug("{} received {}", config.self, req);
-            Operation op = new OverlaySampleOp(BootstrapServerComp.this, context, req.content, req.getVodSource());
-            pendingOps.put(req.content.id, op);
+        public void handle(OverlaySample.Request content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, OverlaySample.Request> container) {
+            log.debug("{} net received:{}", config.self, content);
+            Operation op = new OverlaySampleOp(BootstrapServerComp.this, content, container.getHeader().getSource());
+            pendingOps.put(content.id, op);
             op.start();
         }
     };
 
-    public Handler<NetHeartbeat.OneWay> handleHeartbeat = new Handler<NetHeartbeat.OneWay>() {
+    ClassMatchedHandler handleHeartbeat = 
+            new ClassMatchedHandler<Heartbeat.OneWay, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, Heartbeat.OneWay>>() {
 
         @Override
-        public void handle(NetHeartbeat.OneWay heartbeat) {
-            log.debug("{} received {}", new Object[]{config.self, heartbeat});
-            Operation op = new HeartbeatOp(BootstrapServerComp.this, context, heartbeat.content, heartbeat.getVodSource());
-            pendingOps.put(heartbeat.content.id, op);
+        public void handle(Heartbeat.OneWay content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, Heartbeat.OneWay> container) {
+            log.debug("{} net received:{}", new Object[]{config.self, content});
+            Operation op = new HeartbeatOp(BootstrapServerComp.this, content, container.getHeader().getSource());
+            pendingOps.put(content.id, op);
             op.start();
         }
 
@@ -146,7 +146,7 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
 
         @Override
         public void handle(PeerManagerMsg.Response resp) {
-            log.debug("{} received {}", new Object[]{config.self, resp});
+            log.debug("{} received:{}", new Object[]{config.self, resp});
             Operation op = pendingOps.get(pendingPeerReqs.remove(resp.id));
             if (op == null) {
                 log.debug("{} dropping {}", new Object[]{config.self, resp});
@@ -158,7 +158,7 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
 
     //**********OperationManager
     @Override
-    public void finish(UUID opId, VodAddress src, GvodMsg.Response resp) {
+    public void finish(UUID opId, DecoratedAddress src, GvodMsg.Response resp) {
         if (pendingOps.remove(opId) == null) {
             log.error("logic error handling operations");
             System.exit(1);
@@ -167,21 +167,28 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
         log.debug("{} sending {}", new Object[]{config.self, resp});
         if (resp instanceof BootstrapGlobal.Response) {
             BootstrapGlobal.Response gvodResp = (BootstrapGlobal.Response) resp;
-            trigger(new NetBootstrapGlobal.Response(config.self, src, resp.id, gvodResp), network);
+            DecoratedHeader<DecoratedAddress> responseHeader = new DecoratedHeader(new BasicHeader(config.self, src, Transport.UDP), null, null);
+            ContentMsg response = new BasicContentMsg(responseHeader, gvodResp);
+            trigger(response, network);
         } else if (resp instanceof AddOverlay.Response) {
             AddOverlay.Response gvodResp = (AddOverlay.Response) resp;
-            trigger(new NetAddOverlay.Response(config.self, src, resp.id, gvodResp), network);
+            DecoratedHeader<DecoratedAddress> responseHeader = new DecoratedHeader(new BasicHeader(config.self, src, Transport.UDP), null, null);
+            ContentMsg response = new BasicContentMsg(responseHeader, gvodResp);
+            trigger(response, network);
         } else if (resp instanceof JoinOverlay.Response) {
             JoinOverlay.Response gvodResp = (JoinOverlay.Response) resp;
-            trigger(new NetJoinOverlay.Response(config.self, src, resp.id, gvodResp), network);
+            DecoratedHeader<DecoratedAddress> responseHeader = new DecoratedHeader(new BasicHeader(config.self, src, Transport.UDP), null, null);
+            ContentMsg response = new BasicContentMsg(responseHeader, gvodResp);
+            trigger(response, network);
         } else if (resp instanceof OverlaySample.Response) {
             OverlaySample.Response gvodResp = (OverlaySample.Response) resp;
-            trigger(new NetOverlaySample.Response(config.self, src, resp.id, gvodResp), network);
+            DecoratedHeader<DecoratedAddress> responseHeader = new DecoratedHeader(new BasicHeader(config.self, src, Transport.UDP), null, null);
+            ContentMsg response = new BasicContentMsg(responseHeader, gvodResp);
+            trigger(response, network);
         } else {
             log.error("received wrong message - logic error");
             System.exit(1);
         }
-
     }
 
     @Override
@@ -213,11 +220,9 @@ public class BootstrapServerComp extends ComponentDefinition implements PeerOpMa
     public static class BootstrapServerInit extends Init<BootstrapServerComp> {
 
         public final BootstrapServerConfig config;
-        public final SerializationContext context;
 
         public BootstrapServerInit(BootstrapServerConfig config) {
             this.config = config;
-            this.context = GVoDNetworkSettings.getContext();
         }
     }
 }

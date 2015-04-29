@@ -19,16 +19,16 @@
 
 package se.sics.gvod.manager;
 
-import se.sics.gvod.net.VodAddress;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class VoDManagerConfig {
     public final String libDir;
-    public final VodAddress selfAddress;
+    public final DecoratedAddress selfAddress;
     
-    public VoDManagerConfig(VodAddress selfAddress, String libDir) {
+    public VoDManagerConfig(DecoratedAddress selfAddress, String libDir) {
         this.selfAddress = selfAddress;
         this.libDir = libDir;
     }

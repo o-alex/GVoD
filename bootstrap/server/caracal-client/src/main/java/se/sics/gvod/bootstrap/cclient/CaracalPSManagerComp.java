@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import se.sics.caracaldb.MessageRegistrator;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
 import se.sics.gvod.common.util.GVoDConfigException;
-import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Init;
@@ -32,6 +31,7 @@ import se.sics.kompics.Positive;
 import se.sics.kompics.network.Network;
 import se.sics.kompics.network.netty.NettyInit;
 import se.sics.kompics.network.netty.NettyNetwork;
+import se.sics.kompics.timer.Timer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>

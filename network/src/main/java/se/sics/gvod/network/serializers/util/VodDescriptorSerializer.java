@@ -19,31 +19,35 @@
 
 package se.sics.gvod.network.serializers.util;
 
+import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import se.sics.gvod.common.util.VodDescriptor;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
+import se.sics.kompics.network.netty.serialization.Serializer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class VodDescriptorSerializer implements Serializer<VodDescriptor> {
-
-    @Override
-    public ByteBuf encode(SerializationContext context, ByteBuf buf, VodDescriptor obj) throws SerializerException {
-        buf.writeInt(obj.downloadPos);
-        return buf;
+public class VodDescriptorSerializer implements Serializer {
+    private final int id;
+    
+    public VodDescriptorSerializer(int id) {
+        this.id = id;
     }
 
     @Override
-    public VodDescriptor decode(SerializationContext context, ByteBuf buf) throws SerializerException {
+    public int identifier() {
+        return id;
+    }
+
+    @Override
+    public void toBinary(Object o, ByteBuf buf) {
+        VodDescriptor obj = (VodDescriptor)o;
+        buf.writeInt(obj.downloadPos);
+    }
+
+    @Override
+    public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
         int downloadPos = buf.readInt();
         return new VodDescriptor(downloadPos);
     }
-
-    @Override
-    public int getSize(SerializationContext context, VodDescriptor obj) throws SerializerException {
-        return Integer.SIZE/8;
-    }
-    
 }

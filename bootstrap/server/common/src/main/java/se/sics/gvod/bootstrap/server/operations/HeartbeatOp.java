@@ -18,21 +18,17 @@
  */
 package se.sics.gvod.bootstrap.server.operations;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.bootstrap.server.PeerOpManager;
+import se.sics.gvod.bootstrap.server.operations.util.Helper;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.Heartbeat;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
-import se.sics.gvod.network.serializers.util.SerializerHelper;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -40,15 +36,13 @@ import se.sics.gvod.network.serializers.util.SerializerHelper;
 public class HeartbeatOp implements Operation {
 
     private final PeerOpManager opMngr;
-    private final SerializationContext context;
     private final Heartbeat.OneWay oneWay;
-    private final VodAddress src;
+    private final DecoratedAddress src;
 
     public final Set<UUID> pendingJoins;
 
-    public HeartbeatOp(PeerOpManager opMngr, SerializationContext context, Heartbeat.OneWay oneWay, VodAddress src) {
+    public HeartbeatOp(PeerOpManager opMngr, Heartbeat.OneWay oneWay, DecoratedAddress src) {
         this.opMngr = opMngr;
-        this.context = context;
         this.src = src;
         this.oneWay = oneWay;
         this.pendingJoins = new HashSet<UUID>();
@@ -61,24 +55,16 @@ public class HeartbeatOp implements Operation {
 
     @Override
     public void start() {
-        try {
-            byte[] bytesBootOverlay = SerializerHelper.serializeOverlayData(context, src, System.currentTimeMillis(), 0);
-            PMJoinOverlay.Request joinSystem = new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), bytesBootOverlay);
-            opMngr.sendPeerManagerReq(getId(), joinSystem);
-            pendingJoins.add(joinSystem.id);
-            
-            for (Map.Entry<Integer, Integer> e : oneWay.overlayUtilities.entrySet()) {
-                byte[] bytesOverlay = SerializerHelper.serializeOverlayData(context, src, System.currentTimeMillis(), e.getValue());
-                PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getPeerAddress().getId(), bytesOverlay);
-                opMngr.sendPeerManagerReq(getId(), joinOverlay);
-                pendingJoins.add(joinOverlay.id);
-            }
-        } catch (Serializer.SerializerException ex) {
-            System.exit(1);
-            throw new RuntimeException(ex);
-        } catch (SerializationContext.MissingException ex) {
-            System.exit(1);
-            throw new RuntimeException(ex);
+        byte[] bytesBootOverlay = Helper.serializeOverlayData(src, 0);
+        PMJoinOverlay.Request joinSystem = new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getId(), bytesBootOverlay);
+        opMngr.sendPeerManagerReq(getId(), joinSystem);
+        pendingJoins.add(joinSystem.id);
+
+        for (Map.Entry<Integer, Integer> e : oneWay.overlayUtilities.entrySet()) {
+            byte[] bytesOverlay = Helper.serializeOverlayData(src, e.getValue());
+            PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getId(), bytesOverlay);
+            opMngr.sendPeerManagerReq(getId(), joinOverlay);
+            pendingJoins.add(joinOverlay.id);
         }
     }
 
@@ -88,7 +74,7 @@ public class HeartbeatOp implements Operation {
             PMJoinOverlay.Response joinResp = (PMJoinOverlay.Response) peerResp;
             if (joinResp.status == ReqStatus.SUCCESS) {
                 pendingJoins.remove(joinResp.id);
-                if(pendingJoins.isEmpty()) {
+                if (pendingJoins.isEmpty()) {
                     opMngr.finish(getId());
                 }
             } else {

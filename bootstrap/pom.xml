@@ -4,15 +4,14 @@
     <parent>
         <groupId>se.sics.gvod</groupId>
         <artifactId>GVoD</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
     <groupId>se.sics.gvod</groupId>
     <artifactId>bootstrap</artifactId>
-    <name>Bootstrap</name>
+    <name>GVoD Bootstrap</name>
     <packaging>pom</packaging>
     <modules>
         <module>client</module>
-        <module>common</module>
         <module>server</module>
     </modules>
 </project>

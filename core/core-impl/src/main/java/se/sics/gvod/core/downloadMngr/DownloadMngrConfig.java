@@ -20,7 +20,7 @@ package se.sics.gvod.core.downloadMngr;
 
 import com.typesafe.config.Config;
 import se.sics.gvod.common.util.GVoDConfigException;
-import se.sics.gvod.net.VodAddress;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  *
@@ -29,7 +29,7 @@ import se.sics.gvod.net.VodAddress;
 public class DownloadMngrConfig {
 
     private final Config config;
-    private final VodAddress selfAddress;
+    private final DecoratedAddress selfAddress;
     public final int overlayId;
     public final int startPieces;
     public final long descriptorUpdate;
@@ -41,7 +41,7 @@ public class DownloadMngrConfig {
     public final String hashAlg = "SHA";
     public final long speedupPeriod = 2000;
 
-    private DownloadMngrConfig(Config config, VodAddress selfAddress, int overlayId, int startPieces, long descriptorUpdate, int pieceSize, int piecesPerBlock) {
+    private DownloadMngrConfig(Config config, DecoratedAddress selfAddress, int overlayId, int startPieces, long descriptorUpdate, int pieceSize, int piecesPerBlock) {
         this.config = config;
         this.selfAddress = selfAddress;
         this.overlayId = overlayId;
@@ -51,17 +51,17 @@ public class DownloadMngrConfig {
         this.piecesPerBlock = piecesPerBlock;
     }
 
-    public VodAddress getSelf() {
+    public DecoratedAddress getSelf() {
         return selfAddress;
     }
 
     public static class Builder {
 
         private final Config config;
-        private final VodAddress selfAddress;
+        private final DecoratedAddress selfAddress;
         private final int overlayId;
 
-        public Builder(Config config, VodAddress selfAddress, int overlayId) {
+        public Builder(Config config, DecoratedAddress selfAddress, int overlayId) {
             this.config = config;
             this.selfAddress = selfAddress;
             this.overlayId = overlayId;

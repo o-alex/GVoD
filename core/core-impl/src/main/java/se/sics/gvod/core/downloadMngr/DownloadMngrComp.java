@@ -39,19 +39,16 @@ import se.sics.gvod.common.utility.UtilityUpdate;
 import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.core.downloadMngr.msg.ScheduledSpeedUp;
 import se.sics.gvod.core.downloadMngr.msg.ScheduledUtilityUpdate;
-import se.sics.gvod.timer.CancelPeriodicTimeout;
-import se.sics.gvod.timer.CancelTimeout;
-import se.sics.gvod.timer.SchedulePeriodicTimeout;
-import se.sics.gvod.timer.ScheduleTimeout;
-import se.sics.gvod.timer.Timeout;
-import se.sics.gvod.timer.TimeoutId;
-import se.sics.gvod.timer.Timer;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
+import se.sics.kompics.timer.CancelPeriodicTimeout;
+import se.sics.kompics.timer.SchedulePeriodicTimeout;
+import se.sics.kompics.timer.Timeout;
+import se.sics.kompics.timer.Timer;
 import se.sics.p2ptoolbox.util.managedStore.BlockMngr;
 import se.sics.p2ptoolbox.util.managedStore.FileMngr;
 import se.sics.p2ptoolbox.util.managedStore.HashMngr;
@@ -83,8 +80,8 @@ public class DownloadMngrComp extends ComponentDefinition {
     private Set<Integer> pendingHashes;
     private List<Integer> nextHashes;
 
-    private TimeoutId speedUpTId = null;
-    private TimeoutId updateSelfTId;
+    private UUID speedUpTId = null;
+    private UUID updateSelfTId;
 
     public DownloadMngrComp(DownloadMngrInit init) {
         this.config = init.config;

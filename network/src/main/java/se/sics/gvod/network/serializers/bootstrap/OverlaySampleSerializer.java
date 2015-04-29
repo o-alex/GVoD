@@ -18,97 +18,97 @@
  */
 package se.sics.gvod.network.serializers.bootstrap;
 
+import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.OverlaySample;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
-import se.sics.gvod.network.serializers.base.GvodMsgSerializer;
+import se.sics.kompics.network.netty.serialization.Serializer;
+import se.sics.kompics.network.netty.serialization.Serializers;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class OverlaySampleSerializer {
 
-    public static class Request extends GvodMsgSerializer.AbsRequest<OverlaySample.Request> {
-
+    public static class Request implements Serializer {
+        private final int id;
+        
+        public Request(int id) {
+            this.id = id;
+        }
+        
         @Override
-        public OverlaySample.Request decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            int overlayId = buf.readInt();
-            return new OverlaySample.Request((UUID)shellObj.get(ID_F), overlayId);
+        public int identifier() {
+            return id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, OverlaySample.Request obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
+        public void toBinary(Object o, ByteBuf buf) {
+            OverlaySample.Request obj = (OverlaySample.Request)o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
             buf.writeInt(obj.overlayId);
-            return buf;
         }
 
         @Override
-        public int getSize(SerializationContext context, OverlaySample.Request obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += Integer.SIZE / 8; //overlayId
-            return size;
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+             UUID mId = (UUID)Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+             int overlayId = buf.readInt();
+             return new OverlaySample.Request(mId, overlayId);
         }
-
     }
 
-    public static class Response extends GvodMsgSerializer.AbsResponse<OverlaySample.Response> {
-
-        @Override
-        public OverlaySample.Response decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            int overlayId = buf.readInt();
-            if(!shellObj.get(STATUS_F).equals(ReqStatus.SUCCESS)) {
-                return new OverlaySample.Response((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), overlayId, null);
-            }
-            Map<VodAddress, Integer> overlaySample = new HashMap<VodAddress, Integer>();
-            int overlaySampleSize = buf.readInt();
-            Serializer<VodAddress> vodAddressSerializer = context.getSerializer(VodAddress.class);
-            for (int i = 0; i < overlaySampleSize; i++) {
-                overlaySample.put(vodAddressSerializer.decode(context, buf), buf.readInt());
-            }
-            return new OverlaySample.Response((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), overlayId, overlaySample);
+    public static class Response implements Serializer {
+        private final int id;
+        
+        public Response(int id) {
+            this.id = id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, OverlaySample.Response obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
+        public int identifier() {
+            return id;
+        }
+
+        @Override
+        public void toBinary(Object o, ByteBuf buf) {
+            OverlaySample.Response obj = (OverlaySample.Response)o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+            Serializers.lookupSerializer(ReqStatus.class).toBinary(obj.status, buf);
+            
             buf.writeInt(obj.overlayId);
             if(!obj.status.equals(ReqStatus.SUCCESS)) {
-                return buf;
+                return;
             }
             buf.writeInt(obj.overlaySample.size());
-            Serializer<VodAddress> vodAddressSerializer = context.getSerializer(VodAddress.class);
-            for (Map.Entry<VodAddress, Integer> e : obj.overlaySample.entrySet()) {
-                vodAddressSerializer.encode(context, buf, e.getKey());
+            Serializer decoratedAddressSerializer = Serializers.lookupSerializer(DecoratedAddress.class);
+            for (Map.Entry<DecoratedAddress, Integer> e : obj.overlaySample.entrySet()) {
+                decoratedAddressSerializer.toBinary(e.getKey(), buf);
                 buf.writeInt(e.getValue());
             }
-            return buf;
         }
 
         @Override
-        public int getSize(SerializationContext context, OverlaySample.Response obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += Integer.SIZE / 8; //overlayId
-            if(!obj.status.equals(ReqStatus.SUCCESS)) {
-                return size;
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            ReqStatus status = (ReqStatus) Serializers.lookupSerializer(ReqStatus.class).fromBinary(buf, hint);
+            
+            int overlayId = buf.readInt();
+            if(!status.equals(ReqStatus.SUCCESS)) {
+                return new OverlaySample.Response(mId, status, overlayId, null);
             }
-            size += Integer.SIZE / 8; //sampleSize
-            Serializer<VodAddress> vodAddressSerializer = context.getSerializer(VodAddress.class);
-            for (Map.Entry<VodAddress, Integer> e : obj.overlaySample.entrySet()) {
-                size += vodAddressSerializer.getSize(context, e.getKey());
-                size += Integer.SIZE / 8;
+            int overlaySampleSize = buf.readInt();
+            Map<DecoratedAddress, Integer> overlaySample = new HashMap<DecoratedAddress, Integer>();
+            Serializer decoratedAddressSerializer = Serializers.lookupSerializer(DecoratedAddress.class);
+            for (int i = 0; i < overlaySampleSize; i++) {
+                DecoratedAddress node = (DecoratedAddress)decoratedAddressSerializer.fromBinary(buf, hint);
+                int utility = buf.readInt();
+                overlaySample.put(node, utility);
             }
-            return size;
+            return new OverlaySample.Response(mId, status, overlayId, overlaySample);
         }
     }
 }

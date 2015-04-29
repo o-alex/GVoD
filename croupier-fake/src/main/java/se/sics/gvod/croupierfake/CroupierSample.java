@@ -22,16 +22,16 @@ package se.sics.gvod.croupierfake;
 import java.util.HashMap;
 import java.util.Map;
 import se.sics.gvod.common.util.VodDescriptor;
-import se.sics.gvod.net.VodAddress;
 import se.sics.kompics.KompicsEvent;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class CroupierSample implements KompicsEvent {
-    public final Map<VodAddress, VodDescriptor> sample;
+    public final Map<DecoratedAddress, VodDescriptor> sample;
     
-    public CroupierSample(Map<VodAddress, VodDescriptor> sample) {
-        this.sample = new HashMap<VodAddress, VodDescriptor>(sample);
+    public CroupierSample(Map<DecoratedAddress, VodDescriptor> sample) {
+        this.sample = new HashMap<DecoratedAddress, VodDescriptor>(sample);
     }
 }

@@ -19,6 +19,7 @@
  */
 package se.sics.gvod.bootstrap.cclient;
 
+import com.google.common.io.BaseEncoding;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -28,6 +29,7 @@ import java.util.Random;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import se.sics.caracaldb.Address;
 import se.sics.caracaldb.Key;
 import se.sics.caracaldb.global.ForwardMessage;
 import se.sics.caracaldb.global.Sample;
@@ -35,7 +37,6 @@ import se.sics.caracaldb.global.SampleRequest;
 import se.sics.caracaldb.global.SchemaData;
 import se.sics.caracaldb.operations.CaracalMsg;
 import se.sics.caracaldb.operations.CaracalOp;
-import se.sics.caracaldb.utils.ByteArrayFormatter;
 import se.sics.gvod.bootstrap.cclient.operations.AddFileMetadataOp;
 import se.sics.gvod.bootstrap.cclient.operations.AddOverlayPeerOp;
 import se.sics.gvod.bootstrap.cclient.operations.CleanupOp;
@@ -49,22 +50,19 @@ import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetFileMetadata;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.util.Operation;
-import se.sics.gvod.timer.CancelPeriodicTimeout;
-import se.sics.gvod.timer.CancelTimeout;
-import se.sics.gvod.timer.SchedulePeriodicTimeout;
-import se.sics.gvod.timer.ScheduleTimeout;
-import se.sics.gvod.timer.Timeout;
-import se.sics.gvod.timer.TimeoutId;
-import se.sics.gvod.timer.Timer;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
-import se.sics.kompics.Kompics;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
-import se.sics.kompics.address.Address;
 import se.sics.kompics.network.Network;
+import se.sics.kompics.timer.CancelPeriodicTimeout;
+import se.sics.kompics.timer.CancelTimeout;
+import se.sics.kompics.timer.SchedulePeriodicTimeout;
+import se.sics.kompics.timer.ScheduleTimeout;
+import se.sics.kompics.timer.Timeout;
+import se.sics.kompics.timer.Timer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -82,8 +80,8 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
     private final Map<UUID, Operation<CaracalOp>> pendingOps;
     private final Map<UUID, UUID> pendingCaracalOps;
 
-    private TimeoutId sampleTimeout = null;
-    private TimeoutId caracalPeriodicCleanupTid = null;
+    private UUID sampleTimeout = null;
+    private UUID caracalPeriodicCleanupTid = null;
     private final List<Address> caracalNodes;
     private SchemaData schemaData = null;
     private Random rand = new Random();
@@ -120,7 +118,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
     private void sendBootSampleRequest() {
         log.info("{} sending boot sample request to caracal", config.self);
         scheduleCaracalSampleTimeout();
-        trigger(new SampleRequest(config.self, config.caracalServer, 10, true), network);
+        trigger(new SampleRequest(config.self, config.caracalServer, 10, true, false, 1), network);
     }
 
     private Handler<Sample> handleSample = new Handler<Sample>() {
@@ -133,7 +131,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
                 log.error("{} caracal sample response does not contain gvod schemas - cannot communicate - shutdown");
                 System.exit(1);
             }
-            log.info("{} schema prefixes - heartbeat:{} metadata:{}", new Object[]{config.self, ByteArrayFormatter.toHexString(schemaData.getId("gvod.heartbeat")), ByteArrayFormatter.toHexString(schemaData.getId("gvod.metadata"))});
+            log.info("{} schema prefixes - heartbeat:{} metadata:{}", new Object[]{config.self, BaseEncoding.base16().encode(schemaData.getId("gvod.heartbeat")), BaseEncoding.base16().encode(schemaData.getId("gvod.metadata"))});
             caracalNodes.addAll(sample.nodes);
             cancelCaracalReqTimeout(sampleTimeout);
             trigger(new CaracalReady(), myPort);
@@ -143,7 +141,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
         }
     };
 
-    private Handler<CaracalSampleTimeout> handleSampleTimeout = new Handler<CaracalSampleTimeout>() {
+    Handler handleSampleTimeout = new Handler<CaracalSampleTimeout>() {
 
         @Override
         public void handle(CaracalSampleTimeout event) {
@@ -157,7 +155,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
 
     };
 
-    public Handler<CaracalMsg> handleCaracalResponse = new Handler<CaracalMsg>() {
+    Handler handleCaracalResponse = new Handler<CaracalMsg>() {
 
         @Override
         public void handle(CaracalMsg resp) {
@@ -170,7 +168,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
         }
     };
 
-    public Handler<PMJoinOverlay.Request> handleJoinOverlay = new Handler<PMJoinOverlay.Request>() {
+    Handler handleJoinOverlay = new Handler<PMJoinOverlay.Request>() {
 
         @Override
         public void handle(PMJoinOverlay.Request req) {
@@ -181,7 +179,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
         }
     };
 
-    public Handler<PMGetOverlaySample.Request> handleGetOverlaySample = new Handler<PMGetOverlaySample.Request>() {
+    Handler handleGetOverlaySample = new Handler<PMGetOverlaySample.Request>() {
 
         @Override
         public void handle(PMGetOverlaySample.Request req) {
@@ -192,7 +190,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
         }
     };
 
-    public Handler<PMAddFileMetadata.Request> handleAddFileMetadata = new Handler<PMAddFileMetadata.Request>() {
+    Handler handleAddFileMetadata = new Handler<PMAddFileMetadata.Request>() {
 
         @Override
         public void handle(PMAddFileMetadata.Request req) {
@@ -203,7 +201,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
         }
     };
 
-    public Handler<PMGetFileMetadata.Request> handleGetFileMetadata = new Handler<PMGetFileMetadata.Request>() {
+    Handler handleGetFileMetadata = new Handler<PMGetFileMetadata.Request>() {
 
         @Override
         public void handle(PMGetFileMetadata.Request req) {
@@ -214,7 +212,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
         }
     };
 
-    public Handler<CaracalCleanupTimeout> handleHeartbeatCleanup = new Handler<CaracalCleanupTimeout>() {
+    Handler handleHeartbeatCleanup = new Handler<CaracalCleanupTimeout>() {
 
         @Override
         public void handle(CaracalCleanupTimeout event) {
@@ -235,7 +233,7 @@ public class CaracalPeerStoreComp extends ComponentDefinition implements Caracal
         sampleTimeout = t.getTimeoutId();
     }
 
-    private void cancelCaracalReqTimeout(TimeoutId tid) {
+    private void cancelCaracalReqTimeout(UUID tid) {
         log.debug("{} canceling timeout:{}", config.self, tid);
         CancelTimeout cancelSpeedUp = new CancelTimeout(tid);
         trigger(cancelSpeedUp, timer);

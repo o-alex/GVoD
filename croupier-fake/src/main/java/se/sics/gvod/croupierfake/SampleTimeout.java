@@ -18,8 +18,8 @@
  */
 package se.sics.gvod.croupierfake;
 
-import se.sics.gvod.timer.SchedulePeriodicTimeout;
-import se.sics.gvod.timer.Timeout;
+import se.sics.kompics.timer.SchedulePeriodicTimeout;
+import se.sics.kompics.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>

@@ -18,24 +18,14 @@
  */
 package se.sics.gvod.bootstrap.server.operations;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.javatuples.Pair;
 import se.sics.gvod.bootstrap.server.PeerOpManager;
 import se.sics.gvod.bootstrap.server.operations.util.Helper;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.OverlaySample;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -43,13 +33,11 @@ import se.sics.gvod.network.serializers.Serializer;
 public class OverlaySampleOp implements Operation {
 
     private final PeerOpManager opMngr;
-    private final SerializationContext context;
     private final OverlaySample.Request req;
-    private final VodAddress src;
+    private final DecoratedAddress src;
 
-    public OverlaySampleOp(PeerOpManager opMngr, SerializationContext context, OverlaySample.Request req, VodAddress src) {
+    public OverlaySampleOp(PeerOpManager opMngr, OverlaySample.Request req, DecoratedAddress src) {
         this.opMngr = opMngr;
-        this.context = context;
         this.req = req;
         this.src = src;
     }
@@ -70,15 +58,7 @@ public class OverlaySampleOp implements Operation {
             PMGetOverlaySample.Response sampleResp = (PMGetOverlaySample.Response) resp;
             OverlaySample.Response opResp;
             if (sampleResp.status == ReqStatus.SUCCESS) {
-                try {
-                    opResp = req.success(Helper.processOverlaySample(context, sampleResp.overlaySample));
-                } catch (Serializer.SerializerException ex) {
-                    System.exit(1);
-                    throw new RuntimeException(ex);
-                } catch (SerializationContext.MissingException ex) {
-                    System.exit(1);
-                    throw new RuntimeException(ex);
-                }
+                opResp = req.success(Helper.processOverlaySample(sampleResp.overlaySample));
             } else {
                 opResp = req.fail();
             }

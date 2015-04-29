@@ -29,17 +29,17 @@ import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.manager.VoDManager;
-import se.sics.gvod.net.VodAddress.NatType;
-import se.sics.gvod.net.VodNetwork;
 import se.sics.gvod.core.VoDComp;
 import se.sics.gvod.core.VoDInit;
 import se.sics.gvod.core.VoDPort;
 import se.sics.gvod.manager.VoDManagerConfig;
-import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Init;
 import se.sics.kompics.Positive;
+import se.sics.kompics.network.Network;
+import se.sics.kompics.timer.Timer;
+import se.sics.p2ptoolbox.util.traits.Nated;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -48,7 +48,7 @@ public class HostManagerComp extends ComponentDefinition {
 
     private static final Logger log = LoggerFactory.getLogger(HostManagerComp.class);
 
-    private Positive<VodNetwork> network = requires(VodNetwork.class);
+    private Positive<Network> network = requires(Network.class);
     private Positive<Timer> timer = requires(Timer.class);
 
     private Component vodMngr;
@@ -70,12 +70,12 @@ public class HostManagerComp extends ComponentDefinition {
             this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration().finalise()));
             this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig().finalise()));
 
-            log.info("{} node NAT is {}", config.self, config.self.getNatType());
-            if (config.self.getNatType().equals(NatType.OPEN)) {
+            log.info("{} node is Natted:{}", config.self, config.self.hasTrait(Nated.class));
+            if (!config.self.hasTrait(Nated.class)) {
                 bootstrapServer = create(BootstrapServerComp.class, new BootstrapServerComp.BootstrapServerInit(config.getBootstrapServerConfig()));
                 peerManager = init.peerManager;
 
-                connect(bootstrapServer.getNegative(VodNetwork.class), network);
+                connect(bootstrapServer.getNegative(Network.class), network);
                 connect(bootstrapServer.getNegative(PeerManagerPort.class), peerManager.getPositive(PeerManagerPort.class));
             } else {
                 bootstrapServer = null;
@@ -83,10 +83,10 @@ public class HostManagerComp extends ComponentDefinition {
             }
 
             connect(vodMngr.getNegative(VoDPort.class), vod.getPositive(VoDPort.class));
-            connect(vod.getNegative(VodNetwork.class), network);
+            connect(vod.getNegative(Network.class), network);
             connect(vod.getNegative(BootstrapClientPort.class), bootstrapClient.getPositive(BootstrapClientPort.class));
             connect(vod.getNegative(Timer.class), timer);
-            connect(bootstrapClient.getNegative(VodNetwork.class), network);
+            connect(bootstrapClient.getNegative(Network.class), network);
             connect(bootstrapClient.getNegative(Timer.class), timer);
 
             connect(bootstrapClient.getNegative(UtilityUpdatePort.class), vod.getPositive(UtilityUpdatePort.class));

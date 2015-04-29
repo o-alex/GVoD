@@ -19,17 +19,17 @@
 
 package se.sics.gvod.core.connMngr.msg;
 
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.timer.ScheduleTimeout;
-import se.sics.gvod.timer.Timeout;
+import se.sics.kompics.timer.ScheduleTimeout;
+import se.sics.kompics.timer.Timeout;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class ConnectionTimeout extends Timeout {
-    public final VodAddress connEnd;
+    public final DecoratedAddress connEnd;
     
-    public ConnectionTimeout(ScheduleTimeout schedule, VodAddress connEnd) {
+    public ConnectionTimeout(ScheduleTimeout schedule, DecoratedAddress connEnd) {
         super(schedule);
         this.connEnd = connEnd;
     }

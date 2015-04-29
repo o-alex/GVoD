@@ -4,45 +4,11 @@
     <parent>
         <groupId>se.sics.gvod</groupId>
         <artifactId>GVoD</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
-    <name>Common</name>
+    <name>GVoD Common</name>
     <groupId>se.sics.gvod</groupId>
     <artifactId>common</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <packaging>jar</packaging>
-    
     <dependencies>
-        <dependency>
-            <groupId>se.sics.kompics</groupId>
-            <artifactId>kompics-core</artifactId>
-            <version>${kompics.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>se.sics.kompics.basic</groupId>
-            <artifactId>kompics-port-timer</artifactId>
-            <version>${kompics.version}</version>
-            <type>jar</type>
-        </dependency>
-                    
-        <dependency>
-            <groupId>se.sics.net</groupId>
-            <artifactId>netty</artifactId>
-            <version>${nattraverser.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>se.sics.kompics.basic</groupId>
-                    <artifactId>kompics-address</artifactId>
-                </exclusion>
-            </exclusions>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.javatuples</groupId>
-            <artifactId>javatuples</artifactId>
-            <version>1.2</version>
-            <type>jar</type>
-        </dependency>
     </dependencies>
 </project>

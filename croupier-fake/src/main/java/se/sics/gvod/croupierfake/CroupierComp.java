@@ -27,15 +27,15 @@ import se.sics.gvod.bootstrap.client.BootstrapClientPort;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.peerMngr.OverlaySample;
 import se.sics.gvod.common.util.VodDescriptor;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.timer.SchedulePeriodicTimeout;
-import se.sics.gvod.timer.Timer;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
+import se.sics.kompics.timer.SchedulePeriodicTimeout;
+import se.sics.kompics.timer.Timer;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -49,7 +49,7 @@ public class CroupierComp extends ComponentDefinition {
     private Positive<BootstrapClientPort> bootstrapClient = requires(BootstrapClientPort.class);
     
     private final int overlayId;
-    private final VodAddress self;
+    private final DecoratedAddress self;
     
     public CroupierComp(CroupierInit init) {
         log.info("create CroupierComp");
@@ -93,9 +93,9 @@ public class CroupierComp extends ComponentDefinition {
                 return;
             }
             
-            Map<VodAddress, VodDescriptor> sample = new HashMap<VodAddress, VodDescriptor>();
-            for(Map.Entry<VodAddress, Integer> e : resp.overlaySample.entrySet()) {
-                if(e.getKey().equals(self)) {
+            Map<DecoratedAddress, VodDescriptor> sample = new HashMap<DecoratedAddress, VodDescriptor>();
+            for(Map.Entry<DecoratedAddress, Integer> e : resp.overlaySample.entrySet()) {
+                if(e.getKey().getBase().equals(self.getBase())) {
                     continue;
                 }
                 sample.put(e.getKey(), new VodDescriptor(e.getValue()));
@@ -108,9 +108,9 @@ public class CroupierComp extends ComponentDefinition {
 
     public static class CroupierInit extends Init<CroupierComp> {
         public final int overlayId;
-        public final VodAddress self;
+        public final DecoratedAddress self;
         
-        public CroupierInit(int overlayId, VodAddress self) {
+        public CroupierInit(int overlayId, DecoratedAddress self) {
             this.overlayId = overlayId;
             this.self = self;
         }

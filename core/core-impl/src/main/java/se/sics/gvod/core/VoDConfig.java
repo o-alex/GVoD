@@ -21,9 +21,9 @@ package se.sics.gvod.core;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import se.sics.gvod.common.util.GVoDConfigException;
-import se.sics.gvod.net.VodAddress;
 import se.sics.gvod.core.downloadMngr.DownloadMngrConfig;
 import se.sics.gvod.core.connMngr.ConnMngrConfig;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -31,13 +31,13 @@ import se.sics.gvod.core.connMngr.ConnMngrConfig;
 public class VoDConfig {
 
     private final Config config;
-    public final VodAddress selfAddress;
+    public final DecoratedAddress selfAddress;
     public final int pieceSize;
     public final int piecesPerBlock;
     public final String libDir;
     public final String hashAlg;
 
-    private VoDConfig(Config config, VodAddress selfAddress, int piecesPerBlock, int pieceSize, String libDir, String hashAlg) {
+    private VoDConfig(Config config, DecoratedAddress selfAddress, int piecesPerBlock, int pieceSize, String libDir, String hashAlg) {
         this.config = config;
         this.selfAddress = selfAddress;
         this.pieceSize = pieceSize;
@@ -57,10 +57,10 @@ public class VoDConfig {
     public static class Builder {
 
         private final Config config;
-        private final VodAddress selfAddress;
+        private final DecoratedAddress selfAddress;
         private final String libDir;
         
-        public Builder(Config config, VodAddress selfAddress, String libDir) {
+        public Builder(Config config, DecoratedAddress selfAddress, String libDir) {
             this.config = config;
             this.selfAddress = selfAddress;
             this.libDir = libDir;

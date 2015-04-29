@@ -4,12 +4,11 @@
     <parent>
         <groupId>se.sics.gvod</groupId>
         <artifactId>bootstrap</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
     <groupId>se.sics.gvod.bootstrap</groupId>
     <artifactId>server</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>Bootstrap Server</name>
+    <name>GVoD Bootstrap Server</name>
     <packaging>pom</packaging>
     <modules>
         <module>caracal-client</module>

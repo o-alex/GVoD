@@ -4,16 +4,15 @@
     <parent>
         <groupId>se.sics.gvod.bootstrap</groupId>
         <artifactId>server</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
     <groupId>se.sics.gvod.bootstrap.server</groupId>
     <artifactId>caracal-client</artifactId>
-    <name>Caracal Peer Manager</name>
-    <version>0.0.1-SNAPSHOT</version>
+    <name>GVoD Caracal Peer Manager</name>
     <packaging>jar</packaging>
     
     <properties>
-        <caracaldb-version>0.0.6-SNAPSHOT</caracaldb-version>
+        <caracaldb-version>0.0.7-SNAPSHOT</caracaldb-version>
     </properties>
     
     <dependencies>
@@ -24,21 +23,9 @@
         </dependency>
         
         <dependency>
-            <groupId>se.sics.kompics.basic</groupId>
-            <artifactId>kompics-key-address</artifactId>
-            <version>${kompics.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>se.sics.kompics.basic</groupId>
-            <artifactId>kompics-port-virtual-network</artifactId>
-            <version>${kompics.version}</version>
-        </dependency>
-        
-        <dependency>
             <groupId>se.sics.caracaldb</groupId>
             <artifactId>caracaldb-core</artifactId>
             <version>${caracaldb-version}</version>
         </dependency>
-        
     </dependencies>
 </project>

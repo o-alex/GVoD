@@ -5,16 +5,12 @@
     <parent>
         <groupId>se.sics.gvod</groupId>
         <artifactId>GVoD</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
     <groupId>se.sics.gvod</groupId>
     <artifactId>croupier-fake</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>Croupier Fake</name>
+    <name>GVoD Croupier Fake</name>
     <url>http://maven.apache.org</url>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>se.sics.gvod</groupId>
@@ -27,19 +23,5 @@
             <artifactId>client</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>3.8.1</version>
-            <scope>test</scope>
-        </dependency>
-    
-        <dependency>
-            <groupId>se.sics.kompics</groupId>
-            <artifactId>kompics-core</artifactId>
-            <version>${kompics.version}</version>
-        </dependency>
-        
     </dependencies>
 </project>

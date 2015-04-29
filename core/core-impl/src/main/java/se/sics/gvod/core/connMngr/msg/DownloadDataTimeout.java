@@ -19,19 +19,19 @@
 package se.sics.gvod.core.connMngr.msg;
 
 import java.util.UUID;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.timer.ScheduleTimeout;
-import se.sics.gvod.timer.Timeout;
+import se.sics.kompics.timer.ScheduleTimeout;
+import se.sics.kompics.timer.Timeout;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class DownloadDataTimeout extends Timeout {
 
-    public final VodAddress target;
+    public final DecoratedAddress target;
     public final UUID reqId;
 
-    public DownloadDataTimeout(ScheduleTimeout schedule, VodAddress target, UUID reqId) {
+    public DownloadDataTimeout(ScheduleTimeout schedule, DecoratedAddress target, UUID reqId) {
         super(schedule);
         this.target = target;
         this.reqId = reqId;

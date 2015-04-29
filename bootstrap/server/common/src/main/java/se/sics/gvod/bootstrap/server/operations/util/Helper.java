@@ -16,33 +16,37 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.bootstrap.server.operations.util;
 
+import com.google.common.base.Optional;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import org.javatuples.Triplet;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
-import se.sics.gvod.network.serializers.util.SerializerHelper;
+import se.sics.kompics.network.netty.serialization.Serializers;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class Helper {
-    public static Map<VodAddress, Integer> processOverlaySample(SerializationContext context, Set<byte[]> boverlaySample) throws Serializer.SerializerException, SerializationContext.MissingException {
-        Map<VodAddress, Integer> overlaySample = new HashMap<VodAddress, Integer>();
-        //TODO Alex fix hardcoded timestamp old
-        long newT = System.currentTimeMillis();
-        long difT = 25l * 1000; //25s to ms
+
+    public static byte[] serializeOverlayData(DecoratedAddress node, int overlayUtility) {
+        ByteBuf buf = Unpooled.buffer();
+        buf.writeInt(overlayUtility);
+        Serializers.lookupSerializer(DecoratedAddress.class).toBinary(node, buf);
+        return Arrays.copyOf(buf.array(), buf.readableBytes());
+    }
+    
+    public static Map<DecoratedAddress, Integer> processOverlaySample(Set<byte[]> boverlaySample) {
+        Map<DecoratedAddress, Integer> overlaySample = new HashMap<DecoratedAddress, Integer>();
         for (byte[] peer : boverlaySample) {
-            Triplet<VodAddress, Long, Integer> node = SerializerHelper.deserializeOverlayData(context, Unpooled.wrappedBuffer(peer));
-//            if(node.getValue1() + difT > newT) {
-                overlaySample.put(node.getValue0(), node.getValue2());
-//            }
+            ByteBuf buf = Unpooled.wrappedBuffer(peer);
+            int overlayUtility = buf.readInt();
+            DecoratedAddress node = (DecoratedAddress)Serializers.lookupSerializer(DecoratedAddress.class).fromBinary(buf, Optional.absent());
+            overlaySample.put(node, overlayUtility);
         }
         return overlaySample;
     }

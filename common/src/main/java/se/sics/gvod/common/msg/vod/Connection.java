@@ -22,8 +22,6 @@ import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.util.VodDescriptor;
-import se.sics.gvod.timer.SchedulePeriodicTimeout;
-import se.sics.gvod.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>

@@ -22,7 +22,7 @@ package se.sics.gvod.core.connMngr;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import se.sics.gvod.common.util.GVoDConfigException;
-import se.sics.gvod.net.VodAddress;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -30,13 +30,13 @@ import se.sics.gvod.net.VodAddress;
 public class ConnMngrConfig {
     private final Config config;
     public final int defaultMaxPipeline;
-    private VodAddress selfAddress;
+    private DecoratedAddress selfAddress;
     public final long updatePeriod;
     public final long reqTimeoutPeriod;
     public final int overlayId;
     public final int piecesPerBlock;
     
-    private ConnMngrConfig(Config config, VodAddress selfAddress, int overlayId, int defaulMaxPipeline, long updatePeriod, long reqTimeoutPeriod, int piecesPerBlock) {
+    private ConnMngrConfig(Config config, DecoratedAddress selfAddress, int overlayId, int defaulMaxPipeline, long updatePeriod, long reqTimeoutPeriod, int piecesPerBlock) {
         this.config = config;
         this.selfAddress = selfAddress;
         this.overlayId =  overlayId;
@@ -46,16 +46,16 @@ public class ConnMngrConfig {
         this.piecesPerBlock = piecesPerBlock;
     }
     
-    public VodAddress getSelf() {
+    public DecoratedAddress getSelf() {
         return selfAddress;
     }
     
     public static class Builder {
         private final Config config;
-        private final VodAddress selfAddress;
+        private final DecoratedAddress selfAddress;
         private final int overlayId;
         
-        public Builder(Config config, VodAddress selfAddress, int overlayId) {
+        public Builder(Config config, DecoratedAddress selfAddress, int overlayId) {
             this.config = config;
             this.selfAddress = selfAddress;
             this.overlayId = overlayId;

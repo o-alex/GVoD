@@ -16,21 +16,32 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
 package se.sics.gvod.network.serializers.util;
 
+import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import se.sics.gvod.common.util.FileMetadata;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
+import se.sics.kompics.network.netty.serialization.Serializer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class FileMetadataSerializer implements Serializer<FileMetadata> {
+public class FileMetadataSerializer implements Serializer {
+
+    private final int id;
+
+    public FileMetadataSerializer(int id) {
+        this.id = id;
+    }
 
     @Override
-    public ByteBuf encode(SerializationContext context, ByteBuf buf, FileMetadata obj) throws SerializerException, SerializationContext.MissingException {
+    public int identifier() {
+        return id;
+    }
+
+    @Override
+    public void toBinary(Object o, ByteBuf buf) {
+        FileMetadata obj = (FileMetadata)o;
         byte[] bFileName = obj.fileName.getBytes();
         buf.writeInt(bFileName.length);
         buf.writeBytes(bFileName);
@@ -40,11 +51,10 @@ public class FileMetadataSerializer implements Serializer<FileMetadata> {
         byte[] hashAlg = obj.hashAlg.getBytes();
         buf.writeInt(hashAlg.length);
         buf.writeBytes(hashAlg);
-        return buf;
     }
 
     @Override
-    public FileMetadata decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
+    public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
         int bFileNameSize = buf.readInt();
         byte[] bFileName = new byte[bFileNameSize];
         buf.readBytes(bFileName);
@@ -56,18 +66,4 @@ public class FileMetadataSerializer implements Serializer<FileMetadata> {
         buf.readBytes(hashAlg);
         return new FileMetadata(new String(bFileName), fileSize, pieceSize, new String(hashAlg), hashFileSize);
     }
-
-    @Override
-    public int getSize(SerializationContext context, FileMetadata obj) throws SerializerException, SerializationContext.MissingException {
-        int size = 0;
-        size += Integer.SIZE / 8; //fileNameSize
-        size += obj.fileName.getBytes().length * (Byte.SIZE / 8); //fileName
-        size += Integer.SIZE / 8; // fileSize
-        size += Integer.SIZE / 8; // pieceSize
-        size += Integer.SIZE / 8; // hashFileSize
-        size += Integer.SIZE / 8; // hashAlg byte array size;
-        size += obj.hashAlg.getBytes().length * (Byte.SIZE / 8); //hashAlg byte array
-        return size;
-    }
-    
 }

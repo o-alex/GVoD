@@ -21,10 +21,9 @@ package se.sics.gvod.bootstrap.cclient;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
 import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
+import se.sics.caracaldb.Address;
 import se.sics.gvod.common.util.GVoDConfigException;
-import se.sics.kompics.address.Address;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>

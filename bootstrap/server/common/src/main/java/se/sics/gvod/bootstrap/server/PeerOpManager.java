@@ -22,13 +22,13 @@ package se.sics.gvod.bootstrap.server;
 import java.util.UUID;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.net.VodAddress;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public interface PeerOpManager {
-    public void finish(UUID opId, VodAddress src, GvodMsg.Response resp);
+    public void finish(UUID opId, DecoratedAddress src, GvodMsg.Response resp);
     public void finish(UUID opId);
     public void sendPeerManagerReq(UUID opId, PeerManagerMsg.Request req);
 }

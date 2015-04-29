@@ -22,10 +22,9 @@ import java.util.HashSet;
 import com.google.common.base.Objects;
 import java.util.Set;
 import java.util.UUID;
-import junit.framework.Assert;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.net.VodAddress;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -38,12 +37,12 @@ public class BootstrapGlobal {
             super(reqId);
         }
 
-        public Response success(Set<VodAddress> systemSample) {
+        public Response success(Set<DecoratedAddress> systemSample) {
             return new Response(id, ReqStatus.SUCCESS, systemSample);
         }
 
         public Response fail() {
-            return new Response(id, ReqStatus.FAIL, new HashSet<VodAddress>());
+            return new Response(id, ReqStatus.FAIL, new HashSet<DecoratedAddress>());
         }
 
         @Override
@@ -81,16 +80,16 @@ public class BootstrapGlobal {
 
     public static class Response extends GvodMsg.Response {
 
-        public final Set<VodAddress> systemSample;
+        public final Set<DecoratedAddress> systemSample;
 
-        public Response(UUID reqId, ReqStatus status, Set<VodAddress> systemSample) {
+        public Response(UUID reqId, ReqStatus status, Set<DecoratedAddress> systemSample) {
             super(reqId, status);
             this.systemSample = systemSample;
         }
 
         @Override
         public Response copy() {
-            return new Response(id, status, new HashSet<VodAddress>(systemSample));
+            return new Response(id, status, new HashSet<DecoratedAddress>(systemSample));
         }
 
         @Override

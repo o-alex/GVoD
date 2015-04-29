@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.UUID;
 import se.sics.gvod.common.msg.GvodMsg;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.net.VodAddress;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -38,7 +38,7 @@ public class OverlaySample {
             this.overlayId = overlayId;
         }
         
-        public Response success(Map<VodAddress, Integer> overlaySample) {
+        public Response success(Map<DecoratedAddress, Integer> overlaySample) {
             return new Response(id, ReqStatus.SUCCESS, overlayId, overlaySample);
         }
         
@@ -86,9 +86,9 @@ public class OverlaySample {
     public static class Response extends GvodMsg.Response {
 
         public final int overlayId;
-        public final Map<VodAddress, Integer> overlaySample; //<peer, utility>
+        public final Map<DecoratedAddress, Integer> overlaySample; //<peer, utility>
         
-        public Response(UUID id, ReqStatus status, int overlayId, Map<VodAddress, Integer> overlaySample) {
+        public Response(UUID id, ReqStatus status, int overlayId, Map<DecoratedAddress, Integer> overlaySample) {
             super(id, status);
             this.overlayId = overlayId;
             this.overlaySample = overlaySample;

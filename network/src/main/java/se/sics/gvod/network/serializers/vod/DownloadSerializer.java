@@ -18,6 +18,7 @@
  */
 package se.sics.gvod.network.serializers.vod;
 
+import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,67 +26,63 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.peerMngr.OverlaySample;
 import se.sics.gvod.common.msg.vod.Download;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.base.GvodMsgSerializer;
+import se.sics.kompics.network.netty.serialization.Serializer;
+import se.sics.kompics.network.netty.serialization.Serializers;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class DownloadSerializer {
 
-    public static final class DataRequest extends GvodMsgSerializer.AbsRequest<Download.DataRequest> {
+    public static final class DataRequest implements Serializer {
 
-        @Override
-        public Download.DataRequest decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            int overlayId = buf.readInt();
-            int pieceId = buf.readInt();
-            return new Download.DataRequest((UUID) shellObj.get(ID_F), overlayId, pieceId);
+        private final int id;
+
+        public DataRequest(int id) {
+            this.id = id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, Download.DataRequest obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
+        public int identifier() {
+            return id;
+        }
+
+        @Override
+        public void toBinary(Object o, ByteBuf buf) {
+            Download.DataRequest obj = (Download.DataRequest) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
             buf.writeInt(obj.overlayId);
             buf.writeInt(obj.pieceId);
-            return buf;
         }
 
         @Override
-        public int getSize(SerializationContext context, Download.DataRequest obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += Integer.SIZE / 8; //overlayId
-            size += Integer.SIZE / 8; //pieceId
-            return size;
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            int overlayId = buf.readInt();
+            int pieceId = buf.readInt();
+            return new Download.DataRequest(mId, overlayId, pieceId);
         }
     }
 
-    public static final class DataResponse extends GvodMsgSerializer.AbsResponse<Download.DataResponse> {
+    public static final class DataResponse implements Serializer {
 
-        @Override
-        public Download.DataResponse decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            int overlayId = buf.readInt();
-            int pieceId = buf.readInt();
-            if (((ReqStatus) shellObj.get(STATUS_F)).equals(ReqStatus.SUCCESS)) {
-                int size = buf.readInt();
-                byte[] piece = new byte[size];
-                buf.readBytes(piece);
-                return new Download.DataResponse((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), overlayId, pieceId, piece);
-            } else {
-                //nothing
-                return new Download.DataResponse((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), overlayId, pieceId, null);
-            }
+        private final int id;
 
+        public DataResponse(int id) {
+            this.id = id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, Download.DataResponse obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
+        public int identifier() {
+            return id;
+        }
+
+        @Override
+        public void toBinary(Object o, ByteBuf buf) {
+            Download.DataResponse obj = (Download.DataResponse) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+            Serializers.lookupSerializer(ReqStatus.class).toBinary(obj.status, buf);
             buf.writeInt(obj.overlayId);
             buf.writeInt(obj.pieceId);
             if (obj.status.equals(ReqStatus.SUCCESS)) {
@@ -94,74 +91,111 @@ public class DownloadSerializer {
             } else {
                 //nothing
             }
-            return buf;
         }
 
         @Override
-        public int getSize(SerializationContext context, Download.DataResponse obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += Integer.SIZE / 8; //overlayId
-            size += Integer.SIZE / 8; //pieceId
-            if (obj.status.equals(ReqStatus.SUCCESS)) {
-                size += Integer.SIZE / 8; //size of piece
-                size += obj.piece.length * Byte.SIZE / 8; //piece
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            ReqStatus status = (ReqStatus) Serializers.lookupSerializer(ReqStatus.class).fromBinary(buf, hint);
+            int overlayId = buf.readInt();
+            int pieceId = buf.readInt();
+            if (status.equals(ReqStatus.SUCCESS)) {
+                int size = buf.readInt();
+                byte[] piece = new byte[size];
+                buf.readBytes(piece);
+                return new Download.DataResponse(mId, status, overlayId, pieceId, piece);
             } else {
                 //nothing
+                return new Download.DataResponse(mId, status, overlayId, pieceId, null);
             }
-            return size;
         }
-
     }
 
-    public static final class HashRequest extends GvodMsgSerializer.AbsRequest<Download.HashRequest> {
+    public static final class HashRequest implements Serializer {
+
+        private final int id;
+
+        public HashRequest(int id) {
+            this.id = id;
+        }
 
         @Override
-        public Download.HashRequest decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
+        public int identifier() {
+            return id;
+        }
+
+        @Override
+        public void toBinary(Object o, ByteBuf buf) {
+            Download.HashRequest obj = (Download.HashRequest) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+
+            buf.writeInt(obj.targetPos);
+            buf.writeInt(obj.hashes.size());
+            for (Integer hash : obj.hashes) {
+                buf.writeInt(hash);
+            }
+        }
+
+        @Override
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+
             int targetPos = buf.readInt();
             int nrHashes = buf.readInt();
             Set<Integer> hashes = new HashSet<Integer>();
             for (int i = 0; i < nrHashes; i++) {
                 hashes.add(buf.readInt());
             }
-            return new Download.HashRequest((UUID) shellObj.get(ID_F), targetPos, hashes);
-        }
-
-        @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, Download.HashRequest obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
-            buf.writeInt(obj.targetPos);
-            buf.writeInt(obj.hashes.size());
-            for (Integer hash : obj.hashes) {
-                buf.writeInt(hash);
-            }
-            return buf;
-        }
-
-        @Override
-        public int getSize(SerializationContext context, Download.HashRequest obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += Integer.SIZE / 8; //targetPos
-            size += Integer.SIZE / 8; //size of hashes
-            for (Integer hash : obj.hashes) {
-                size += Integer.SIZE / 8; //hash
-            }
-            return size;
+            return new Download.HashRequest(mId, targetPos, hashes);
         }
 
     }
 
-    public static final class HashResponse extends GvodMsgSerializer.AbsResponse<Download.HashResponse> {
+    public static final class HashResponse implements Serializer {
+
+        private final int id;
+
+        public HashResponse(int id) {
+            this.id = id;
+        }
 
         @Override
-        public Download.HashResponse decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            int targetPos = buf.readInt();
+        public int identifier() {
+            return id;
+        }
 
-            Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
+        @Override
+        public void toBinary(Object o, ByteBuf buf) {
+            Download.HashResponse obj = (Download.HashResponse) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+            Serializers.lookupSerializer(ReqStatus.class).toBinary(obj.status, buf);
+
+            buf.writeInt(obj.targetPos);
+            buf.writeInt(obj.hashes.size());
+            if (obj.hashes.size() > 0) {
+                int hashSize = obj.hashes.values().iterator().next().length;
+                buf.writeInt(hashSize);
+
+                for (Map.Entry<Integer, byte[]> e : obj.hashes.entrySet()) {
+                    buf.writeInt(e.getKey());
+                    buf.writeBytes(e.getValue());
+                }
+            }
+
+            buf.writeInt(obj.missingHashes.size());
+            for (Integer missingHash : obj.missingHashes) {
+                buf.writeInt(missingHash);
+            }
+        }
+
+        @Override
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            ReqStatus status = (ReqStatus) Serializers.lookupSerializer(ReqStatus.class).fromBinary(buf, hint);
+
+            int targetPos = buf.readInt();
             int nrHashes = buf.readInt();
+            Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
             if (nrHashes > 0) {
                 int hashSize = buf.readInt();
                 byte[] hash;
@@ -179,44 +213,7 @@ public class DownloadSerializer {
                 missingHashes.add(buf.readInt());
             }
 
-            return new Download.HashResponse((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F), targetPos, hashes, missingHashes);
-        }
-
-        @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, Download.HashResponse obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
-            buf.writeInt(obj.targetPos);
-            buf.writeInt(obj.hashes.size());
-            if (obj.hashes.size() > 0) {
-                int hashSize = obj.hashes.values().iterator().next().length;
-                buf.writeInt(hashSize);
-
-                for (Map.Entry<Integer, byte[]> e : obj.hashes.entrySet()) {
-                    buf.writeInt(e.getKey());
-                    buf.writeBytes(e.getValue());
-                }
-            }
-
-            buf.writeInt(obj.missingHashes.size());
-            for (Integer missingHash : obj.missingHashes) {
-                buf.writeInt(missingHash);
-            }
-            return buf;
-        }
-
-        @Override
-        public int getSize(SerializationContext context, Download.HashResponse obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += Integer.SIZE / 8; //targetPos
-            size += Integer.SIZE / 8; //hashes size
-            if (obj.hashes.size() > 0) {
-                size += Integer.SIZE / 8; //hash size
-                int hashSize = obj.hashes.values().iterator().next().length;
-                size += obj.hashes.size() * (Integer.SIZE / 8 + hashSize * Byte.SIZE / 8);
-            }
-            size += Integer.SIZE / 8; // missingHashes size
-            size += obj.missingHashes.size() * (Integer.SIZE / 8);
-            return size;
+            return new Download.HashResponse(mId, status, targetPos, hashes, missingHashes);
         }
     }
 }

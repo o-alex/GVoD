@@ -18,18 +18,30 @@
  */
 package se.sics.gvod.network.serializers.util;
 
+import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.Serializer;
+import se.sics.kompics.network.netty.serialization.Serializer;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class ReqStatusSerializer implements Serializer<ReqStatus> {
+public class ReqStatusSerializer implements Serializer {
+
+    private final int id;
+
+    public ReqStatusSerializer(int id) {
+        this.id = id;
+    }
 
     @Override
-    public ByteBuf encode(SerializationContext context, ByteBuf buf, ReqStatus obj) throws SerializerException {
+    public int identifier() {
+        return id;
+    }
+
+    @Override
+    public void toBinary(Object o, ByteBuf buf) {
+        ReqStatus obj = (ReqStatus)o;
         switch (obj) {
             case FAIL:
                 buf.writeByte(0x00);
@@ -47,13 +59,12 @@ public class ReqStatusSerializer implements Serializer<ReqStatus> {
                 buf.writeByte(0x04);
                 break;
             default:
-                throw new SerializerException("no code for encoding status " + obj);
+                throw new RuntimeException("no code for encoding status " + obj);
         }
-        return buf;
     }
 
     @Override
-    public ReqStatus decode(SerializationContext context, ByteBuf buf) throws SerializerException {
+    public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
         byte status = buf.readByte();
         switch (status) {
             case 0x00:
@@ -67,13 +78,7 @@ public class ReqStatusSerializer implements Serializer<ReqStatus> {
             case 0x04:
                 return ReqStatus.TIMEOUT;
             default:
-                throw new SerializerException("no code for decoding status byte " + status);
+                throw new RuntimeException("no code for decoding status byte " + status);
         }
     }
-
-    @Override
-    public int getSize(SerializationContext context, ReqStatus obj) throws SerializerException, SerializationContext.MissingException {
-        return Byte.SIZE / 8;
-    }
-
 }

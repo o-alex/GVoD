@@ -4,12 +4,11 @@
     <parent>
         <groupId>se.sics.gvod</groupId>
         <artifactId>bootstrap</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.2-SNAPSHOT</version>
     </parent>
     <groupId>se.sics.gvod.bootstrap</groupId>
     <artifactId>client</artifactId>
-    <name>Bootstrap Client</name>
-    <version>0.0.1-SNAPSHOT</version>
+    <name>GVoD Bootstrap Client</name>
     <packaging>jar</packaging>
     
     <dependencies>
@@ -19,32 +18,9 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>se.sics.gvod.bootstrap</groupId>
-            <artifactId>common</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>se.sics.gvod</groupId>
-            <artifactId>network</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        
-        <dependency>
-            <groupId>se.sics.kompics</groupId>
-            <artifactId>kompics-core</artifactId>
-            <version>${kompics.version}</version>
-        </dependency>
-        <dependency>
             <groupId>se.sics.kompics.basic</groupId>
             <artifactId>kompics-component-netty-network</artifactId>
             <version>${kompics.version}</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>se.sics.kompics.basic</groupId>
-            <artifactId>kompics-port-timer</artifactId>
-            <version>${kompics.version}</version>
-            <type>jar</type>
         </dependency>
     </dependencies>
 </project>

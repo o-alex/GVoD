@@ -39,8 +39,6 @@ import se.sics.gvod.common.util.HashUtil;
 import se.sics.gvod.common.utility.UtilityUpdatePort;
 import se.sics.gvod.croupierfake.CroupierComp;
 import se.sics.gvod.croupierfake.CroupierPort;
-import se.sics.gvod.net.VodNetwork;
-import se.sics.gvod.network.filters.OverlayFilter;
 import se.sics.gvod.core.connMngr.ConnMngrComp;
 import se.sics.gvod.core.downloadMngr.DownloadMngrComp;
 import se.sics.gvod.core.downloadMngr.DownloadMngrConfig;
@@ -49,13 +47,15 @@ import se.sics.gvod.core.connMngr.ConnMngrPort;
 import se.sics.gvod.core.msg.DownloadVideo;
 import se.sics.gvod.core.msg.PlayReady;
 import se.sics.gvod.core.msg.UploadVideo;
-import se.sics.gvod.timer.Timer;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
+import se.sics.kompics.network.Network;
+import se.sics.kompics.timer.Timer;
+import se.sics.p2ptoolbox.util.filters.IntegerOverlayFilter;
 import se.sics.p2ptoolbox.util.managedStore.FileMngr;
 import se.sics.p2ptoolbox.util.managedStore.HashMngr;
 import se.sics.p2ptoolbox.util.managedStore.StorageMngrFactory;
@@ -74,7 +74,7 @@ public class VoDComp extends ComponentDefinition {
 
     Negative<UtilityUpdatePort> utilityUpdate = provides(UtilityUpdatePort.class);
     Positive<Timer> timer = requires(Timer.class);
-    Positive<VodNetwork> network = requires(VodNetwork.class);
+    Positive<Network> network = requires(Network.class);
     Positive<BootstrapClientPort> bootstrap = requires(BootstrapClientPort.class);
 
     Negative<VoDPort> myPort = provides(VoDPort.class);
@@ -231,7 +231,7 @@ public class VoDComp extends ComponentDefinition {
         connect(croupier.getNegative(Timer.class), timer);
         connect(croupier.getNegative(BootstrapClientPort.class), bootstrap);
 
-        connect(connMngr.getNegative(VodNetwork.class), network, new OverlayFilter(overlayId));
+        connect(connMngr.getNegative(Network.class), network, new IntegerOverlayFilter(overlayId));
         connect(connMngr.getNegative(Timer.class), timer);
         connect(connMngr.getNegative(CroupierPort.class), croupier.getPositive(CroupierPort.class));
 

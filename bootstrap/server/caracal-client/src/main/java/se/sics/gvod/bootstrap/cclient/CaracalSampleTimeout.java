@@ -18,8 +18,8 @@
  */
 package se.sics.gvod.bootstrap.cclient;
 
-import se.sics.gvod.timer.ScheduleTimeout;
-import se.sics.gvod.timer.Timeout;
+import se.sics.kompics.timer.ScheduleTimeout;
+import se.sics.kompics.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>

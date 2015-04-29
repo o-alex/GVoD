@@ -22,10 +22,9 @@ import com.google.common.base.Objects;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.junit.Assert;
 import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.timer.SchedulePeriodicTimeout;
-import se.sics.gvod.timer.Timeout;
+import se.sics.kompics.timer.SchedulePeriodicTimeout;
+import se.sics.kompics.timer.Timeout;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -38,7 +37,9 @@ public class Heartbeat {
 
         public OneWay(UUID id, Map<Integer, Integer> overlays) {
             super(id);
-            Assert.assertNotNull(overlays);
+            if(overlays == null) {
+                throw new RuntimeException("overlays map is null");
+            }
             this.overlayUtilities = overlays;
         }
 

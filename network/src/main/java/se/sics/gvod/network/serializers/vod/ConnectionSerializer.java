@@ -18,90 +18,124 @@
  */
 package se.sics.gvod.network.serializers.vod;
 
+import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import se.sics.gvod.common.msg.ReqStatus;
 import se.sics.gvod.common.msg.vod.Connection;
 import se.sics.gvod.common.util.VodDescriptor;
-import se.sics.gvod.network.serializers.SerializationContext;
-import se.sics.gvod.network.serializers.base.GvodMsgSerializer;
+import se.sics.kompics.network.netty.serialization.Serializer;
+import se.sics.kompics.network.netty.serialization.Serializers;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class ConnectionSerializer {
 
-    public static final class Request extends GvodMsgSerializer.AbsRequest<Connection.Request> {
+    public static final class Request implements Serializer {
 
-        @Override
-        public Connection.Request decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            VodDescriptor desc = context.getSerializer(VodDescriptor.class).decode(context, buf);
-            return new Connection.Request((UUID) shellObj.get(ID_F), desc);
+        private final int id;
+
+        public Request(int id) {
+            this.id = id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, Connection.Request obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
-            context.getSerializer(VodDescriptor.class).encode(context, buf, obj.desc);
-            return buf;
+        public int identifier() {
+            return id;
         }
 
         @Override
-        public int getSize(SerializationContext context, Connection.Request obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += context.getSerializer(VodDescriptor.class).getSize(context, obj.desc);
-            return size;
+        public void toBinary(Object o, ByteBuf buf) {
+            Connection.Request obj = (Connection.Request) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+            Serializers.lookupSerializer(VodDescriptor.class).toBinary(obj.desc, buf);
+        }
+
+        @Override
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            VodDescriptor desc = (VodDescriptor) Serializers.lookupSerializer(VodDescriptor.class).fromBinary(buf, hint);
+            return new Connection.Request(mId, desc);
         }
     }
 
-    public static final class Response extends GvodMsgSerializer.AbsResponse<Connection.Response> {
+    public static final class Response implements Serializer {
+        private final int id;
 
-        @Override
-        public Connection.Response decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            return new Connection.Response((UUID) shellObj.get(ID_F), (ReqStatus) shellObj.get(STATUS_F));
+        public Response(int id) {
+            this.id = id;
         }
 
+        @Override
+        public int identifier() {
+            return id;
+        }
+
+        @Override
+        public void toBinary(Object o, ByteBuf buf) {
+            Connection.Response obj = (Connection.Response) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+            Serializers.lookupSerializer(ReqStatus.class).toBinary(obj.status, buf);
+        }
+
+        @Override
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            ReqStatus status = (ReqStatus) Serializers.lookupSerializer(ReqStatus.class).fromBinary(buf, hint);
+            return new Connection.Response(mId, status);
+        }
     }
 
-    public static final class Update extends GvodMsgSerializer.AbsOneWay<Connection.Update> {
-
-        @Override
-        public Connection.Update decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            VodDescriptor desc = context.getSerializer(VodDescriptor.class).decode(context, buf);
-            return new Connection.Update((UUID)shellObj.get(ID_F), desc);
+    public static final class Update implements Serializer {
+        private final int id;
+        
+        public Update(int id) {
+            this.id = id;
         }
 
         @Override
-        public ByteBuf encode(SerializationContext context, ByteBuf buf, Connection.Update obj) throws SerializerException, SerializationContext.MissingException {
-            super.encode(context, buf, obj);
-            context.getSerializer(VodDescriptor.class).encode(context, buf, obj.desc);
-            return buf;
+        public int identifier() {
+            return id;
         }
 
         @Override
-        public int getSize(SerializationContext context, Connection.Update obj) throws SerializerException, SerializationContext.MissingException {
-            int size = super.getSize(context, obj);
-            size += context.getSerializer(VodDescriptor.class).getSize(context, obj.desc);
-            return size;
+        public void toBinary(Object o, ByteBuf buf) {
+            Connection.Update obj = (Connection.Update) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+            Serializers.lookupSerializer(VodDescriptor.class).toBinary(obj.desc, buf);
         }
 
+        @Override
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+            UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+            VodDescriptor desc = (VodDescriptor) Serializers.lookupSerializer(VodDescriptor.class).fromBinary(buf, hint);
+            return new Connection.Update(mId, desc);
+        }
     }
 
-    public static final class Close extends GvodMsgSerializer.AbsOneWay<Connection.Close> {
+    public static final class Close implements Serializer {
+        private final int id;
+        
+        public Close(int id) {
+            this.id = id;
+        }
+        
+        @Override
+        public int identifier() {
+            return id;
+        }
 
         @Override
-        public Connection.Close decode(SerializationContext context, ByteBuf buf) throws SerializerException, SerializationContext.MissingException {
-            Map<String, Object> shellObj = new HashMap<String, Object>();
-            super.decodeParent(context, buf, shellObj);
-            return new Connection.Close((UUID)shellObj.get(ID_F));
+        public void toBinary(Object o, ByteBuf buf) {
+            Connection.Close obj = (Connection.Close) o;
+            Serializers.lookupSerializer(UUID.class).toBinary(obj.id, buf);
+        }
+
+        @Override
+        public Object fromBinary(ByteBuf buf, Optional<Object> hint) {
+             UUID mId = (UUID) Serializers.lookupSerializer(UUID.class).fromBinary(buf, hint);
+             return new Connection.Close(mId);
         }
     }
 }

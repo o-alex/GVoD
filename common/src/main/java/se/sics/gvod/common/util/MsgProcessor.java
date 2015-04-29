@@ -19,8 +19,8 @@
 package se.sics.gvod.common.util;
 
 import java.util.HashMap;
-import se.sics.gvod.net.VodAddress;
 import se.sics.kompics.KompicsEvent;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -41,7 +41,7 @@ public class MsgProcessor {
         subscribedHandlers.put(handler.eventType, handler);
     }
 
-    public <E extends KompicsEvent> void trigger(VodAddress src, E event) {
+    public <E extends KompicsEvent> void trigger(DecoratedAddress src, E event) {
         Class<? extends KompicsEvent> eventType = event.getClass();
         Handler<?> handler = null;
 
@@ -66,6 +66,6 @@ public class MsgProcessor {
             this.eventType = eventType;
         }
 
-        public abstract void handle(VodAddress src, E event);
+        public abstract void handle(DecoratedAddress src, E event);
     }
 }

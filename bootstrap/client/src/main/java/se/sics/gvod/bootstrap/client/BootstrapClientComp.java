@@ -36,25 +36,24 @@ import se.sics.gvod.common.msg.peerMngr.Heartbeat;
 import se.sics.gvod.common.msg.peerMngr.JoinOverlay;
 import se.sics.gvod.common.msg.peerMngr.OverlaySample;
 import se.sics.gvod.common.util.FileMetadata;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.net.VodNetwork;
-import se.sics.gvod.network.netmsg.bootstrap.NetAddOverlay;
-import se.sics.gvod.network.netmsg.bootstrap.NetBootstrapGlobal;
-import se.sics.gvod.network.netmsg.bootstrap.NetHeartbeat;
-import se.sics.gvod.network.netmsg.bootstrap.NetJoinOverlay;
-import se.sics.gvod.network.netmsg.bootstrap.NetOverlaySample;
-import se.sics.gvod.timer.CancelTimeout;
-import se.sics.gvod.timer.SchedulePeriodicTimeout;
-import se.sics.gvod.timer.ScheduleTimeout;
-import se.sics.gvod.timer.Timeout;
-import se.sics.gvod.timer.TimeoutId;
-import se.sics.gvod.timer.Timer;
+import se.sics.kompics.ClassMatchedHandler;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
-import se.sics.kompics.Kompics;
 import se.sics.kompics.Negative;
 import se.sics.kompics.Positive;
 import se.sics.kompics.Start;
+import se.sics.kompics.network.Network;
+import se.sics.kompics.network.Transport;
+import se.sics.kompics.timer.CancelTimeout;
+import se.sics.kompics.timer.SchedulePeriodicTimeout;
+import se.sics.kompics.timer.ScheduleTimeout;
+import se.sics.kompics.timer.Timeout;
+import se.sics.kompics.timer.Timer;
+import se.sics.p2ptoolbox.util.network.ContentMsg;
+import se.sics.p2ptoolbox.util.network.impl.BasicContentMsg;
+import se.sics.p2ptoolbox.util.network.impl.BasicHeader;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedHeader;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -64,7 +63,7 @@ public class BootstrapClientComp extends ComponentDefinition {
     private static final Logger log = LoggerFactory.getLogger(BootstrapClientComp.class);
 
     private Negative<BootstrapClientPort> myPort = provides(BootstrapClientPort.class);
-    private Positive<VodNetwork> network = requires(VodNetwork.class);
+    private Positive<Network> network = requires(Network.class);
     private Positive<Timer> timer = requires(Timer.class);
     private Positive<UtilityUpdatePort> utilityPort = requires(UtilityUpdatePort.class);
 
@@ -73,10 +72,10 @@ public class BootstrapClientComp extends ComponentDefinition {
     private final Random rand;
 
     private final Map<Integer, Integer> overlaysUtility;
-    private final Set<VodAddress> bootstrapNodes;
+    private final Set<DecoratedAddress> bootstrapNodes;
     private final Map<Integer, FileMetadata> pendingAddOverlay;
-    
-    private final Map<UUID, TimeoutId> pendingRequests;
+
+    private final Map<UUID, UUID> pendingRequests;
 
     public BootstrapClientComp(BootstrapClientInit init) {
         this.config = init.config;
@@ -84,9 +83,9 @@ public class BootstrapClientComp extends ComponentDefinition {
 
         this.rand = new SecureRandom(config.seed);
         this.overlaysUtility = new HashMap<Integer, Integer>();
-        this.bootstrapNodes = new HashSet<VodAddress>();
+        this.bootstrapNodes = new HashSet<DecoratedAddress>();
         this.pendingAddOverlay = new HashMap<Integer, FileMetadata>();
-        this.pendingRequests = new HashMap<UUID, TimeoutId>();
+        this.pendingRequests = new HashMap<UUID, UUID>();
 
         subscribe(handleStart, control);
         subscribe(handleAddOverlayRequest, myPort);
@@ -101,7 +100,7 @@ public class BootstrapClientComp extends ComponentDefinition {
         subscribe(handleCaracalReqTimeout, timer);
     }
 
-    public Handler<Start> handleStart = new Handler<Start>() {
+    Handler handleStart = new Handler<Start>() {
 
         @Override
         public void handle(Start event) {
@@ -118,15 +117,15 @@ public class BootstrapClientComp extends ComponentDefinition {
         }
     };
 
-    public Handler<NetBootstrapGlobal.Response> handleBootstrapResponse = new Handler<NetBootstrapGlobal.Response>() {
+    ClassMatchedHandler handleBootstrapResponse = new ClassMatchedHandler<BootstrapGlobal.Response, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, BootstrapGlobal.Response>>() {
 
         @Override
-        public void handle(NetBootstrapGlobal.Response resp) {
-            if (resp.content.status == ReqStatus.SUCCESS) {
+        public void handle(BootstrapGlobal.Response content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, BootstrapGlobal.Response> container) {
+            if (content.status == ReqStatus.SUCCESS) {
                 log.info("{} contacted caracalDB successfully", config.self);
-                log.debug("{} global nodes {}", new Object[]{config.self, resp.content.systemSample});
-                cancelCaracalReqTimeout(pendingRequests.remove(resp.id));
-                for (VodAddress peer : resp.content.systemSample) {
+                log.debug("{} global nodes {}", new Object[]{config.self, content.systemSample});
+                cancelCaracalReqTimeout(pendingRequests.remove(content.id));
+                for (DecoratedAddress peer : content.systemSample) {
                     if (bootstrapNodes.size() < config.openViewSize) {
                         bootstrapNodes.add(peer);
                     }
@@ -135,87 +134,93 @@ public class BootstrapClientComp extends ComponentDefinition {
         }
     };
 
-    public Handler<AddOverlay.Request> handleAddOverlayRequest = new Handler<AddOverlay.Request>() {
+    Handler handleAddOverlayRequest = new Handler<AddOverlay.Request>() {
 
         @Override
-        public void handle(AddOverlay.Request req) {
-            log.trace("{} {}", config.self, req);
-            log.debug("{} adding overlay:{}", config.self, req.overlayId);
-            pendingAddOverlay.put(req.overlayId, req.fileMeta);
+        public void handle(AddOverlay.Request reqContent) {
+            log.trace("{} {}", config.self, reqContent);
+            log.debug("{} adding overlay:{}", config.self, reqContent.overlayId);
+            pendingAddOverlay.put(reqContent.overlayId, reqContent.fileMeta);
 
-            NetAddOverlay.Request netReq = new NetAddOverlay.Request(config.self, config.server, req.id, req);
-            log.trace("{} sending {}", new Object[]{config.self, netReq});
-            pendingRequests.put(req.id, scheduleCaracalReqTimeout(req.id));
-            trigger(netReq, network);
+            DecoratedHeader<DecoratedAddress> requestHeader = new DecoratedHeader(new BasicHeader(config.self, config.server, Transport.UDP), null, null);
+            ContentMsg request = new BasicContentMsg(requestHeader, reqContent);
+
+            log.trace("{} sending{} to:{}", new Object[]{config.self, reqContent, config.server});
+            pendingRequests.put(reqContent.id, scheduleCaracalReqTimeout(reqContent.id));
+            trigger(request, network);
         }
     };
-
-    public Handler<JoinOverlay.Request> handleJoinOverlayRequest = new Handler<JoinOverlay.Request>() {
-
-        @Override
-        public void handle(JoinOverlay.Request req) {
-            log.trace("{} received {}", config.self, req);
-            log.debug("{} joining overlay:{}", config.self, req.overlayId);
-            NetJoinOverlay.Request netReq = new NetJoinOverlay.Request(config.self, config.server, req.id, req);
-            log.debug("{} sending {}", new Object[]{config.self, netReq});
-            pendingRequests.put(req.id, scheduleCaracalReqTimeout(req.id));
-            trigger(netReq, network);
-        }
-    };
-
-    public Handler<OverlaySample.Request> handleOverlaySampleRequest = new Handler<OverlaySample.Request>() {
+    
+    ClassMatchedHandler handleAddOverlayResponse = new ClassMatchedHandler<AddOverlay.Response, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, AddOverlay.Response>>() {
 
         @Override
-        public void handle(OverlaySample.Request req) {
-            log.trace("{} {} - overlay:{}", new Object[]{config.self, req, req.overlayId});
-
-            NetOverlaySample.Request netReq = new NetOverlaySample.Request(config.self, config.server, req.id, req);
-            log.debug("{} sending {}", new Object[]{config.self, netReq});
-            pendingRequests.put(req.id, scheduleCaracalReqTimeout(req.id));
-            trigger(netReq, network);
-        }
-    };
-
-    public Handler<NetAddOverlay.Response> handleAddOverlayResponse = new Handler<NetAddOverlay.Response>() {
-
-        @Override
-        public void handle(NetAddOverlay.Response resp) {
-            log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
-            cancelCaracalReqTimeout(pendingRequests.remove(resp.id));
-            trigger(resp.content, myPort);
-            FileMetadata fileMeta = pendingAddOverlay.remove(resp.content.overlayId);
+        public void handle(AddOverlay.Response content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, AddOverlay.Response> container) {
+            log.trace("{} net received:{}", new Object[]{config.self.toString(), content.toString()});
+            cancelCaracalReqTimeout(pendingRequests.remove(content.id));
+            trigger(content, myPort);
+            FileMetadata fileMeta = pendingAddOverlay.remove(content.overlayId);
             if (fileMeta == null) {
                 log.error("fileMeta missing");
                 System.exit(1);
             }
             int downloadPos = fileMeta.fileSize / fileMeta.pieceSize + 1;
-            overlaysUtility.put(resp.content.overlayId, downloadPos);
+            overlaysUtility.put(content.overlayId, downloadPos);
         }
     };
 
-    public Handler<NetJoinOverlay.Response> handleJoinOverlayResponse = new Handler<NetJoinOverlay.Response>() {
+    Handler handleJoinOverlayRequest = new Handler<JoinOverlay.Request>() {
 
         @Override
-        public void handle(NetJoinOverlay.Response resp) {
-            log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
-            cancelCaracalReqTimeout(pendingRequests.remove(resp.id));
-            trigger(resp.content, myPort);
+        public void handle(JoinOverlay.Request reqContent) {
+            log.trace("{} {}", config.self, reqContent);
+            log.debug("{} joining overlay:{}", config.self, reqContent.overlayId);
+            DecoratedHeader<DecoratedAddress> requestHeader = new DecoratedHeader(new BasicHeader(config.self, config.server, Transport.UDP), null, null);
+            ContentMsg request = new BasicContentMsg(requestHeader, reqContent);
+
+            log.debug("{} sending {}", new Object[]{config.self, request});
+            pendingRequests.put(reqContent.id, scheduleCaracalReqTimeout(reqContent.id));
+            trigger(request, network);
+        }
+    };
+    
+    ClassMatchedHandler handleJoinOverlayResponse = new ClassMatchedHandler<JoinOverlay.Response, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, JoinOverlay.Response>>() {
+
+        @Override
+        public void handle(JoinOverlay.Response content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, JoinOverlay.Response> container) {
+            log.trace("{} net received:{}", new Object[]{config.self.toString(), content.toString()});
+            cancelCaracalReqTimeout(pendingRequests.remove(content.id));
+            trigger(content, myPort);
             int downloadPos = 0;
-            overlaysUtility.put(resp.content.overlayId, downloadPos);
+            overlaysUtility.put(content.overlayId, downloadPos);
         }
     };
 
-    public Handler<NetOverlaySample.Response> handleOverlaySampleResponse = new Handler<NetOverlaySample.Response>() {
+    Handler handleOverlaySampleRequest = new Handler<OverlaySample.Request>() {
 
-                @Override
-                public void handle(NetOverlaySample.Response resp) {
-                    log.trace("{} {}", new Object[]{config.self.toString(), resp.toString()});
-                    cancelCaracalReqTimeout(pendingRequests.remove(resp.id));
-                    trigger(resp.content, myPort);
-                }
-            };
+        @Override
+        public void handle(OverlaySample.Request reqContent) {
+            log.trace("{} {} - overlay:{}", new Object[]{config.self, reqContent, reqContent.overlayId});
 
-    public Handler<UtilityUpdate> handleUtilityUpdate = new Handler<UtilityUpdate>() {
+            DecoratedHeader<DecoratedAddress> requestHeader = new DecoratedHeader(new BasicHeader(config.self, config.server, Transport.UDP), null, null);
+            ContentMsg request = new BasicContentMsg(requestHeader, reqContent);
+
+            log.debug("{} sending {}", new Object[]{config.self, request});
+            pendingRequests.put(reqContent.id, scheduleCaracalReqTimeout(reqContent.id));
+            trigger(request, network);
+        }
+    };
+
+    ClassMatchedHandler handleOverlaySampleResponse = new ClassMatchedHandler<OverlaySample.Response, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>,OverlaySample.Response>>() {
+
+        @Override
+        public void handle(OverlaySample.Response content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>,OverlaySample.Response> container) {
+            log.trace("{} net received {}", new Object[]{config.self.toString(), container.toString()});
+            cancelCaracalReqTimeout(pendingRequests.remove(content.id));
+            trigger(content, myPort);
+        }
+    };
+
+    Handler handleUtilityUpdate = new Handler<UtilityUpdate>() {
 
         @Override
         public void handle(UtilityUpdate update) {
@@ -224,27 +229,29 @@ public class BootstrapClientComp extends ComponentDefinition {
         }
     };
 
-    public Handler<Heartbeat.PeriodicTimeout> handleHeartbeat = new Handler<Heartbeat.PeriodicTimeout>() {
+    Handler handleHeartbeat = new Handler<Heartbeat.PeriodicTimeout>() {
 
         @Override
         public void handle(Heartbeat.PeriodicTimeout timeout) {
             log.info("{} periodic heartbeat, active overlays:{}", new Object[]{config.self, overlaysUtility});
 
             Heartbeat.OneWay heartbeat = new Heartbeat.OneWay(UUID.randomUUID(), new HashMap<Integer, Integer>(overlaysUtility));
-            NetHeartbeat.OneWay netOneWay = new NetHeartbeat.OneWay(config.self, config.server, heartbeat.id, heartbeat);
-            log.debug("{} sending {}", new Object[]{config.self, netOneWay});
-            trigger(netOneWay, network);
+            DecoratedHeader<DecoratedAddress> requestHeader = new DecoratedHeader(new BasicHeader(config.self, config.server, Transport.UDP), null, null);
+            ContentMsg request = new BasicContentMsg(requestHeader, heartbeat);
+
+            log.debug("{} sending {}", new Object[]{config.self, request});
+            trigger(request, network);
         }
     };
-    
+
     public Handler<CaracalReqTimeout> handleCaracalReqTimeout = new Handler<CaracalReqTimeout>() {
 
         @Override
         public void handle(CaracalReqTimeout timeout) {
             log.debug("{} timeout for req:{}", new Object[]{config.self, timeout.reqId});
 
-            TimeoutId tid = pendingRequests.remove(timeout.reqId);
-            if(tid == null) {
+            UUID tid = pendingRequests.remove(timeout.reqId);
+            if (tid == null) {
                 log.debug("{} late timeout:{}", new Object[]{config.self, tid});
                 return;
             } else {
@@ -252,10 +259,10 @@ public class BootstrapClientComp extends ComponentDefinition {
                 System.exit(1);
             }
         }
-        
+
     };
-    
-    private TimeoutId scheduleCaracalReqTimeout(UUID reqId) {
+
+    private UUID scheduleCaracalReqTimeout(UUID reqId) {
         ScheduleTimeout st = new ScheduleTimeout(3000);
         Timeout t = new CaracalReqTimeout(st, reqId);
         st.setTimeoutEvent(t);
@@ -264,7 +271,7 @@ public class BootstrapClientComp extends ComponentDefinition {
         return t.getTimeoutId();
     }
 
-    private void cancelCaracalReqTimeout(TimeoutId tid) {
+    private void cancelCaracalReqTimeout(UUID tid) {
         log.debug("{} canceling timeout:{}", config.self, tid);
         CancelTimeout cancelSpeedUp = new CancelTimeout(tid);
         trigger(cancelSpeedUp, timer);

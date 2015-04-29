@@ -20,8 +20,8 @@ package se.sics.gvod.bootstrap.cclient;
 
 import com.typesafe.config.Config;
 import java.net.InetAddress;
+import se.sics.caracaldb.Address;
 import se.sics.gvod.common.util.GVoDConfigException;
-import se.sics.kompics.address.Address;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>

@@ -16,16 +16,20 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+package se.sics.gvod.system;
 
-package se.sics.gvod.network.netmsg;
+import se.sics.gvod.network.GVoDSerializerSetup;
+import se.sics.p2ptoolbox.util.serializer.BasicSerializerSetup;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class OverlayHeaderField implements HeaderField {
-    public final int overlayId;
-    
-    public OverlayHeaderField(int overlayId) {
-        this.overlayId = overlayId;
+public class GVoDSystemSerializerSetup {
+
+    public static void oneTimeSetup() {
+        int currentId = 128;
+        
+        currentId = BasicSerializerSetup.registerBasicSerializers(currentId);
+        currentId = GVoDSerializerSetup.registerSerializers(currentId);
     }
 }
