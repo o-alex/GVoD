@@ -360,6 +360,9 @@ public class DownloadMngrComp extends ComponentDefinition {
                     new Object[]{config.overlayId, playBlockNr, playPos, fileMngr.contiguous(0), hashPos});
             //TODO Alex might need to move it to its own timeout
             checkCompleteBlocks();
+            if(hashMngr.isComplete(0) && fileMngr.isComplete(0)) {
+                finishDownload();
+            }
             trigger(new UtilityUpdate(config.overlayId, downloading, playPos), utilityUpdate);
         }
     };
