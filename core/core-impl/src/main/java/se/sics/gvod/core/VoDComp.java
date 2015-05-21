@@ -90,6 +90,7 @@ public class VoDComp extends ComponentDefinition {
 
     private final Map<UUID, Pair<Pair<String, Integer>, FileMetadata>> pendingUploads;
     private final Map<UUID, Pair<String, Integer>> pendingDownloads;
+    private final Map<UUID, Pair<String, Integer>> rejoinUploads;
     private final LibraryMngr libMngr;
 
     public VoDComp(VoDInit init) {
@@ -99,6 +100,7 @@ public class VoDComp extends ComponentDefinition {
         this.videoComps = new HashMap<Integer, Triplet<Component, Component, Component>>();
         this.pendingDownloads = new HashMap<UUID, Pair<String, Integer>>();
         this.pendingUploads = new HashMap<UUID, Pair<Pair<String, Integer>, FileMetadata>>();
+        this.rejoinUploads = new HashMap<UUID, Pair<String, Integer>>();
         this.libMngr = new LibraryMngr(config.libDir);
         libMngr.loadLibrary();
 
@@ -108,18 +110,27 @@ public class VoDComp extends ComponentDefinition {
         subscribe(handleDownloadVideoRequest, myPort);
         subscribe(handleAddOverlayResponse, bootstrap);
         subscribe(handleJoinOverlayResponse, bootstrap);
-        
+
         startUploading();
     }
-    
+
     private void startUploading() {
-//        Map<String, FileStatus> fileStatusMap = libMngr.getLibrary();
-//        
-//        for(Map.Entry<String, FileStatus> e : fileStatusMap) {
-//            if(e.getValue().equals(FileStatus.UPLOADING)) {
-//                
-//            }
-//        }
+        Map<String, Pair<FileStatus, Integer>> fileStatusMap = libMngr.getLibrary();
+
+        for (Map.Entry<String, Pair<FileStatus, Integer>> e : fileStatusMap.entrySet()) {
+            if (e.getValue().getValue0().equals(FileStatus.UPLOADING)) {
+                String fileName = e.getKey();
+                Integer overlayId = e.getValue().getValue1();
+                if (overlayId == null) {
+                    LOG.error("{} unexpected null overlayId for video:{}", logPrefix, fileName);
+                    throw new RuntimeException("unexpected null overlayId for video:" + fileName);
+                }
+                LOG.info("{} - joining upload - fileName:{} overlay:{}", new Object[]{logPrefix, fileName, overlayId});
+                JoinOverlay.Request req = new JoinOverlay.Request(UUID.randomUUID(), overlayId, 0);
+                trigger(req, bootstrap);
+                rejoinUploads.put(req.id, Pair.with(fileName, overlayId));
+            }
+        }
     }
 
     public Handler<BootstrapGlobal.Response> handleBootstrapGlobalResponse = new Handler<BootstrapGlobal.Response>() {
@@ -181,27 +192,11 @@ public class VoDComp extends ComponentDefinition {
             LOG.trace("{} - {}", new Object[]{logPrefix, resp});
 
             Pair<Pair<String, Integer>, FileMetadata> fileInfo = pendingUploads.remove(resp.id);
-            String fileName = fileInfo.getValue0().getValue0();
-
             if (resp.status == ReqStatus.SUCCESS) {
-                try {
-                    if (!libMngr.upload(fileName, resp.overlayId)) {
-                        LOG.error("library manager - upload denied for file:{}", fileName);
-                        throw new RuntimeException("library manager - upload denied for file:" + fileName);
-                    }
-                    Pair<FileMngr, HashMngr> videoMngrs = getUploadVideoMngrs(fileName, fileInfo.getValue1());
-                    startVideoComp(resp.id, resp.overlayId, fileInfo.getValue1(), videoMngrs, false);
-                    trigger(new GetLibrary.Response(UUID.randomUUID(), ResponseStatus.SUCCESS, libMngr.getLibrary()), myPort);
-                } catch (IOException ex) {
-                    LOG.error("{} error writting to disk for video:{}", logPrefix, fileName);
-                    throw new RuntimeException("error writting to disk for video:" + fileName, ex);
-                } catch (GVoDConfigException.Missing ex) {
-                    LOG.error("{} configuration problem in VoDComp:{}", logPrefix, ex.getMessage());
-                    throw new RuntimeException(ex);
-                }
+                startUpload(resp.id, fileInfo.getValue0().getValue0(), fileInfo.getValue0().getValue1(), fileInfo.getValue1());
             } else {
-                LOG.error("{} error in response message of upload video:{}", logPrefix, fileName);
-                throw new RuntimeException("error in response message of upload video:" + fileName);
+                LOG.error("{} error in response message of upload video:{}", logPrefix, fileInfo.getValue0().getValue0());
+                throw new RuntimeException("error in response message of upload video:" + fileInfo.getValue0().getValue0());
             }
         }
     };
@@ -226,34 +221,59 @@ public class VoDComp extends ComponentDefinition {
         public void handle(JoinOverlay.Response resp) {
             LOG.trace("{} - {}", new Object[]{config.selfAddress, resp});
 
-            Pair<String, Integer> fileInfo = pendingDownloads.remove(resp.id);
-            String fileName = fileInfo.getValue0();
-
             if (resp.status == ReqStatus.SUCCESS) {
-                try {
-                    if (!libMngr.startDownload(fileName, resp.overlayId)) {
-                        LOG.error("library manager - download denied for file:{}", fileName);
-                        throw new RuntimeException("library manager - download denied for file:" + fileName);
-                    }
-                    Pair<FileMngr, HashMngr> videoMngrs = getDownloadVideoMngrs(fileInfo.getValue0(), resp.fileMeta);
-                    startVideoComp(resp.id, resp.overlayId, resp.fileMeta, videoMngrs, true);
-                    trigger(new GetLibrary.Response(UUID.randomUUID(), ResponseStatus.SUCCESS, libMngr.getLibrary()), myPort);
-                } catch (IOException ex) {
-                    LOG.error("error writting to disk for video " + fileInfo.getValue0());
-                    System.exit(1);
-                } catch (HashUtil.HashBuilderException ex) {
-                    LOG.error("error creating hash file for video " + fileInfo.getValue0());
-                    System.exit(1);
-                } catch (GVoDConfigException.Missing ex) {
-                    LOG.error("configuration problem in VoDComp " + ex.getMessage());
-                    System.exit(1);
+                if (pendingDownloads.containsKey(resp.id)) {
+                    Pair<String, Integer> fileInfo = pendingDownloads.remove(resp.id);
+                    startDownload(resp.id, fileInfo.getValue0(), fileInfo.getValue1(), resp.fileMeta);
+                } else if (rejoinUploads.containsKey(resp.id)) {
+                    Pair<String, Integer> fileInfo = rejoinUploads.remove(resp.id);
+                    startUpload(resp.id, fileInfo.getValue0(), fileInfo.getValue1(), resp.fileMeta);
                 }
             } else {
-                LOG.error("error in response message of upload video " + fileInfo.getValue0());
-                System.exit(1);
+                LOG.error("{} error in response message of upload video:{}", logPrefix, resp.fileMeta.fileName);
+                throw new RuntimeException("error in response message of upload video:" + resp.fileMeta.fileName);
             }
         }
     };
+
+    private void startUpload(UUID reqId, String fileName, Integer overlayId, FileMetadata fileMeta) {
+        try {
+            if (!libMngr.upload(fileName, overlayId)) {
+                LOG.error("{} library manager - upload denied for file:{}", logPrefix, fileName);
+                throw new RuntimeException("library manager - upload denied for file:" + fileName);
+            }
+            Pair<FileMngr, HashMngr> videoMngrs = getUploadVideoMngrs(fileName, fileMeta);
+            startVideoComp(reqId, overlayId, fileMeta, videoMngrs, false);
+            trigger(new GetLibrary.Response(UUID.randomUUID(), ResponseStatus.SUCCESS, libMngr.getLibrary()), myPort);
+        } catch (IOException ex) {
+            LOG.error("{} error writting to disk for video:{}", logPrefix, fileName);
+            throw new RuntimeException("error writting to disk for video:" + fileName, ex);
+        } catch (GVoDConfigException.Missing ex) {
+            LOG.error("{} configuration problem in VoDComp:{}", logPrefix, ex.getMessage());
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private void startDownload(UUID reqId, String fileName, Integer overlayId, FileMetadata fileMeta) {
+        try {
+            if (!libMngr.startDownload(fileName, overlayId)) {
+                LOG.error("{} library manager - download denied for file:{}", logPrefix, fileName);
+                throw new RuntimeException("library manager - download denied for file:" + fileName);
+            }
+            Pair<FileMngr, HashMngr> videoMngrs = getDownloadVideoMngrs(fileName, fileMeta);
+            startVideoComp(reqId, overlayId, fileMeta, videoMngrs, false);
+            trigger(new GetLibrary.Response(UUID.randomUUID(), ResponseStatus.SUCCESS, libMngr.getLibrary()), myPort);
+        } catch (IOException ex) {
+            LOG.error("{} error writting to disk for video:{}", logPrefix, fileName);
+            throw new RuntimeException("error writting to disk for video:" + fileName, ex);
+        } catch (HashUtil.HashBuilderException ex) {
+            LOG.error("{} error creating hash file for video:{}", logPrefix, fileName);
+            throw new RuntimeException("error creating hash file for video:" + fileName, ex);
+        } catch (GVoDConfigException.Missing ex) {
+            LOG.error("{} configuration problem in VoDComp:{}", logPrefix, ex.getMessage());
+            throw new RuntimeException(ex);
+        }
+    }
 
     private void startVideoComp(UUID reqId, int overlayId, FileMetadata fileMeta, Pair<FileMngr, HashMngr> hashedFileMngr, boolean download) {
         int hashSize = 0;
