@@ -30,6 +30,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.logging.Level;
 import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -221,8 +223,25 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
         VideoStreamManager videoPlayer = vsMngrs.get(videoName);
         if (videoPlayer == null) {
-            LOG.error("logic error on video manager - video player");
-            System.exit(1);
+            SettableFuture<Boolean> downloadFuture = SettableFuture.create();
+            downloadVideo(videoName, overlayId, downloadFuture);
+            try {
+                if (!downloadFuture.get()) {
+                    LOG.error("logic error on video manager - video player");
+                    System.exit(1);
+                }
+            } catch (InterruptedException ex) {
+                LOG.error("logic error on video manager - video player2");
+                System.exit(1);
+            } catch (ExecutionException ex) {
+                LOG.error("logic error on video manager - video player3");
+                System.exit(1);
+            }
+            videoPlayer = vsMngrs.get(videoName);
+            if (videoPlayer == null) {
+                LOG.error("logic error on video manager - video player4");
+                System.exit(1);
+            }
         }
 
         if (videoPaths.contains(videoName)) {
