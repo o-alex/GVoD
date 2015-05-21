@@ -277,7 +277,7 @@ public class VoDComp extends ComponentDefinition {
                 throw new RuntimeException("library manager - download denied for file:" + fileName);
             }
             Pair<FileMngr, HashMngr> videoMngrs = getDownloadVideoMngrs(fileName, fileMeta);
-            startVideoComp(reqId, overlayId, fileMeta, videoMngrs, false);
+            startVideoComp(reqId, overlayId, fileMeta, videoMngrs, true);
             trigger(new GetLibrary.Response(UUID.randomUUID(), ResponseStatus.SUCCESS, libMngr.getLibrary()), myPort);
         } catch (IOException ex) {
             LOG.error("{} error writting to disk for video:{}", logPrefix, fileName);
