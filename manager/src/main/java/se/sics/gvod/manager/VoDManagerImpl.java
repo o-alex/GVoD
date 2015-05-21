@@ -154,8 +154,12 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     @Override
     public void pendingUpload(String videoName, SettableFuture<Boolean> myFuture) {
         FileStatus videoStatus = videos.get(videoName);
-        if (videoStatus == null || !videoStatus.equals(FileStatus.NONE)) {
-            LOG.warn("{} video {} not found in library {}", new Object[]{config.selfAddress, videoName, config.libDir});
+        if(videoStatus == null) {
+            LOG.warn("{} video:{} not found in library:{}", new Object[]{logPrefix, videoName, config.libDir});
+            myFuture.set(false);
+        }
+        if (!videoStatus.equals(FileStatus.NONE)) {
+            LOG.warn("{} video:{} has status:{} - cannot upload", new Object[]{logPrefix, videoName, videoStatus});
             myFuture.set(false);
             return;
         }

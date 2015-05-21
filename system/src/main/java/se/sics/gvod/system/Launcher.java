@@ -21,6 +21,7 @@ package se.sics.gvod.system;
 import com.google.common.util.concurrent.SettableFuture;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
 import se.sics.gvod.bootstrap.server.peermanager.msg.CaracalReady;
 import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.manager.VoDManager;
+import se.sics.gvod.manager.util.FileStatus;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
@@ -63,6 +65,7 @@ public class Launcher extends ComponentDefinition {
     private DecoratedAddress selfAddress;
     private final HostConfiguration.ExecBuilder configBuilder;
     private HostConfiguration config;
+    private final String logPrefix;
 
     public static VoDManager getInstance() {
         return vodManager;
@@ -92,6 +95,7 @@ public class Launcher extends ComponentDefinition {
         } catch (GVoDConfigException.Missing ex) {
             throw new RuntimeException("missing addressparts", ex);
         }
+        this.logPrefix = selfAddress.toString();
 
         timer = create(JavaTimer.class, Init.NONE);
         network = create(NettyNetwork.class, new NettyInit(selfAddress));
@@ -137,8 +141,13 @@ public class Launcher extends ComponentDefinition {
             }
             try {
                 if (firstCmd.download) {
+                    SettableFuture<Map<String, FileStatus>> libFuture = SettableFuture.create();
+                    vodManager.getFiles(libFuture);
+                    log.info("{} getting library", logPrefix);
+                    libFuture.get();
                     SettableFuture<Boolean> downloadFuture = SettableFuture.create();
                     vodManager.downloadVideo(firstCmd.fileName, firstCmd.overlayId, downloadFuture);
+                    log.info("{} first command", logPrefix);
                     if (!downloadFuture.get()) {
                         log.error("bad first command - cannot download - check if library contains file already");
                         System.exit(1);
@@ -158,8 +167,14 @@ public class Launcher extends ComponentDefinition {
                     log.info("can play video:{} on port:{}", firstCmd.fileName, videoPort);
 
                 } else {
+                    SettableFuture<Map<String, FileStatus>> libFuture = SettableFuture.create();
+                    vodManager.getFiles(libFuture);
+                    log.info("{} getting library", logPrefix);
+                    libFuture.get();
+                    
                     SettableFuture<Boolean> pendingUpFuture = SettableFuture.create();
                     vodManager.pendingUpload(firstCmd.fileName, pendingUpFuture);
+                    log.info("{} first command", logPrefix);
                     if (!pendingUpFuture.get()) {
                         log.error("bad first command - cannot upload - check if library contains file");
                         System.exit(1);
