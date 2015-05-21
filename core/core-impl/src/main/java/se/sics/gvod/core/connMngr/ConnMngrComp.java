@@ -430,6 +430,10 @@ public class ConnMngrComp extends ComponentDefinition {
                         //TODO Alex fix this;
                         return;
                     }
+                    if(up == null) {
+                        log.warn("received data from someone who i didn't connect to or clossed connection");
+                        return;
+                    }
                     up.freeSlot();
                     cancelDownloadDataTimeout(req.getValue0().id, req.getValue1());
                     trigger(content, myPort);
