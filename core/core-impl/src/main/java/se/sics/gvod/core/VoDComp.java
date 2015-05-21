@@ -131,7 +131,13 @@ public class VoDComp extends ComponentDefinition {
                 Integer overlayId = e.getValue().getValue1();
                 if (overlayId == null) {
                     LOG.error("{} unexpected null overlayId for video:{}", logPrefix, fileName);
-                    throw new RuntimeException("unexpected null overlayId for video:" + fileName);
+//                    throw new RuntimeException("unexpected null overlayId for video:" + fileName);
+                    System.exit(1);
+                }
+                if (!libMngr.pendingUpload(fileName)) {
+                    LOG.error("library manager - pending upload denied for file:{}", fileName);
+//                    throw new RuntimeException("library manager - pending upload denied for file:" + fileName);
+                    System.exit(1);
                 }
                 LOG.info("{} - joining upload - fileName:{} overlay:{}", new Object[]{logPrefix, fileName, overlayId});
                 JoinOverlay.Request req = new JoinOverlay.Request(UUID.randomUUID(), overlayId, 0);
@@ -178,14 +184,17 @@ public class VoDComp extends ComponentDefinition {
                 HashUtil.makeHashes(videoFilePath, hashFilePath, config.hashAlg, blockSize);
                 if (!libMngr.pendingUpload(req.videoName)) {
                     LOG.error("library manager - pending upload denied for file:{}", req.videoName);
-                    throw new RuntimeException("library manager - pending upload denied for file:" + req.videoName);
+//                    throw new RuntimeException("library manager - pending upload denied for file:" + req.videoName);
+                    System.exit(1);
                 }
             } catch (HashUtil.HashBuilderException ex) {
                 LOG.error("error while hashing file:{}", req.videoName);
-                throw new RuntimeException("error while hashing file:" + req.videoName, ex);
+//                throw new RuntimeException("error while hashing file:" + req.videoName, ex);
+                 System.exit(1);
             } catch (IOException ex) {
                 LOG.error("error writting hash file:{} to disk", req.videoName);
-                throw new RuntimeException("error writting hash file:" + req.videoName + " to disk", ex);
+//                throw new RuntimeException("error writting hash file:" + req.videoName + " to disk", ex);
+                 System.exit(1);
             }
             FileMetadata fileMeta = new FileMetadata(req.videoName, (int) videoFile.length(), config.pieceSize, config.hashAlg, (int) hashFile.length());
             trigger(new AddOverlay.Request(req.id, req.overlayId, fileMeta), bootstrap);
@@ -204,7 +213,8 @@ public class VoDComp extends ComponentDefinition {
                 startUpload(resp.id, fileInfo.getValue0().getValue0(), fileInfo.getValue0().getValue1(), fileInfo.getValue1());
             } else {
                 LOG.error("{} error in response message of upload video:{}", logPrefix, fileInfo.getValue0().getValue0());
-                throw new RuntimeException("error in response message of upload video:" + fileInfo.getValue0().getValue0());
+//                throw new RuntimeException("error in response message of upload video:" + fileInfo.getValue0().getValue0());
+                 System.exit(1);
             }
         }
     };
