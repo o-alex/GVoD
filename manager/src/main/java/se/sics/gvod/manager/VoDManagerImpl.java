@@ -154,7 +154,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     @Override
     public void pendingUpload(String videoName, SettableFuture<Boolean> myFuture) {
         FileStatus videoStatus = videos.get(videoName);
-        if(videoStatus == null) {
+        if (videoStatus == null) {
             LOG.warn("{} video:{} not found in library:{}", new Object[]{logPrefix, videoName, config.libDir});
             myFuture.set(false);
         }
@@ -204,11 +204,9 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
             LOG.info("{} video:{} ready to play", logPrefix, resp.videoName);
             vsMngrs.put(resp.videoName, resp.vsMngr);
             SettableFuture<Boolean> myFuture = pendingJobs.remove(resp.id);
-            if (myFuture == null) {
-                LOG.error("missing job");
-                throw new RuntimeException("missing job");
+            if (myFuture != null) {
+                myFuture.set(true);
             }
-            myFuture.set(true);
         }
     };
 
