@@ -104,15 +104,23 @@ public class VoDComp extends ComponentDefinition {
         this.libMngr = new LibraryMngr(config.libDir);
         libMngr.loadLibrary();
 
+        subscribe(handleStart, control);
         subscribe(handleBootstrapGlobalResponse, bootstrap);
         subscribe(handleGetLibraryRequest, myPort);
         subscribe(handleUploadVideoRequest, myPort);
         subscribe(handleDownloadVideoRequest, myPort);
         subscribe(handleAddOverlayResponse, bootstrap);
         subscribe(handleJoinOverlayResponse, bootstrap);
-
-        startUploading();
     }
+
+    private Handler handleStart = new Handler<Start>() {
+
+        @Override
+        public void handle(Start event) {
+            LOG.info("{} starting", logPrefix);
+            startUploading();
+        }
+    };
 
     private void startUploading() {
         Map<String, Pair<FileStatus, Integer>> fileStatusMap = libMngr.getLibrary();
