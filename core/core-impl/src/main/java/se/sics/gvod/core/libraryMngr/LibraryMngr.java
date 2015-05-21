@@ -28,10 +28,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.sics.gvod.core.VoDComp;
+import se.sics.gvod.core.util.FileStatus;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -41,10 +44,6 @@ public class LibraryMngr {
     private static final Logger LOG = LoggerFactory.getLogger(VoDComp.class);
     private static final String STATUS_FILE = "status.file";
 
-    public static enum FileStatus {
-
-        NONE, PENDING_DOWNLOAD, DOWNLOADING, PAUSED, PENDING_UPLOAD, UPLOADING
-    }
     private static final FileFilter mp4Filter = new FileFilter() {
         @Override
         public boolean accept(File file) {
@@ -65,14 +64,14 @@ public class LibraryMngr {
     };
 
     private final String libPath;
-    private final Map<String, FileStatus> fileMap;
+    private final Map<String, Pair<FileStatus, Integer>> fileMap;
 
     public LibraryMngr(String libPath) {
         this.libPath = libPath;
-        this.fileMap = new HashMap<String, FileStatus>();
+        this.fileMap = new HashMap<String, Pair<FileStatus, Integer>>();
     }
 
-    public Map<String, FileStatus> getLibrary() {
+    public Map<String, Pair<FileStatus, Integer>> getLibrary() {
         return fileMap;
     }
 
@@ -89,66 +88,65 @@ public class LibraryMngr {
     }
 
     public boolean pendingUpload(String file) {
-        FileStatus fileStatus = fileMap.get(file);
+        Pair<FileStatus, Integer> fileStatus = fileMap.get(file);
         if (fileStatus == null) {
             return false;
         }
-        if (!fileStatus.equals(FileStatus.NONE)) {
+        if (!fileStatus.getValue0().equals(FileStatus.NONE)) {
             return false;
         }
-        fileMap.put(file, FileStatus.PENDING_UPLOAD);
+        fileMap.put(file, Pair.with(FileStatus.PENDING_UPLOAD, (Integer) null));
         writeStatusFile();
         return true;
     }
 
-    public boolean upload(String file) {
-        FileStatus fileStatus = fileMap.get(file);
+    public boolean upload(String file, int overlayId) {
+        Pair<FileStatus, Integer> fileStatus = fileMap.get(file);
         if (fileStatus == null) {
             return false;
         }
-        if (!fileStatus.equals(FileStatus.PENDING_UPLOAD)) {
+        if (!fileStatus.getValue0().equals(FileStatus.PENDING_UPLOAD)) {
             return false;
         }
-        fileMap.put(file, FileStatus.UPLOADING);
+        fileMap.put(file, Pair.with(FileStatus.UPLOADING, overlayId));
         writeStatusFile();
         return true;
     }
-    
+
     public boolean pendingDownload(String file) {
-        FileStatus fileStatus = fileMap.get(file);
+        Pair<FileStatus, Integer> fileStatus = fileMap.get(file);
         if (fileStatus != null) {
             return false;
         }
-        
-        fileMap.put(file, FileStatus.PENDING_DOWNLOAD);
+
+        fileMap.put(file, Pair.with(FileStatus.PENDING_DOWNLOAD, (Integer) null));
         writeStatusFile();
         return true;
 
     }
 
-    public boolean startDownload(String file) {
-        FileStatus fileStatus = fileMap.get(file);
-        if (fileStatus == null || !fileStatus.equals(FileStatus.PENDING_DOWNLOAD)) {
+    public boolean startDownload(String file, Integer overlayId) {
+        Pair<FileStatus, Integer> fileStatus = fileMap.get(file);
+        if (fileStatus == null || !fileStatus.getValue0().equals(FileStatus.PENDING_DOWNLOAD)) {
             return false;
         }
-        fileMap.put(file, FileStatus.DOWNLOADING);
+        fileMap.put(file, Pair.with(FileStatus.DOWNLOADING, overlayId));
         writeStatusFile();
         return true;
     }
 
-    public boolean finishDownload(String file) {
-        FileStatus fileStatus = fileMap.get(file);
-        if (fileStatus == null) {
-            return false;
-        }
-        if (!fileStatus.equals(FileStatus.DOWNLOADING)) {
-            return false;
-        }
-        fileMap.put(file, FileStatus.UPLOADING);
-        writeStatusFile();
-        return true;
-    }
-
+//    public boolean finishDownload(String file) {
+//        FileStatus fileStatus = fileMap.get(file);
+//        if (fileStatus == null) {
+//            return false;
+//        }
+//        if (!fileStatus.equals(FileStatus.DOWNLOADING)) {
+//            return false;
+//        }
+//        fileMap.put(file, FileStatus.UPLOADING);
+//        writeStatusFile();
+//        return true;
+//    }
     private void checkLibraryDir() {
         File dir = new File(libPath);
         if (!dir.isDirectory()) {
@@ -165,7 +163,7 @@ public class LibraryMngr {
         for (File file : libDir.listFiles(mp4Filter)) {
             LOG.info("library - loading video: {}", file.getName());
             if (!fileMap.containsKey(file.getName())) {
-                fileMap.put(file.getName(), FileStatus.NONE);
+                fileMap.put(file.getName(), Pair.with(FileStatus.NONE, (Integer) null));
             }
         }
     }
@@ -198,13 +196,13 @@ public class LibraryMngr {
             String line;
             while ((line = br.readLine()) != null) {
                 StringTokenizer st = new StringTokenizer(line, ":");
-                if (st.countTokens() != 2) {
-                    LOG.error("bad status format");
-                    throw new RuntimeException("bad status format");
-                }
                 String fileName = st.nextToken();
                 FileStatus fileStatus = FileStatus.valueOf(st.nextToken());
-                checkStatus(fileName, fileStatus);
+                Integer overlayId = null;
+                if (st.hasMoreElements()) {
+                    overlayId = Integer.parseInt(st.nextToken());
+                }
+                checkStatus(fileName, fileStatus, overlayId);
             }
         } catch (FileNotFoundException ex) {
             LOG.error("could not find status check file - should not get here");
@@ -215,6 +213,9 @@ public class LibraryMngr {
         } catch (IllegalArgumentException ex) {
             LOG.error("bad file status");
             throw new RuntimeException("bad file status", ex);
+        } catch (NoSuchElementException ex) {
+            LOG.error("bad status format");
+            throw new RuntimeException("bad status format", ex);
         } finally {
             try {
                 if (br != null) {
@@ -229,7 +230,7 @@ public class LibraryMngr {
         }
     }
 
-    private void checkStatus(String fileName, FileStatus fileStatus) {
+    private void checkStatus(String fileName, FileStatus fileStatus, Integer overlayId) {
         if (fileStatus.equals(FileStatus.NONE) || fileStatus.equals(FileStatus.PENDING_UPLOAD) || fileStatus.equals(FileStatus.PENDING_DOWNLOAD)) {
             //do nothing
         } else if (fileStatus.equals(FileStatus.UPLOADING)) {
@@ -241,7 +242,7 @@ public class LibraryMngr {
                 }
                 File hashFile = new File(libPath + File.separator + fileST.nextToken() + ".hash");
                 if (hashFile.exists()) {
-                    fileMap.put(fileName, fileStatus);
+                    fileMap.put(fileName, Pair.with(fileStatus, overlayId));
                 }
             }
         } else if (fileStatus.equals(FileStatus.DOWNLOADING)) {
@@ -268,11 +269,15 @@ public class LibraryMngr {
         try {
             fw = new FileWriter(libPath + File.separator + STATUS_FILE);
             bw = new BufferedWriter(fw);
-            for (Map.Entry<String, FileStatus> fileStatus : fileMap.entrySet()) {
+            for (Map.Entry<String, Pair<FileStatus, Integer>> fileStatus : fileMap.entrySet()) {
                 if (!fileStatus.getValue().equals(FileStatus.NONE)) {
                     bw.write(fileStatus.getKey());
                     bw.write(":");
-                    bw.write(fileStatus.getValue().toString());
+                    bw.write(fileStatus.getValue().getValue0().toString());
+                    if (fileStatus.getValue().getValue1() != null) {
+                        bw.write(":");
+                        bw.write(fileStatus.getValue().getValue1().toString());
+                    }
                     bw.write("\n");
                 }
             }

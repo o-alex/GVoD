@@ -1,3 +1,13 @@
+package se.sics.gvod.core.msg;
+
+
+import java.util.Map;
+import java.util.UUID;
+import org.javatuples.Pair;
+import se.sics.gvod.core.util.FileStatus;
+import se.sics.gvod.core.util.ResponseStatus;
+import se.sics.kompics.KompicsEvent;
+
 /*
  * Copyright (C) 2009 Swedish Institute of Computer Science (SICS) Copyright (C)
  * 2009 Royal Institute of Technology (KTH)
@@ -16,36 +26,28 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package se.sics.gvod.core.msg;
-
-import java.util.UUID;
-import se.sics.gvod.common.msg.GvodMsg;
-import se.sics.gvod.common.msg.ReqStatus;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
-public class UploadVideo {
-
-    public static class Request extends GvodMsg.Request {
-
-        public final String videoName;
-        public final int overlayId;
-
-        public Request(String videoName, int overlayId) {
-            super(UUID.randomUUID());
-            this.videoName = videoName;
-            this.overlayId = overlayId;
+public class GetLibrary {
+    public static class Request implements KompicsEvent {
+        public final UUID reqId;
+        
+        public Request(UUID reqId) {
+            this.reqId = reqId;
         }
-
-        @Override
-        public Request copy() {
-            return new Request(videoName, overlayId);
-        }
-
-        @Override
-        public String toString() {
-            return "UploadVideo.Request " + id.toString();
+    }
+    
+    public static class Response implements KompicsEvent {
+        public final UUID reqId;
+        public final ResponseStatus respStatus;
+        public final Map<String, Pair<FileStatus, Integer>> fileStatusMap;
+        
+        public Response(UUID reqId, ResponseStatus respStatus, Map<String, Pair<FileStatus, Integer>> fileStatusMap) {
+            this.reqId = reqId;
+            this.respStatus = respStatus;
+            this.fileStatusMap = fileStatusMap;
         }
     }
 }

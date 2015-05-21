@@ -23,9 +23,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
+import org.javatuples.Pair;
 import org.junit.Assert;
 import org.junit.Test;
-import se.sics.gvod.core.libraryMngr.LibraryMngr.FileStatus;
+import se.sics.gvod.core.util.FileStatus;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -50,35 +51,36 @@ public class LibraryMngrTest {
         //**********************************************************************
 
         LibraryMngr libMngr;
-        Map<String, FileStatus> libFiles;
+        Map<String, Pair<FileStatus, Integer>> libFiles;
         
         libMngr = new LibraryMngr(libPath);
         libMngr.loadLibrary();
         libFiles = libMngr.getLibrary();
         
         Assert.assertEquals(2, libFiles.size());
-        Assert.assertEquals(FileStatus.NONE, libFiles.get("video1.mp4"));
-        Assert.assertEquals(FileStatus.NONE, libFiles.get("video2.mp4"));
+        Assert.assertEquals(FileStatus.NONE, libFiles.get("video1.mp4").getValue0());
+        Assert.assertEquals(FileStatus.NONE, libFiles.get("video2.mp4").getValue0());
 
         File videoHash2 = new File(libPath + File.separator + "video2.hash");
         videoHash2.createNewFile();
         Assert.assertTrue(libMngr.pendingDownload("video3.mp4"));
-        Assert.assertTrue(libMngr.startDownload("video3.mp4"));
+        Assert.assertTrue(libMngr.startDownload("video3.mp4", 10));
         Assert.assertTrue(libMngr.pendingUpload("video2.mp4"));
-        Assert.assertTrue(libMngr.upload("video2.mp4"));
+        Assert.assertTrue(libMngr.upload("video2.mp4", 11));
         
         Assert.assertEquals(3, libFiles.size());
-        Assert.assertEquals(FileStatus.NONE, libFiles.get("video1.mp4"));
-        Assert.assertEquals(FileStatus.UPLOADING, libFiles.get("video2.mp4"));
-        Assert.assertEquals(FileStatus.DOWNLOADING, libFiles.get("video3.mp4"));
+        Assert.assertEquals(FileStatus.NONE, libFiles.get("video1.mp4").getValue0());
+        Assert.assertEquals(FileStatus.UPLOADING, libFiles.get("video2.mp4").getValue0());
+        Assert.assertEquals(FileStatus.DOWNLOADING, libFiles.get("video3.mp4").getValue0());
         
         libMngr = new LibraryMngr(libPath);
         libMngr.loadLibrary();
         libFiles = libMngr.getLibrary();
 
         Assert.assertEquals(2, libFiles.size());
-        Assert.assertEquals(FileStatus.NONE, libFiles.get("video1.mp4"));
-        Assert.assertEquals(FileStatus.UPLOADING, libFiles.get("video2.mp4"));
+        Assert.assertEquals(FileStatus.NONE, libFiles.get("video1.mp4").getValue0());
+        Assert.assertEquals(FileStatus.UPLOADING, libFiles.get("video2.mp4").getValue0());
+        Assert.assertEquals(new Integer(11), libFiles.get("video2.mp4").getValue1());
     }
 
     @Test
@@ -98,20 +100,21 @@ public class LibraryMngrTest {
         File statusFile = new File(libPath + File.separator + "status.file");
         statusFile.createNewFile();
         BufferedWriter bw = new BufferedWriter(new FileWriter(libPath + File.separator + "status.file"));
-        bw.write("video1.mp4:UPLOADING\n");
-        bw.write("video2.mp4:DOWNLOADING\n");
-        bw.write("video3.mp4:UPLOADING\n");
+        bw.write("video1.mp4:UPLOADING:10\n");
+        bw.write("video2.mp4:DOWNLOADING:11\n");
+        bw.write("video3.mp4:UPLOADING:12\n");
         bw.close();
         //**********************************************************************
 
         LibraryMngr libMngr = new LibraryMngr(libPath);
         libMngr.loadLibrary();
-        Map<String, FileStatus> libFiles;
+        Map<String, Pair<FileStatus, Integer>> libFiles;
 
         libFiles = libMngr.getLibrary();
         Assert.assertEquals(3, libFiles.size());
-        Assert.assertEquals(FileStatus.NONE, libFiles.get("video1.mp4"));
-        Assert.assertEquals(FileStatus.NONE, libFiles.get("video2.mp4"));
-        Assert.assertEquals(FileStatus.UPLOADING, libFiles.get("video3.mp4"));
+        Assert.assertEquals(FileStatus.NONE, libFiles.get("video1.mp4").getValue0());
+        Assert.assertEquals(FileStatus.NONE, libFiles.get("video2.mp4").getValue0());
+        Assert.assertEquals(FileStatus.UPLOADING, libFiles.get("video3.mp4").getValue0());
+        Assert.assertEquals(new Integer(12), libFiles.get("video3.mp4").getValue1());
     }
 }

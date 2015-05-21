@@ -29,8 +29,6 @@ public interface VoDManager {
     
     public void getFiles(SettableFuture<Map<String, FileStatus>> myFuture);
     
-    public void reloadLibrary(SettableFuture<Boolean> myFuture);
-    
     public void pendingUpload(String videoName, SettableFuture<Boolean> myFuture);
     
     public void uploadVideo(String videoName, int overlayId, SettableFuture<Boolean> myFuture);
