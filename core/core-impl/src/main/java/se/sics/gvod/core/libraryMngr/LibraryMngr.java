@@ -257,6 +257,7 @@ public class LibraryMngr {
             }
             File hashFile = new File(libPath + File.separator + fileST.nextToken() + ".hash");
             hashFile.delete();
+            fileMap.remove(fileName);
         } else {
             LOG.error("logic error - introduced new FileStatus:" + fileStatus.toString() + " and did not add it to the checkStatusFile");
             throw new RuntimeException("logic error - introduced new FileStatus:" + fileStatus.toString() + " and did not add it to the checkStatusFile");
