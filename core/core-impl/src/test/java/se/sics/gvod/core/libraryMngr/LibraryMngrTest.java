@@ -111,9 +111,8 @@ public class LibraryMngrTest {
         Map<String, Pair<FileStatus, Integer>> libFiles;
 
         libFiles = libMngr.getLibrary();
-        Assert.assertEquals(3, libFiles.size());
+        Assert.assertEquals(2, libFiles.size());
         Assert.assertEquals(FileStatus.NONE, libFiles.get("video1.mp4").getValue0());
-        Assert.assertEquals(FileStatus.NONE, libFiles.get("video2.mp4").getValue0());
         Assert.assertEquals(FileStatus.UPLOADING, libFiles.get("video3.mp4").getValue0());
         Assert.assertEquals(new Integer(12), libFiles.get("video3.mp4").getValue1());
     }
