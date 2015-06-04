@@ -23,6 +23,8 @@ import com.typesafe.config.ConfigException;
 import com.typesafe.config.ConfigFactory;
 import java.net.Inet4Address;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
+import java.util.Random;
 import se.sics.gvod.bootstrap.cclient.CaracalPSManagerConfig;
 import se.sics.gvod.bootstrap.client.BootstrapClientConfig;
 import se.sics.gvod.bootstrap.server.BootstrapServerConfig;
@@ -148,7 +150,8 @@ public class HostConfiguration {
             try {
                 return config.getInt("vod.address.id");
             } catch (ConfigException.Missing ex) {
-                throw new GVoDConfigException.Missing(ex);
+                Random rand  = new SecureRandom();
+                return rand.nextInt();
             }
         }
 
