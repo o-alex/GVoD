@@ -66,7 +66,7 @@ public class CroupierComp extends ComponentDefinition {
 
         @Override
         public void handle(Start event) {
-            SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(1000, 1000);
+            SchedulePeriodicTimeout spt = new SchedulePeriodicTimeout(3000, 3000);
             spt.setTimeoutEvent(new SampleTimeout(spt));
             trigger(spt, timer);
         }

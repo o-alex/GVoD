@@ -76,6 +76,7 @@ public class BootstrapClientComp extends ComponentDefinition {
     private final Map<Integer, FileMetadata> pendingAddOverlay;
 
     private final Map<UUID, UUID> pendingRequests;
+    private final Set<UUID> overlaySamples = new HashSet<UUID>();
 
     public BootstrapClientComp(BootstrapClientInit init) {
         this.config = init.config;
@@ -150,7 +151,7 @@ public class BootstrapClientComp extends ComponentDefinition {
             trigger(request, network);
         }
     };
-    
+
     ClassMatchedHandler handleAddOverlayResponse = new ClassMatchedHandler<AddOverlay.Response, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, AddOverlay.Response>>() {
 
         @Override
@@ -182,7 +183,7 @@ public class BootstrapClientComp extends ComponentDefinition {
             trigger(request, network);
         }
     };
-    
+
     ClassMatchedHandler handleJoinOverlayResponse = new ClassMatchedHandler<JoinOverlay.Response, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, JoinOverlay.Response>>() {
 
         @Override
@@ -206,16 +207,18 @@ public class BootstrapClientComp extends ComponentDefinition {
 
             log.debug("{} sending {}", new Object[]{config.self, request});
             pendingRequests.put(reqContent.id, scheduleCaracalReqTimeout(reqContent.id));
+            overlaySamples.add(reqContent.id);
             trigger(request, network);
         }
     };
 
-    ClassMatchedHandler handleOverlaySampleResponse = new ClassMatchedHandler<OverlaySample.Response, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>,OverlaySample.Response>>() {
+    ClassMatchedHandler handleOverlaySampleResponse = new ClassMatchedHandler<OverlaySample.Response, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, OverlaySample.Response>>() {
 
         @Override
-        public void handle(OverlaySample.Response content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>,OverlaySample.Response> container) {
+        public void handle(OverlaySample.Response content, BasicContentMsg<DecoratedAddress, DecoratedHeader<DecoratedAddress>, OverlaySample.Response> container) {
             log.trace("{} net received {}", new Object[]{config.self.toString(), container.toString()});
             cancelCaracalReqTimeout(pendingRequests.remove(content.id));
+            overlaySamples.remove(content.id);
             trigger(content, myPort);
         }
     };
@@ -255,8 +258,14 @@ public class BootstrapClientComp extends ComponentDefinition {
                 log.debug("{} late timeout:{}", new Object[]{config.self, tid});
                 return;
             } else {
-                log.error("{} caracal timed out - shutting down", config.self);
-                System.exit(1);
+                if (overlaySamples.contains(timeout.reqId)) {
+                    //sometime caracal times out here... fix later .. this is only necessary for croupier fake, so we can skip one in a while
+                    log.warn("{} caracal timed out on a sample request", config.self);
+                    overlaySamples.remove(timeout.reqId);
+                } else {
+                    log.error("{} caracal timed out - shutting down", config.self);
+                    System.exit(1);
+                }
             }
         }
 
