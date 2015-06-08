@@ -109,11 +109,12 @@ public class HostConfiguration {
                         config.getInt("vod.address.port"),
                         id));
 
-                DecoratedAddress server = new DecoratedAddress(new BasicAddress(
-                        Inet4Address.getLocalHost(),
-                        config.getInt("bootstrap.server.address.port"),
-                        config.getInt("bootstrap.server.address.id")
-                ));
+                DecoratedAddress server = self; //TODO fix later
+//                DecoratedAddress server = new DecoratedAddress(new BasicAddress(
+//                        Inet4Address.getLocalHost(),
+//                        config.getInt("bootstrap.server.address.port"),
+//                        config.getInt("bootstrap.server.address.id")
+//                ));
 
                 if (seed == null) {
                     throw new GVoDConfigException.Missing("seed");
