@@ -95,13 +95,13 @@ public class VoDComp extends ComponentDefinition {
 
     public VoDComp(VoDInit init) {
         this.config = init.config;
-        this.logPrefix = config.selfAddress.toString();
-        LOG.info("{} lib folder: {}", logPrefix, config.libDir);
+        this.logPrefix = config.getSelf().toString();
+        LOG.info("{} lib folder: {}", logPrefix, config.getVideoLibrary());
         this.videoComps = new HashMap<Integer, Triplet<Component, Component, Component>>();
         this.pendingDownloads = new HashMap<UUID, Pair<String, Integer>>();
         this.pendingUploads = new HashMap<UUID, Pair<Pair<String, Integer>, FileMetadata>>();
         this.rejoinUploads = new HashMap<UUID, Pair<String, Integer>>();
-        this.libMngr = new LibraryMngr(config.libDir);
+        this.libMngr = new LibraryMngr(config.getVideoLibrary());
         libMngr.loadLibrary();
 
         subscribe(handleStart, control);
@@ -166,8 +166,8 @@ public class VoDComp extends ComponentDefinition {
         public void handle(UploadVideo.Request req) {
             LOG.info("{} - uploa videoName:{} overlay:{}", new Object[]{logPrefix, req.videoName, req.overlayId});
             String videoNameNoExt = req.videoName.substring(0, req.videoName.indexOf("."));
-            String videoFilePath = config.libDir + File.separator + req.videoName;
-            String hashFilePath = config.libDir + File.separator + videoNameNoExt + ".hash";
+            String videoFilePath = config.getVideoLibrary() + File.separator + req.videoName;
+            String hashFilePath = config.getVideoLibrary() + File.separator + videoNameNoExt + ".hash";
 
             File videoFile = new File(videoFilePath);
             File hashFile = new File(hashFilePath);
@@ -176,8 +176,8 @@ public class VoDComp extends ComponentDefinition {
             }
             try {
                 hashFile.createNewFile();
-                int blockSize = config.piecesPerBlock * config.pieceSize;
-                HashUtil.makeHashes(videoFilePath, hashFilePath, config.hashAlg, blockSize);
+                int blockSize = config.getPiecesPerBlock() * config.getPieceSize();
+                HashUtil.makeHashes(videoFilePath, hashFilePath, config.getHashAlg(), blockSize);
                 if (!libMngr.pendingUpload(req.videoName)) {
                     LOG.error("library manager - pending upload denied for file:{}", req.videoName);
 //                    throw new RuntimeException("library manager - pending upload denied for file:" + req.videoName);
@@ -192,7 +192,7 @@ public class VoDComp extends ComponentDefinition {
 //                throw new RuntimeException("error writting hash file:" + req.videoName + " to disk", ex);
                 System.exit(1);
             }
-            FileMetadata fileMeta = new FileMetadata(req.videoName, (int) videoFile.length(), config.pieceSize, config.hashAlg, (int) hashFile.length());
+            FileMetadata fileMeta = new FileMetadata(req.videoName, (int) videoFile.length(), config.getPieceSize(), config.getHashAlg(), (int) hashFile.length());
             trigger(new AddOverlay.Request(req.id, req.overlayId, fileMeta), bootstrap);
             pendingUploads.put(req.id, Pair.with(Pair.with(req.videoName, req.overlayId), fileMeta));
         }
@@ -239,7 +239,7 @@ public class VoDComp extends ComponentDefinition {
 
         @Override
         public void handle(JoinOverlay.Response resp) {
-            LOG.trace("{} - {}", new Object[]{config.selfAddress, resp});
+            LOG.trace("{} - {}", new Object[]{config.getSelf(), resp});
 
             if (resp.status == ReqStatus.SUCCESS) {
                 if (pendingDownloads.containsKey(resp.id)) {
@@ -296,10 +296,10 @@ public class VoDComp extends ComponentDefinition {
         try {
             hashSize = HashUtil.getHashSize(fileMeta.hashAlg);
         } catch (GVoDConfigException.Missing ex) {
-            LOG.error("{} unknown hash function:{}", config.selfAddress, fileMeta.hashAlg);
+            LOG.error("{} unknown hash function:{}", config.getSelf(), fileMeta.hashAlg);
             System.exit(1);
         }
-        LOG.info("{} - videoName:{} videoFileSize:{}, hashFileSize:{}, hashSize:{}", new Object[]{config.selfAddress, fileMeta.fileName, fileMeta.fileSize, fileMeta.hashFileSize, hashSize});
+        LOG.info("{} - videoName:{} videoFileSize:{}, hashFileSize:{}, hashSize:{}", new Object[]{config.getSelf(), fileMeta.fileName, fileMeta.fileSize, fileMeta.hashFileSize, hashSize});
         DownloadMngrConfig downloadMngrConfig = null;
         ConnMngrConfig connMngrConfig = null;
 
@@ -314,7 +314,7 @@ public class VoDComp extends ComponentDefinition {
         Component connMngr = create(ConnMngrComp.class, new ConnMngrComp.ConnMngrInit(connMngrConfig));
         AtomicInteger playPos = new AtomicInteger(0);
         Component downloadMngr = create(DownloadMngrComp.class, new DownloadMngrComp.DownloadMngrInit(downloadMngrConfig, hashedFileMngr.getValue0(), hashedFileMngr.getValue1(), download, playPos));
-        Component croupier = create(CroupierComp.class, new CroupierComp.CroupierInit(overlayId, config.selfAddress));
+        Component croupier = create(CroupierComp.class, new CroupierComp.CroupierInit(overlayId, config.getSelf()));
         videoComps.put(overlayId, Triplet.with(connMngr, downloadMngr, croupier));
 
         connect(croupier.getNegative(Timer.class), timer);
@@ -348,8 +348,8 @@ public class VoDComp extends ComponentDefinition {
 
         String videoName = video.substring(0, video.indexOf("."));
         String videoExt = video.substring(video.indexOf("."));
-        String videoFilePath = config.libDir + File.separator + video;
-        String hashFilePath = config.libDir + File.separator + videoName + ".hash";
+        String videoFilePath = config.getVideoLibrary() + File.separator + video;
+        String hashFilePath = config.getVideoLibrary() + File.separator + videoName + ".hash";
 
 //        int nrHashPieces = fileMeta.hashFileSize / HashUtil.getHashSize(fileMeta.hashAlg);
 //        PieceTracker hashPieceTracker = new CompletePieceTracker(nrHashPieces);
@@ -361,18 +361,18 @@ public class VoDComp extends ComponentDefinition {
 //        Storage videoStorage = StorageFactory.getExistingFile(videoFilePath, config.pieceSize);
 //        PieceTracker videoPieceTracker = new CompletePieceTracker(filePieces);
 //        FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
-        int blockSize = config.piecesPerBlock * config.pieceSize;
-        FileMngr fileMngr = StorageMngrFactory.getCompleteFileMngr(videoFilePath, fileMeta.fileSize, blockSize, config.pieceSize);
+        int blockSize = config.getPiecesPerBlock() * config.getPieceSize();
+        FileMngr fileMngr = StorageMngrFactory.getCompleteFileMngr(videoFilePath, fileMeta.fileSize, blockSize, config.getPieceSize());
 
         return Pair.with(fileMngr, hashMngr);
     }
 
     private Pair<FileMngr, HashMngr> getDownloadVideoMngrs(String video, FileMetadata fileMeta) throws IOException, HashUtil.HashBuilderException, GVoDConfigException.Missing {
-        LOG.info("{} lib directory {}", config.selfAddress, config.libDir);
+        LOG.info("{} lib directory {}", config.getSelf(), config.getVideoLibrary());
         String videoName = video.substring(0, video.indexOf("."));
         String videoExt = video.substring(video.indexOf("."));
-        String videoFilePath = config.libDir + File.separator + video;
-        String hashFilePath = config.libDir + File.separator + videoName + ".hash";
+        String videoFilePath = config.getVideoLibrary() + File.separator + video;
+        String hashFilePath = config.getVideoLibrary() + File.separator + videoName + ".hash";
 
         File hashFile = new File(hashFilePath);
         if (hashFile.exists()) {
@@ -389,8 +389,8 @@ public class VoDComp extends ComponentDefinition {
 //        int filePieces = fileMeta.fileSize / fileMeta.pieceSize + (fileMeta.fileSize % fileMeta.pieceSize == 0 ? 0 : 1);
 //        PieceTracker videoPieceTracker = new SimplePieceTracker(filePieces);
 //        FileMngr fileMngr = new SimpleFileMngr(videoStorage, videoPieceTracker);
-        int blockSize = config.piecesPerBlock * config.pieceSize;
-        FileMngr fileMngr = StorageMngrFactory.getIncompleteFileMngr(videoFilePath, fileMeta.fileSize, blockSize, config.pieceSize);
+        int blockSize = config.getPiecesPerBlock() * config.getPieceSize();
+        FileMngr fileMngr = StorageMngrFactory.getIncompleteFileMngr(videoFilePath, fileMeta.fileSize, blockSize, config.getPieceSize());
 
         return Pair.with(fileMngr, hashMngr);
     }

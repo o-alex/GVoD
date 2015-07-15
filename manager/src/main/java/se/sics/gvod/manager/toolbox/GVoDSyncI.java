@@ -17,29 +17,21 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-package se.sics.gvod.manager;
+package se.sics.gvod.manager.toolbox;
 
-import se.sics.gvod.common.utility.GVoDHostConfig;
-import se.sics.gvod.common.utility.GVoDReferenceConfig;
-import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
+import com.google.common.util.concurrent.SettableFuture;
+import java.util.Map;
+import se.sics.gvod.manager.util.FileStatus;
 
 /**
- * @author Alex Ormenisan <aaor@sics.se>
+ * @author Alex Ormenisan <aaor@kth.se>
  */
-public class VoDManagerConfig {
-    private GVoDHostConfig hostConfig;
-    private GVoDReferenceConfig referenceConfig;
-    
-    public VoDManagerConfig(GVoDHostConfig hostConfig, GVoDReferenceConfig referenceConfig) {
-        this.hostConfig = hostConfig;
-        this.referenceConfig = referenceConfig;
-    }
-    
-    public String getVideoLibrary() {
-        return hostConfig.getVideoLibrary();
-    }
-    
-    public DecoratedAddress getSelf() {
-        return hostConfig.getSelf();
-    }
+public interface GVoDSyncI {
+    public boolean isReady();
+    public void getFiles(SettableFuture<Result<Map<String, FileStatus>>> opFuture);
+    public void pendingUpload(VideoInfo videoInfo, SettableFuture<Result<Boolean>> opFuture);
+    public void upload(VideoInfo videoInfo, SettableFuture<Result<Boolean>> opFuture);
+    public void download(VideoInfo videoInfo, SettableFuture<Result<Boolean>> opFuture);
+    public void play(VideoInfo videoInfo, SettableFuture<Result<Integer>> opFuture);
+    public void stop(VideoInfo videoInfo, SettableFuture<Result<Boolean>> opFuture);
 }

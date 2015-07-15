@@ -18,6 +18,7 @@
  */
 package se.sics.gvod.system;
 
+import com.google.common.util.concurrent.SettableFuture;
 import se.sics.gvod.manager.VoDManagerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,13 +27,10 @@ import se.sics.gvod.bootstrap.client.BootstrapClientInit;
 import se.sics.gvod.bootstrap.client.BootstrapClientPort;
 import se.sics.gvod.bootstrap.server.BootstrapServerComp;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerPort;
-import se.sics.gvod.common.util.GVoDConfigException;
 import se.sics.gvod.common.utility.UtilityUpdatePort;
-import se.sics.gvod.manager.VoDManager;
 import se.sics.gvod.core.VoDComp;
 import se.sics.gvod.core.VoDInit;
 import se.sics.gvod.core.VoDPort;
-import se.sics.gvod.manager.VoDManagerConfig;
 import se.sics.kompics.Component;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Init;
@@ -58,58 +56,51 @@ public class HostManagerComp extends ComponentDefinition {
     private Component peerManager;
     private Component globalCroupier;
 
-    private final HostConfiguration config;
+    private final HostManagerConfig config;
 
     public HostManagerComp(HostManagerInit init) {
         log.debug("starting... - self {}, bootstrap server {}",
-                new Object[]{init.config.self.toString(), init.config.server.toString()});
+                new Object[]{init.config.getSelf(), init.config.getCaracalClient()});
         this.config = init.config;
 
-        try {
-            this.vodMngr = create(VoDManagerImpl.class, new VoDManagerImpl.VoDManagerInit(new VoDManagerConfig(config.self, config.libDir)));
-            this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfiguration().finalise()));
-            this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig().finalise()));
+        this.vodMngr = create(VoDManagerImpl.class, new VoDManagerImpl.VoDManagerInit(config.getVoDManagerConfig()));
+        init.gvodSyncIFuture.set(vodMngr.getComponent());
+        this.vod = create(VoDComp.class, new VoDInit(config.getVoDConfig()));
+        this.bootstrapClient = create(BootstrapClientComp.class, new BootstrapClientInit(config.getBootstrapClientConfig()));
 
-            log.info("{} node is Natted:{}", config.self, config.self.hasTrait(Nated.class));
-            if (!config.self.hasTrait(Nated.class)) {
-                bootstrapServer = create(BootstrapServerComp.class, new BootstrapServerComp.BootstrapServerInit(config.getBootstrapServerConfig()));
-                peerManager = init.peerManager;
+        log.info("{} node is Natted:{}", config.getSelf(), config.getSelf().hasTrait(Nated.class));
+        if (!config.getSelf().hasTrait(Nated.class)) {
+            bootstrapServer = create(BootstrapServerComp.class, new BootstrapServerComp.BootstrapServerInit(config.getBootstrapServerConfig()));
+            peerManager = init.peerManager;
 
-                connect(bootstrapServer.getNegative(Network.class), network);
-                connect(bootstrapServer.getNegative(PeerManagerPort.class), peerManager.getPositive(PeerManagerPort.class));
-            } else {
-                bootstrapServer = null;
-                peerManager = null;
-            }
-
-            connect(vodMngr.getNegative(VoDPort.class), vod.getPositive(VoDPort.class));
-            connect(vod.getNegative(Network.class), network);
-            connect(vod.getNegative(BootstrapClientPort.class), bootstrapClient.getPositive(BootstrapClientPort.class));
-            connect(vod.getNegative(Timer.class), timer);
-            connect(bootstrapClient.getNegative(Network.class), network);
-            connect(bootstrapClient.getNegative(Timer.class), timer);
-
-            connect(bootstrapClient.getNegative(UtilityUpdatePort.class), vod.getPositive(UtilityUpdatePort.class));
-            connect(vodMngr.getNegative(UtilityUpdatePort.class), vod.getPositive(UtilityUpdatePort.class));
-        } catch (GVoDConfigException.Missing ex) {
-            log.error("configuration problem " + ex.getMessage());
-            System.exit(1);
+            connect(bootstrapServer.getNegative(Network.class), network);
+            connect(bootstrapServer.getNegative(PeerManagerPort.class), peerManager.getPositive(PeerManagerPort.class));
+        } else {
+            bootstrapServer = null;
+            peerManager = null;
         }
-    }
 
-    public VoDManager getVoDManager() {
-        VoDManagerImpl vodM = (VoDManagerImpl) vodMngr.getComponent();
-        return vodM;
+        connect(vodMngr.getNegative(VoDPort.class), vod.getPositive(VoDPort.class));
+        connect(vod.getNegative(Network.class), network);
+        connect(vod.getNegative(BootstrapClientPort.class), bootstrapClient.getPositive(BootstrapClientPort.class));
+        connect(vod.getNegative(Timer.class), timer);
+        connect(bootstrapClient.getNegative(Network.class), network);
+        connect(bootstrapClient.getNegative(Timer.class), timer);
+
+        connect(bootstrapClient.getNegative(UtilityUpdatePort.class), vod.getPositive(UtilityUpdatePort.class));
+        connect(vodMngr.getNegative(UtilityUpdatePort.class), vod.getPositive(UtilityUpdatePort.class));
     }
 
     public static class HostManagerInit extends Init<HostManagerComp> {
 
-        public final HostConfiguration config;
+        public final HostManagerConfig config;
         public final Component peerManager;
+        public final SettableFuture gvodSyncIFuture;
 
-        public HostManagerInit(HostConfiguration config, Component peerManager) {
+        public HostManagerInit(HostManagerConfig config, Component peerManager, SettableFuture gvodSyncIFuture) {
             this.config = config;
             this.peerManager = peerManager;
+            this.gvodSyncIFuture = gvodSyncIFuture;
         }
     }
 }

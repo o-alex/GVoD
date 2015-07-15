@@ -4,11 +4,9 @@
     <parent>
         <groupId>se.sics.gvod</groupId>
         <artifactId>GVoD</artifactId>
-        <version>0.0.2-SNAPSHOT</version>
+        <version>0.0.3-SNAPSHOT</version>
     </parent>
     <name>GVoD Common</name>
     <groupId>se.sics.gvod</groupId>
     <artifactId>common</artifactId>
-    <dependencies>
-    </dependencies>
 </project>

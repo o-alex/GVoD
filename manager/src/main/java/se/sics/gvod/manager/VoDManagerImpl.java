@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
 import org.javatuples.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,11 +41,18 @@ import se.sics.gvod.core.msg.GetLibrary;
 import se.sics.gvod.core.msg.PlayReady;
 import se.sics.gvod.core.msg.UploadVideo;
 import se.sics.gvod.core.util.ResponseStatus;
+import se.sics.gvod.manager.toolbox.GVoDSyncI;
+import se.sics.gvod.manager.toolbox.Result;
+import se.sics.gvod.manager.toolbox.VideoInfo;
 import se.sics.gvod.manager.util.FileStatus;
+import se.sics.kompics.Component;
+import se.sics.kompics.Component.State;
 import se.sics.kompics.ComponentDefinition;
 import se.sics.kompics.Handler;
 import se.sics.kompics.Init;
 import se.sics.kompics.Positive;
+import se.sics.kompics.Start;
+import se.sics.kompics.Stop;
 import se.sics.p2ptoolbox.videostream.VideoStreamManager;
 import se.sics.p2ptoolbox.videostream.http.BaseHandler;
 import se.sics.p2ptoolbox.videostream.http.JwHttpServer;
@@ -54,9 +60,9 @@ import se.sics.p2ptoolbox.videostream.http.RangeCapableMp4Handler;
 
 /**
  *
- * @author Alex Ormenisan <aaor@sics.se>
+ * @author Alex Ormenisan <aaor@kth.se>
  */
-public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
+public class VoDManagerImpl extends ComponentDefinition implements GVoDSyncI {
 
     private static final Logger LOG = LoggerFactory.getLogger(VoDManager.class);
 
@@ -68,9 +74,7 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     private final String logPrefix;
 
     private final Map<String, VideoStreamManager> vsMngrs;
-    private final Set<String> videoPaths;
-    private Integer videoPort = null;
-    private InetSocketAddress httpAddr;
+    private final Map<String, Integer> httpVideoPaths;
 
     private Map<UUID, SettableFuture> pendingJobs;
     private Set<String> pendingUploads;
@@ -78,46 +82,68 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
 
     public VoDManagerImpl(VoDManagerInit init) {
         this.config = init.config;
-        this.logPrefix = config.selfAddress.toString();
+        this.logPrefix = config.getSelf().toString();
         LOG.info("{} initiating...", logPrefix);
 
         this.vsMngrs = new ConcurrentHashMap<String, VideoStreamManager>();
-        this.videoPaths = new HashSet<String>();
+        this.httpVideoPaths = new HashMap<String, Integer>();
 
         this.pendingJobs = new HashMap<UUID, SettableFuture>();
         this.pendingUploads = new HashSet<String>();
         this.videos = new HashMap<String, FileStatus>();
 
+        subscribe(handleStart, control);
+        subscribe(handleStop, control);
         subscribe(handlePlayReady, vodPort);
         subscribe(handleGetLibraryResponse, vodPort);
     }
 
+    private Handler handleStart = new Handler<Start>() {
+        @Override
+        public void handle(Start event) {
+            LOG.info("{} starting...", logPrefix);
+        }
+    };
+
+    private Handler handleStop = new Handler<Stop>() {
+        @Override
+        public void handle(Stop event) {
+            LOG.info("{} stopping...", logPrefix);
+        }
+    };
+    
     @Override
-    public void getFiles(SettableFuture<Map<String, FileStatus>> myFuture) {
-        LOG.debug("{} get files request", logPrefix);
+    public boolean isReady() {
+        return this.getComponentCore().state().equals(State.ACTIVE);
+    }
+
+    @Override
+    public void getFiles(SettableFuture<Result<Map<String, FileStatus>>> opFuture) {
+        LOG.info("{} get files request", logPrefix);
         GetLibrary.Request req = new GetLibrary.Request(UUID.randomUUID());
-        pendingJobs.put(req.reqId, myFuture);
+        pendingJobs.put(req.reqId, opFuture);
         trigger(req, vodPort);
     }
 
     private Handler handleGetLibraryResponse = new Handler<GetLibrary.Response>() {
         @Override
         public void handle(GetLibrary.Response resp) {
-            SettableFuture<Map<String, FileStatus>> myFuture = (SettableFuture<Map<String, FileStatus>>) pendingJobs.remove(resp.reqId);
+            SettableFuture opFuture = pendingJobs.remove(resp.reqId);
+            if (opFuture == null) {
+                return;
+            }
             if (resp.respStatus.equals(ResponseStatus.SUCCESS)) {
-                LOG.debug("{} get files response", logPrefix);
                 videos = convert(resp.fileStatusMap);
                 for (String pendingFile : pendingUploads) {
                     videos.put(pendingFile, FileStatus.PENDING);
                 }
-                if (myFuture != null) {
-                    myFuture.set(videos);
-                }
+                LOG.info("{} get files completed", logPrefix);
+                opFuture.set(Result.ok(videos));
+                return;
             } else {
-                LOG.warn("{} bad status", logPrefix);
-                if (myFuture != null) {
-                    myFuture.setException(new RuntimeException("bad status " + resp.respStatus));
-                }
+                LOG.warn("{} get library:{}", logPrefix, resp.respStatus);
+                opFuture.set(Result.internalError("failed"));
+                return;
             }
         }
     };
@@ -154,49 +180,51 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
     }
 
     @Override
-    public void pendingUpload(String videoName, SettableFuture<Boolean> myFuture) {
-        FileStatus videoStatus = videos.get(videoName);
+    public void pendingUpload(VideoInfo videoInfo, SettableFuture<Result<Boolean>> opFuture) {
+        LOG.info("{} pending upload:{} request", logPrefix, videoInfo.getName());
+        FileStatus videoStatus = videos.get(videoInfo.getName());
         if (videoStatus == null) {
-            LOG.warn("{} video:{} not found in library:{}", new Object[]{logPrefix, videoName, config.libDir});
-            myFuture.set(false);
+            LOG.warn("{} video:{} not found in library:{}", new Object[]{logPrefix, videoInfo.getName(), config.getVideoLibrary()});
+            opFuture.set(Result.internalError("video not found"));
+            return;
         }
         if (!videoStatus.equals(FileStatus.NONE)) {
-            LOG.warn("{} video:{} has status:{} - cannot upload", new Object[]{logPrefix, videoName, videoStatus});
-            myFuture.set(false);
+            LOG.warn("{} video:{} has status:{} - cannot upload", new Object[]{logPrefix, videoInfo.getName(), videoStatus});
+            opFuture.set(Result.internalError("video - bad state"));
             return;
         }
-        LOG.debug("{} video:{} - pending upload", logPrefix, videoName);
-        videos.put(videoName, FileStatus.PENDING);
-        pendingUploads.add(videoName);
-        myFuture.set(true);
-        return;
+        videos.put(videoInfo.getName(), FileStatus.PENDING);
+        pendingUploads.add(videoInfo.getName());
+        LOG.info("{} pending upload:{} completed", logPrefix, videoInfo.getName());
+        opFuture.set(new Result(true));
     }
 
     @Override
-    public void uploadVideo(String videoName, int overlayId, SettableFuture<Boolean> myFuture) {
-        if (pendingUploads.remove(videoName == null)) {
-            LOG.warn("{} video not pending upload - cannot initiate upload", new Object[]{config.selfAddress, videoName, config.libDir});
-            myFuture.set(false);
+    public void upload(VideoInfo videoInfo, SettableFuture<Result<Boolean>> opFuture) {
+        LOG.info("{} upload:{} request", logPrefix, videoInfo.getName());
+        if (pendingUploads.remove(videoInfo.getName() == null)) {
+            LOG.warn("{} video not pending upload - cannot initiate upload", new Object[]{config.getSelf(), videoInfo.getName(), config.getVideoLibrary()});
+            opFuture.set(Result.internalError("video - bad state"));
             return;
         }
-        LOG.info("{} video:{} - upload request", logPrefix, videoName);
-        videos.put(videoName, FileStatus.PENDING);
-        UploadVideo.Request req = new UploadVideo.Request(videoName, overlayId);
+        videos.put(videoInfo.getName(), FileStatus.PENDING);
+        UploadVideo.Request req = new UploadVideo.Request(videoInfo.getName(), videoInfo.getOverlayId());
         trigger(req, vodPort);
-        pendingJobs.put(req.id, myFuture);
+        pendingJobs.put(req.id, opFuture);
     }
 
     @Override
-    public void downloadVideo(String videoName, int overlayId, SettableFuture<Boolean> myFuture) {
-        FileStatus videoStatus = videos.get(videoName);
+    public void download(VideoInfo videoInfo, SettableFuture<Result<Boolean>> opFuture) {
+        LOG.info("{} download:{} request", logPrefix, videoInfo.getName());
+        FileStatus videoStatus = videos.get(videoInfo.getName());
         if (videoStatus == FileStatus.DOWNLOADING || videoStatus == FileStatus.UPLOADING || videoStatus == FileStatus.PENDING) {
-            myFuture.set(true);
+            opFuture.set(Result.ok(true));
+            return;
         }
-        LOG.info("{} video:{} - download request", logPrefix, videoName);
-        videos.put(videoName, FileStatus.PENDING);
-        DownloadVideo.Request req = new DownloadVideo.Request(videoName, overlayId);
+        videos.put(videoInfo.getName(), FileStatus.PENDING);
+        DownloadVideo.Request req = new DownloadVideo.Request(videoInfo.getName(), videoInfo.getOverlayId());
         trigger(req, vodPort);
-        pendingJobs.put(req.id, myFuture);
+        pendingJobs.put(req.id, opFuture);
     }
 
     private Handler<PlayReady> handlePlayReady = new Handler<PlayReady>() {
@@ -205,87 +233,93 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
         public void handle(PlayReady resp) {
             LOG.info("{} video:{} ready to play", logPrefix, resp.videoName);
             vsMngrs.put(resp.videoName, resp.vsMngr);
-            SettableFuture<Boolean> myFuture = pendingJobs.remove(resp.id);
-            if (myFuture != null) {
-                myFuture.set(true);
+
+            SettableFuture myFuture = pendingJobs.remove(resp.id);
+            if (myFuture == null) {
+                return;
             }
+            myFuture.set(Result.ok(true));
         }
     };
 
     @Override
-    public void playVideo(String videoName, int overlayId, SettableFuture<Integer> myFuture) {
-        LOG.info("{} play video:{}", logPrefix, videoName);
-        if (videoPort == null) {
-            do {
-                videoPort = tryPort(10000 + rand.nextInt(40000));
-            } while (videoPort == -1);
-        }
-
-        VideoStreamManager videoPlayer = vsMngrs.get(videoName);
-        if (videoPlayer == null) {
-            SettableFuture<Boolean> downloadFuture = SettableFuture.create();
-            downloadVideo(videoName, overlayId, downloadFuture);
-            try {
-                if (!downloadFuture.get()) {
-                    LOG.error("logic error on video manager - video player");
-                    System.exit(1);
-                }
-            } catch (InterruptedException ex) {
-                LOG.error("logic error on video manager - video player2");
-                System.exit(1);
-            } catch (ExecutionException ex) {
-                LOG.error("logic error on video manager - video player3");
-                System.exit(1);
-            }
-            videoPlayer = vsMngrs.get(videoName);
-            if (videoPlayer == null) {
-                LOG.error("logic error on video manager - video player4");
-                System.exit(1);
-            }
-        }
-
-        if (videoPaths.contains(videoName)) {
-            LOG.info("return play");
-            myFuture.set(videoPort);
+    public void play(VideoInfo videoInfo, SettableFuture<Result<Integer>> opFuture) {
+        LOG.info("{} play video:{} request", logPrefix, videoInfo.getName());
+        //TODO Alex check this - can I use same player/same http handler for different video players?
+        Integer httpPlayPort = httpVideoPaths.get(videoInfo.getName());
+        if (httpPlayPort != null) {
+            LOG.info("{} return play for video:{}", logPrefix, videoInfo.getName());
+            opFuture.set(Result.ok(httpPlayPort));
             return;
         }
 
-        LOG.info("setting up player for video:{}", videoName);
-        httpAddr = new InetSocketAddress(videoPort);
-        setupPlayerHttpConnection(videoPlayer, videoName);
-        videoPaths.add(videoName);
+        VideoStreamManager videoPlayer = vsMngrs.get(videoInfo.getName());
+        if (videoPlayer == null) {
+            SettableFuture<Result<Boolean>> downloadFuture = SettableFuture.create();
+            download(videoInfo, downloadFuture);
+            try {
+                Result<Boolean> downloadResult = downloadFuture.get();
+                if (!downloadResult.ok()) {
+                    LOG.error("{} video:{} - {}", new Object[]{logPrefix, videoInfo.getName(), downloadResult.getDetails()});
+                    opFuture.set(Result.failed(downloadResult.status, downloadResult.getDetails()));
+                    return;
+                }
+            } catch (InterruptedException ex) {
+                LOG.error("future error");
+                opFuture.set(Result.internalError("future error"));
+                return;
+            } catch (ExecutionException ex) {
+                LOG.error("future error");
+                opFuture.set(Result.internalError("future error"));
+                return;
+            }
+            videoPlayer = vsMngrs.get(videoInfo.getName());
+            if (videoPlayer == null) {
+                LOG.error("no video player");
+                opFuture.set(Result.internalError("no video player"));
+                return;
+            }
+        }
 
-        LOG.info("return play");
-        myFuture.set(videoPort);
-        return;
+        do {
+            httpPlayPort = tryPort(10000 + rand.nextInt(40000));
+        } while (httpPlayPort == -1);
+        LOG.debug("{} video:{} httpPlayPort:{}", new Object[]{logPrefix, videoInfo.getName(), httpPlayPort});
+
+        setupPlayerHttpConnection(videoPlayer, videoInfo.getName(), httpPlayPort);
+        httpVideoPaths.put(videoInfo.getName(), httpPlayPort);
+
+        LOG.info("{} return play for video:{}", logPrefix, videoInfo.getName());
+        opFuture.set(Result.ok(httpPlayPort));
     }
 
     @Override
-    public void stopVideo(String videoName, SettableFuture<Boolean> myFuture) {
-        LOG.info("received stop");
-        VideoStreamManager vsMngr = vsMngrs.get(videoName);
+    public void stop(VideoInfo videoInfo, SettableFuture<Result<Boolean>> opFuture) {
+        LOG.info("{} stop video:{} request", logPrefix, videoInfo.getName());
+        VideoStreamManager vsMngr = vsMngrs.get(videoInfo.getName());
         if (vsMngr == null) {
-            LOG.info("player for video:{} is not ready yet - weird stop message", videoName);
-            myFuture.set(true);
+            LOG.warn("{} player for video:{} is not ready yet - weird stop message", logPrefix, videoInfo.getName());
+            opFuture.set(Result.ok(true));
             return;
         } else {
-            LOG.info("stopping play for video:{}", videoName);
+            LOG.info("{} stop video:{} completed", logPrefix, videoInfo.getName());
             vsMngr.stop();
-            LOG.info("return stop");
-            myFuture.set(true);
+            opFuture.set(Result.ok(true));
             return;
         }
     }
 
-    private void setupPlayerHttpConnection(VideoStreamManager vsMngr, String videoName) {
-        LOG.info("{} starting player http connection http://127.0.0.1:{}/{}/{}", new Object[]{config.selfAddress, videoPort, videoName, videoName});
+    private void setupPlayerHttpConnection(VideoStreamManager vsMngr, String videoName, Integer httpPlayPort) {
+        LOG.info("{} starting player http connection http://127.0.0.1:{}/{}/{}", new Object[]{config.getSelf(), httpPlayPort, videoName, videoName});
         String fileName = "/" + videoName + "/";
         BaseHandler handler = new RangeCapableMp4Handler(vsMngr);
         try {
+            InetSocketAddress httpAddr = new InetSocketAddress(httpPlayPort);
             JwHttpServer.startOrUpdate(httpAddr, fileName, handler);
         } catch (IOException ex) {
-            LOG.error("http server error");
-            System.exit(1);
+            //TODO Alex - check if this is a recovarable state
+            LOG.error("{} http server error", logPrefix);
+            throw new RuntimeException(ex);
         }
     }
 
@@ -315,11 +349,6 @@ public class VoDManagerImpl extends ComponentDefinition implements VoDManager {
             }
         }
         return port;
-    }
-
-    @Override
-    public boolean isInitialized() {
-        return true;
     }
 
     public static class VoDManagerInit extends Init<VoDManagerImpl> {

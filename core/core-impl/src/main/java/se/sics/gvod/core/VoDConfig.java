@@ -18,9 +18,8 @@
  */
 package se.sics.gvod.core;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigException;
-import se.sics.gvod.common.util.GVoDConfigException;
+import se.sics.gvod.common.utility.GVoDHostConfig;
+import se.sics.gvod.common.utility.GVoDReferenceConfig;
 import se.sics.gvod.core.downloadMngr.DownloadMngrConfig;
 import se.sics.gvod.core.connMngr.ConnMngrConfig;
 import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
@@ -30,51 +29,39 @@ import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
  */
 public class VoDConfig {
 
-    private final Config config;
-    public final DecoratedAddress selfAddress;
-    public final int pieceSize;
-    public final int piecesPerBlock;
-    public final String libDir;
-    public final String hashAlg;
+    private GVoDHostConfig hostConfig;
+    private GVoDReferenceConfig referenceConfig;
 
-    private VoDConfig(Config config, DecoratedAddress selfAddress, int piecesPerBlock, int pieceSize, String libDir, String hashAlg) {
-        this.config = config;
-        this.selfAddress = selfAddress;
-        this.pieceSize = pieceSize;
-        this.piecesPerBlock = piecesPerBlock;
-        this.libDir = libDir;
-        this.hashAlg = hashAlg;
+    public VoDConfig(GVoDHostConfig hostConfig, GVoDReferenceConfig referenceConfig) {
+        this.hostConfig = hostConfig;
+        this.referenceConfig = referenceConfig;
     }
 
     public DownloadMngrConfig.Builder getDownloadMngrConfig(int overlayId) {
-        return new DownloadMngrConfig.Builder(config, selfAddress, overlayId);
+        return new DownloadMngrConfig.Builder(hostConfig.getConfig(), hostConfig.getSelf(), overlayId);
     }
 
     public ConnMngrConfig.Builder getConnMngrConfig(int overlayId) {
-        return new ConnMngrConfig.Builder(config, selfAddress, overlayId);
+        return new ConnMngrConfig.Builder(hostConfig.getConfig(), hostConfig.getSelf(), overlayId);
     }
-
-    public static class Builder {
-
-        private final Config config;
-        private final DecoratedAddress selfAddress;
-        private final String libDir;
-        
-        public Builder(Config config, DecoratedAddress selfAddress, String libDir) {
-            this.config = config;
-            this.selfAddress = selfAddress;
-            this.libDir = libDir;
-        }
-
-        public VoDConfig finalise() throws GVoDConfigException.Missing {
-            try {
-                int pieceSize = config.getInt("vod.video.pieceSize");
-                int piecesPerBlock = config.getInt("vod.video.piecesPerBlock");
-                String hashAlg = config.getString("vod.hashAlg");
-                return new VoDConfig(config, selfAddress, piecesPerBlock, pieceSize, libDir, hashAlg);
-            } catch (ConfigException.Missing ex) {
-                throw new GVoDConfigException.Missing(ex);
-            }
-        }
+    
+    public DecoratedAddress getSelf() {
+        return hostConfig.getSelf();
+    }
+    
+    public String getVideoLibrary() {
+        return hostConfig.getVideoLibrary();
+    }
+    
+    public int getPiecesPerBlock() {
+        return referenceConfig.getPiecesPerBlock();
+    }
+    
+    public int getPieceSize() {
+        return referenceConfig.getPieceSize();
+    }
+    
+    public String getHashAlg() {
+        return referenceConfig.getHashAlg();
     }
 }

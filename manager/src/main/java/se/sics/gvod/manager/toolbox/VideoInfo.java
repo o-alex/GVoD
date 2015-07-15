@@ -16,30 +16,30 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-
-package se.sics.gvod.manager;
-
-import se.sics.gvod.common.utility.GVoDHostConfig;
-import se.sics.gvod.common.utility.GVoDReferenceConfig;
-import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
+package se.sics.gvod.manager.toolbox;
 
 /**
- * @author Alex Ormenisan <aaor@sics.se>
+ * @author Alex Ormenisan <aaor@kth.se>
  */
-public class VoDManagerConfig {
-    private GVoDHostConfig hostConfig;
-    private GVoDReferenceConfig referenceConfig;
-    
-    public VoDManagerConfig(GVoDHostConfig hostConfig, GVoDReferenceConfig referenceConfig) {
-        this.hostConfig = hostConfig;
-        this.referenceConfig = referenceConfig;
+public class VideoInfo {
+
+    private String name;
+    private int overlayId;
+
+
+    public String getName() {
+        return name;
     }
-    
-    public String getVideoLibrary() {
-        return hostConfig.getVideoLibrary();
+
+    public void setName(String name) {
+        this.name = name;
     }
-    
-    public DecoratedAddress getSelf() {
-        return hostConfig.getSelf();
+
+    public int getOverlayId() {
+        return overlayId;
+    }
+
+    public void setOverlayId(int overlayId) {
+        this.overlayId = overlayId;
     }
 }
