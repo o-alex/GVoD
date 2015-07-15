@@ -22,41 +22,43 @@ import java.util.UUID;
 import se.sics.kompics.KompicsEvent;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class GvodMsg {
-
-    public static abstract class Request implements KompicsEvent {
-
+    
+    public static abstract class Base implements KompicsEvent, Content {
         public final UUID id;
+        
+        public Base(UUID id) {
+            this.id = id;
+        }
+    }
+
+    public static abstract class Request extends Base {
 
         public Request(UUID id) {
-            this.id = id;
+            super(id);
         }
         
         public abstract <E extends Request> E copy();
     }
 
-    public static abstract class Response implements KompicsEvent {
+    public static abstract class Response extends Base {
 
-        public final UUID id;
         public final ReqStatus status;
 
         public Response(UUID id, ReqStatus status) {
-            this.id = id;
+            super(id);
             this.status = status;
         }
         
         public abstract <E extends Response> E copy();
     }
 
-    public static abstract class OneWay implements KompicsEvent {
-
-        public final UUID id;
+    public static abstract class OneWay extends Base {
 
         public OneWay(UUID id) {
-            this.id = id;
+            super(id);
         }
         
         public abstract <E extends OneWay> E copy();

@@ -18,17 +18,19 @@
  */
 package se.sics.gvod.bootstrap.server.operations;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.Arrays;
 import java.util.UUID;
 import se.sics.gvod.bootstrap.server.PeerOpManager;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMAddFileMetadata;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
-import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.AddOverlay;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.common.msg.peerMngr.AddOverlay;
+import se.sics.gvod.common.util.FileMetadata;
+import se.sics.kompics.network.netty.serialization.Serializers;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -36,16 +38,17 @@ import se.sics.gvod.network.Util;
 public class AddOverlayOp implements Operation {
 
     private static enum Phase {
-
-        CHECK_OVERLAY, JOIN_OVERLAY, ADD_FILE_METADATA
+        CHECK_OVERLAY, ADD_FILE_METADATA
     }
 
     private final PeerOpManager opMngr;
     private final AddOverlay.Request req;
-    private final VodAddress src;
+    private final DecoratedAddress src;
+    
     private Phase phase;
+    
 
-    public AddOverlayOp(PeerOpManager opMngr, AddOverlay.Request req, VodAddress src) {
+    public AddOverlayOp(PeerOpManager opMngr, AddOverlay.Request req, DecoratedAddress src) {
         this.opMngr = opMngr;
         this.req = req;
         this.src = src;
@@ -67,27 +70,23 @@ public class AddOverlayOp implements Operation {
         if (phase == Phase.CHECK_OVERLAY && peerResp instanceof PMGetOverlaySample.Response) {
             PMGetOverlaySample.Response phase1Resp = (PMGetOverlaySample.Response) peerResp;
             if (phase1Resp.status == ReqStatus.SUCCESS) {
-                phase = Phase.JOIN_OVERLAY;
-                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), req.overlayId, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
-            } else {
-                opMngr.finish(getId(), src, req.fail());
-            }
-        } else if (phase == Phase.JOIN_OVERLAY && peerResp instanceof PMJoinOverlay.Response) {
-            PMJoinOverlay.Response phase2Resp = (PMJoinOverlay.Response) peerResp;
-            if (phase2Resp.status == ReqStatus.SUCCESS) {
                 phase = Phase.ADD_FILE_METADATA;
-                opMngr.sendPeerManagerReq(getId(), new PMAddFileMetadata.Request(UUID.randomUUID(), req.overlayId, Util.encodeFileMeta(Unpooled.buffer(), req.fileMeta).array()));
+                ByteBuf buf = Unpooled.buffer();
+                Serializers.lookupSerializer(FileMetadata.class).toBinary(req.fileMeta, buf);
+                byte[] bytes = Arrays.copyOf(buf.array(), buf.readableBytes());
+                opMngr.sendPeerManagerReq(getId(), new PMAddFileMetadata.Request(UUID.randomUUID(), req.overlayId, bytes));
             } else {
                 opMngr.finish(getId(), src, req.fail());
             }
         } else if (phase == Phase.ADD_FILE_METADATA && peerResp instanceof PMAddFileMetadata.Response) {
-            PMAddFileMetadata.Response phase3Resp = (PMAddFileMetadata.Response) peerResp;
-            if (phase3Resp.status == ReqStatus.SUCCESS) {
+            PMAddFileMetadata.Response phase2Resp = (PMAddFileMetadata.Response) peerResp;
+            if (phase2Resp.status == ReqStatus.SUCCESS) {
                 opMngr.finish(getId(), src, req.success());
             } else {
                 opMngr.finish(getId(), src, req.fail());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

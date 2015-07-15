@@ -20,8 +20,8 @@ package se.sics.gvod.bootstrap.server.simulation;
 
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigException;
-import se.sics.gvod.address.Address;
 import se.sics.gvod.common.util.GVoDConfigException;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -29,12 +29,12 @@ import se.sics.gvod.common.util.GVoDConfigException;
 public class SimPMConfig {
 
     private final Config config;
-    public final Address selfAddress;
+    public final DecoratedAddress selfAddress;
     public final byte[] seed;
     public final int intSeed;
     public final int sampleSize;
 
-    private SimPMConfig(Config config, byte[] seed, int intSeed, Address selfAddress, int sampleSize) {
+    private SimPMConfig(Config config, byte[] seed, int intSeed, DecoratedAddress selfAddress, int sampleSize) {
         this.config = config;
         this.seed = seed;
         this.intSeed = intSeed;
@@ -46,9 +46,9 @@ public class SimPMConfig {
 
         private final Config config;
         private final byte[] seed;
-        private final Address selfAddress;
+        private final DecoratedAddress selfAddress;
 
-        public Builder(Config config, byte[] seed, Address selfAddress) {
+        public Builder(Config config, byte[] seed, DecoratedAddress selfAddress) {
             this.config = config;
             this.seed = seed;
             this.selfAddress = selfAddress;

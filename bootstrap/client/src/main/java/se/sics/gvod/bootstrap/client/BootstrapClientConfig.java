@@ -20,21 +20,21 @@ package se.sics.gvod.bootstrap.client;
 
 import com.typesafe.config.Config;
 import se.sics.gvod.common.util.GVoDConfigException;
-import se.sics.gvod.net.VodAddress;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class BootstrapClientConfig {
 
-    public final VodAddress self;
-    public final VodAddress server;
+    public final DecoratedAddress self;
+    public final DecoratedAddress server;
     public final byte[] seed;
     public final int openViewSize;
     public final int storageViewSize;
     public final int heartbeatPeriod;
 
-    private BootstrapClientConfig(VodAddress self, VodAddress server, byte[] seed, 
+    private BootstrapClientConfig(DecoratedAddress self, DecoratedAddress server, byte[] seed, 
             int openViewSize, int storageViewSize, int heartbeatPeriod) {
         this.self = self;
         this.server = server;
@@ -47,11 +47,11 @@ public class BootstrapClientConfig {
     public static class Builder {
 
         private final Config config;
-        private final VodAddress self;
-        private final VodAddress server;
+        private final DecoratedAddress self;
+        private final DecoratedAddress server;
         private final byte[] seed;
 
-        public Builder(Config config, VodAddress self, VodAddress server, byte[] seed) {
+        public Builder(Config config, DecoratedAddress self, DecoratedAddress server, byte[] seed) {
             this.config = config;
             this.self = self;
             this.server = server;

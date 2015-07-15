@@ -20,6 +20,8 @@
 package se.sics.gvod.bootstrap.cclient.operations;
 
 import java.util.UUID;
+import se.sics.caracaldb.Key;
+import se.sics.caracaldb.global.SchemaData;
 import se.sics.caracaldb.operations.CaracalOp;
 import se.sics.caracaldb.operations.PutRequest;
 import se.sics.caracaldb.operations.PutResponse;
@@ -35,10 +37,12 @@ import se.sics.gvod.common.util.Operation;
 public class AddFileMetadataOp implements Operation<CaracalOp> {
     private final CaracalOpManager opMngr;
     private final PMAddFileMetadata.Request req;
+    private final SchemaData schemaData;
 
-    public AddFileMetadataOp(CaracalOpManager opMngr, PMAddFileMetadata.Request req) {
+    public AddFileMetadataOp(CaracalOpManager opMngr, PMAddFileMetadata.Request req, SchemaData schemaData) {
         this.opMngr = opMngr;
         this.req = req;
+        this.schemaData = schemaData;
     }
 
     @Override
@@ -48,7 +52,8 @@ public class AddFileMetadataOp implements Operation<CaracalOp> {
 
     @Override
     public void start() {
-        opMngr.sendCaracalReq(req.id, new PutRequest(UUID.randomUUID(), CaracalKeyFactory.getFileMetadataKey(req.overlayId), req.fileMetadata));
+        Key target = CaracalKeyFactory.getFileMetadataKey(req.overlayId).prepend(schemaData.getId("gvod.metadata")).get();
+        opMngr.sendCaracalReq(req.id, target, new PutRequest(UUID.randomUUID(), target, req.fileMetadata));
     }
 
     @Override
@@ -56,11 +61,12 @@ public class AddFileMetadataOp implements Operation<CaracalOp> {
         if (caracalResp instanceof PutResponse) {
             PutResponse phase1Resp = (PutResponse) caracalResp;
             if (phase1Resp.code == ResponseCode.SUCCESS) {
-                opMngr.finish(req.success());
+                opMngr.finish(req.id, req.success());
             } else {
-                opMngr.finish(req.fail());
+                opMngr.finish(req.id, req.fail());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

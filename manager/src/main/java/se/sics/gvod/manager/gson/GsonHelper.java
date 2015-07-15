@@ -20,8 +20,6 @@ package se.sics.gvod.manager.gson;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import se.sics.gvod.manager.FileDescriptor;
-import se.sics.gvod.manager.Library;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -32,8 +30,6 @@ public class GsonHelper {
 
     public static GsonBuilder getGsonBuilder() {
         GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(FileDescriptor.class, new FileDescriptorAdapter());
-        gsonBuilder.registerTypeAdapter(Library.class, new LibraryAdapter());
         return gsonBuilder;
     }
 

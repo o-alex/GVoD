@@ -19,19 +19,18 @@
 package se.sics.gvod.bootstrap.server;
 
 import com.typesafe.config.Config;
-import se.sics.gvod.net.VodAddress;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public class BootstrapServerConfig {
 
-    public final VodAddress self;
+    public final DecoratedAddress self;
     public final Config config;
     public final byte[] seed;
 
-    public BootstrapServerConfig(Config config, VodAddress self, byte[] seed) {
+    public BootstrapServerConfig(Config config, DecoratedAddress self, byte[] seed) {
         this.config = config;
         this.self = self;
         this.seed = seed;

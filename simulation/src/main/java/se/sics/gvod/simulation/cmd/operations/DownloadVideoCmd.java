@@ -19,7 +19,6 @@
 
 package se.sics.gvod.simulation.cmd.operations;
 
-import se.sics.gvod.manager.DownloadFileInfo;
 import se.sics.gvod.simulation.cmd.OperationCmd;
 
 /**
@@ -28,15 +27,17 @@ import se.sics.gvod.simulation.cmd.OperationCmd;
  */
 public class DownloadVideoCmd implements OperationCmd {
     public final int nodeId;
-    public final DownloadFileInfo fileInfo;
+    public final String videoName;
+    public final int overlayId;
     
-    public DownloadVideoCmd(int nodeId, DownloadFileInfo fileInfo) {
+    public DownloadVideoCmd(int nodeId, String videoName, int overlayId) {
         this.nodeId = nodeId;
-        this.fileInfo = fileInfo;
+        this.videoName = videoName;
+        this.overlayId = overlayId;
     }
     
     @Override
     public String toString() {
-        return "DownloadVideoCmd - node:" + nodeId + " overlay:" + fileInfo.overlayId;
+        return "DownloadVideoCmd - node:" + nodeId;
     }
 }

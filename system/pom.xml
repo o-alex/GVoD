@@ -4,11 +4,10 @@
     <parent>
         <groupId>se.sics.gvod</groupId>
         <artifactId>GVoD</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>0.0.3-SNAPSHOT</version>
     </parent>
-    <name>System</name>
+    <name>GVoD System</name>
     <artifactId>system</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     
     <dependencies>
@@ -23,13 +22,13 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>se.sics.gvod</groupId>
-            <artifactId>common</artifactId>
+            <groupId>se.sics.gvod.bootstrap</groupId>
+            <artifactId>client</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>se.sics.gvod.bootstrap</groupId>
-            <artifactId>client</artifactId>
+            <groupId>se.sics.gvod</groupId>
+            <artifactId>common</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -42,67 +41,113 @@
             <artifactId>network</artifactId>
             <version>${project.version}</version>
         </dependency>
-        
         <dependency>
-            <groupId>se.sics.kompics</groupId>
-            <artifactId>kompics-core</artifactId>
-            <version>${kompics.version}</version>
+            <groupId>se.sics.gvod</groupId>
+            <artifactId>croupier-fake</artifactId>
+            <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>se.sics.gvod</groupId>
+            <artifactId>core-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>se.sics.gvod</groupId>
+            <artifactId>core-impl</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
         <dependency>
             <groupId>se.sics.kompics.basic</groupId>
             <artifactId>kompics-component-netty-network</artifactId>
             <version>${kompics.version}</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>se.sics.p2ptoolbox</groupId>
+            <artifactId>util-serializer</artifactId>
+            <version>${p2ptoolbox.util.version}</version>
+            <type>jar</type>
+        </dependency>
+         <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.5.6</version>
+        </dependency>
     </dependencies>
-    
-     <build>
+        
+    <build>
         <plugins>
             <plugin>
-                <inherited>true</inherited>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <artifactId>
+                    maven-assembly-plugin
+                </artifactId>
                 <configuration>
-                    <encoding>UTF-8</encoding>
-                    <source>${java.compiler.version}</source>
-                    <target>${java.compiler.version}</target>
-                    <debug>true</debug>
-                    <optimize>true</optimize>
-                    <showDeprecations>true</showDeprecations>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <version>2.3.4</version>
-                <extensions>true</extensions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.2</version>
-                <configuration>
-                    <descriptors>
-                        <descriptor>src/main/assembly/src.xml</descriptor>
-                    </descriptors>
-                    <finalName>gvod</finalName>
-                    <appendAssemblyId>false</appendAssemblyId>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
                     <archive>
                         <manifest>
                             <mainClass>se.sics.gvod.system.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id> <!-- this is used for inheritance merges -->
-                        <phase>package</phase> <!-- append to the packaging phase. -->
-                        <goals>
-                            <goal>single</goal> <!-- goals == mojos -->
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
 </project>
+
+
+
+<!--old plugins-->
+<!--<plugin>
+    <inherited>true</inherited>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <version>2.3.2</version>
+    <configuration>
+        <encoding>UTF-8</encoding>
+        <source>${java.compiler.version}</source>
+        <target>${java.compiler.version}</target>
+        <debug>true</debug>
+        <optimize>true</optimize>
+        <showDeprecations>true</showDeprecations>
+    </configuration>
+</plugin>
+<plugin>
+    <groupId>org.apache.felix</groupId>
+    <artifactId>maven-bundle-plugin</artifactId>
+    <version>2.3.4</version>
+    <extensions>true</extensions>
+</plugin>
+<plugin>
+    <artifactId>maven-assembly-plugin</artifactId>
+    <version>2.2</version>
+    <configuration>
+        <descriptors>
+            <descriptor>src/main/assembly/src.xml</descriptor>
+        </descriptors>
+        <finalName>gvod</finalName>
+        <appendAssemblyId>false</appendAssemblyId>
+        <archive>
+            <manifest>
+                <mainClass>se.sics.gvod.system.Main</mainClass>
+            </manifest>
+        </archive>
+    </configuration>
+    <executions>
+        <execution>
+            <id>make-assembly</id>  this is used for inheritance merges 
+            <phase>package</phase>  append to the packaging phase. 
+            <goals>
+                <goal>single</goal>  goals == mojos 
+            </goals>
+        </execution>
+    </executions>
+</plugin>-->

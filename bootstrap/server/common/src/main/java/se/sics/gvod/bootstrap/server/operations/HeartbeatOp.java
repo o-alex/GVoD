@@ -18,18 +18,17 @@
  */
 package se.sics.gvod.bootstrap.server.operations;
 
-import io.netty.buffer.Unpooled;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.bootstrap.server.PeerOpManager;
+import se.sics.gvod.bootstrap.server.operations.util.Helper;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.Heartbeat;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.common.msg.peerMngr.Heartbeat;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -38,11 +37,11 @@ public class HeartbeatOp implements Operation {
 
     private final PeerOpManager opMngr;
     private final Heartbeat.OneWay oneWay;
-    private final VodAddress src;
+    private final DecoratedAddress src;
 
     public final Set<UUID> pendingJoins;
 
-    public HeartbeatOp(PeerOpManager opMngr, Heartbeat.OneWay oneWay, VodAddress src) {
+    public HeartbeatOp(PeerOpManager opMngr, Heartbeat.OneWay oneWay, DecoratedAddress src) {
         this.opMngr = opMngr;
         this.src = src;
         this.oneWay = oneWay;
@@ -56,10 +55,15 @@ public class HeartbeatOp implements Operation {
 
     @Override
     public void start() {
-        for (Map.Entry<Integer, Integer> e : oneWay.overlaysUtility.entrySet()) {
-            byte[] heartbeatEntry = Util.encodeHeartbeatEntry(Unpooled.buffer(), src, e.getValue()).array();
-            PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getPeerAddress().getId(), heartbeatEntry);
-            opMngr.sendPeerManagerReq(oneWay.id, joinOverlay);
+        byte[] bytesBootOverlay = Helper.serializeOverlayData(src, 0);
+        PMJoinOverlay.Request joinSystem = new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getId(), bytesBootOverlay);
+        opMngr.sendPeerManagerReq(getId(), joinSystem);
+        pendingJoins.add(joinSystem.id);
+
+        for (Map.Entry<Integer, Integer> e : oneWay.overlayUtilities.entrySet()) {
+            byte[] bytesOverlay = Helper.serializeOverlayData(src, e.getValue());
+            PMJoinOverlay.Request joinOverlay = new PMJoinOverlay.Request(UUID.randomUUID(), e.getKey(), src.getId(), bytesOverlay);
+            opMngr.sendPeerManagerReq(getId(), joinOverlay);
             pendingJoins.add(joinOverlay.id);
         }
     }
@@ -70,15 +74,15 @@ public class HeartbeatOp implements Operation {
             PMJoinOverlay.Response joinResp = (PMJoinOverlay.Response) peerResp;
             if (joinResp.status == ReqStatus.SUCCESS) {
                 pendingJoins.remove(joinResp.id);
-                if(pendingJoins.isEmpty()) {
+                if (pendingJoins.isEmpty()) {
                     opMngr.finish(getId());
                 }
             } else {
                 opMngr.finish(getId());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }
-
 }

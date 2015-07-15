@@ -18,13 +18,26 @@
  */
 package se.sics.gvod.manager;
 
+import com.google.common.util.concurrent.SettableFuture;
+import se.sics.gvod.manager.util.FileStatus;
+import java.util.Map;
+
 /**
- *
  * @author Alex Ormenisan <aaor@sics.se>
  */
 public interface VoDManager {
+    
+    public void getFiles(SettableFuture<Map<String, FileStatus>> myFuture);
+    
+    public void pendingUpload(String videoName, SettableFuture<Boolean> myFuture);
+    
+    public void uploadVideo(String videoName, int overlayId, SettableFuture<Boolean> myFuture);
 
-    public void uploadVideo(UploadFileInfo fileInfo);
-
-    public void downloadVideo(DownloadFileInfo fileInfo);
+    public void downloadVideo(String videoName, int overlayId, SettableFuture<Boolean> myFuture);
+    
+    public void playVideo(String videoName, int overlayId, SettableFuture<Integer> myFuture);
+    
+    public void stopVideo(String videoName, SettableFuture<Boolean> myFuture);
+    
+    public boolean isInitialized();
 }

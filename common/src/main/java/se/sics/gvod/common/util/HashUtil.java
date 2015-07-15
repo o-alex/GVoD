@@ -26,6 +26,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.javatuples.Pair;
@@ -98,6 +99,17 @@ public class HashUtil {
                 throw new HashBuilderException(ex);
             }
         }
+    }
+    
+    public static boolean checkHash(String hashAlg, byte[] piece, byte[] hash) {
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance(hashAlg);
+        } catch (NoSuchAlgorithmException ex) {
+            System.exit(1);
+            throw new RuntimeException(ex);
+        }
+        return Arrays.equals(hash, md.digest(piece));
     }
 
     public static class HashBuilderException extends Exception {

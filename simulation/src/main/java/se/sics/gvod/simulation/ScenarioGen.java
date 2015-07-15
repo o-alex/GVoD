@@ -27,8 +27,6 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import se.sics.gvod.manager.DownloadFileInfo;
-import se.sics.gvod.manager.UploadFileInfo;
 import se.sics.gvod.simulation.cmd.operations.DownloadVideoCmd;
 import se.sics.gvod.simulation.cmd.operations.UploadVideoCmd;
 import se.sics.gvod.simulation.cmd.system.StartBSCmd;
@@ -59,6 +57,7 @@ public class ScenarioGen {
             f.mkdir();
             experimentDir = f.getPath();
         } catch (IOException ex) {
+            System.exit(1);
             throw new RuntimeException(ex);
         }
     }
@@ -116,10 +115,11 @@ public class ScenarioGen {
                         }
                         writer.flush();
                         writer.close();
+                        return new UploadVideoCmd(nodeId, fileNames.get(overlayId), overlayId);
                     } catch (IOException ex) {
+                        System.exit(1);
                         throw new RuntimeException(ex);
                     }
-                    return new UploadVideoCmd(nodeId, new UploadFileInfo(overlayId, fileNames.get(overlayId)));
                 }
             };
 
@@ -132,7 +132,7 @@ public class ScenarioGen {
                     File nodeLibDir = new File(experimentDir + File.separator + "node" + nodeId);
                     nodeLibDir.mkdir();
                     libDir = nodeLibDir.getPath();
-                    return new DownloadVideoCmd(nodeId, new DownloadFileInfo(overlayId, libDir, fileNames.get(overlayId)));
+                    return new DownloadVideoCmd(nodeId, fileNames.get(overlayId), overlayId);
                 }
             };
 
@@ -185,7 +185,7 @@ public class ScenarioGen {
                 StochasticProcess downloadVideoProc = new StochasticProcess() {
                     {
                         eventInterArrivalTime(constant(1000));
-                        raise(5, downloadVideo, downloaderIdDist, videoIdDist);
+                        raise(9, downloadVideo, downloaderIdDist, videoIdDist);
                     }
                 };
 

@@ -19,6 +19,8 @@
 package se.sics.gvod.bootstrap.cclient.operations;
 
 import java.util.UUID;
+import se.sics.caracaldb.Key;
+import se.sics.caracaldb.global.SchemaData;
 import se.sics.caracaldb.operations.CaracalOp;
 import se.sics.caracaldb.operations.PutRequest;
 import se.sics.caracaldb.operations.PutResponse;
@@ -35,10 +37,12 @@ public class AddOverlayPeerOp implements Operation<CaracalOp> {
 
     private final CaracalOpManager opMngr;
     private final PMJoinOverlay.Request req;
+    private final SchemaData schemaData;
 
-    public AddOverlayPeerOp(CaracalOpManager opMngr, PMJoinOverlay.Request req) {
+    public AddOverlayPeerOp(CaracalOpManager opMngr, PMJoinOverlay.Request req, SchemaData schemaData) {
         this.opMngr = opMngr;
         this.req = req;
+        this.schemaData = schemaData;
     }
 
     @Override
@@ -48,7 +52,8 @@ public class AddOverlayPeerOp implements Operation<CaracalOp> {
 
     @Override
     public void start() {
-        opMngr.sendCaracalReq(req.id, new PutRequest(UUID.randomUUID(), CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId), req.data));
+        Key target = CaracalKeyFactory.getOverlayPeerKey(req.overlayId, req.nodeId).prepend(schemaData.getId("gvod.heartbeat")).get();
+        opMngr.sendCaracalReq(req.id, target, new PutRequest(UUID.randomUUID(), target, req.nodeInfo));
     }
 
     @Override
@@ -56,11 +61,12 @@ public class AddOverlayPeerOp implements Operation<CaracalOp> {
         if (caracalResp instanceof PutResponse) {
             PutResponse phase1Resp = (PutResponse) caracalResp;
             if (phase1Resp.code == ResponseCode.SUCCESS) {
-                opMngr.finish(req.success());
+                opMngr.finish(req.id, req.success());
             } else {
-                opMngr.finish(req.fail());
+                opMngr.finish(req.id, req.fail());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
     }

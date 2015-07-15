@@ -18,18 +18,15 @@
  */
 package se.sics.gvod.bootstrap.server.operations;
 
-import io.netty.buffer.Unpooled;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 import se.sics.gvod.bootstrap.server.PeerOpManager;
+import se.sics.gvod.bootstrap.server.operations.util.Helper;
 import se.sics.gvod.bootstrap.server.peermanager.PeerManagerMsg;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMJoinOverlay;
 import se.sics.gvod.bootstrap.server.peermanager.msg.PMGetOverlaySample;
 import se.sics.gvod.common.msg.ReqStatus;
-import se.sics.gvod.common.msg.impl.BootstrapGlobal;
-import se.sics.gvod.net.VodAddress;
-import se.sics.gvod.network.Util;
+import se.sics.gvod.common.msg.peerMngr.BootstrapGlobal;
+import se.sics.p2ptoolbox.util.network.impl.DecoratedAddress;
 
 /**
  * @author Alex Ormenisan <aaor@sics.se>
@@ -38,16 +35,16 @@ public class BootstrapGlobalOp implements Operation {
 
     private static enum Phase {
 
-        GET_SYSTEM_SAMPLE, JOIN_SYSTEM
+        GET_SYSTEM_SAMPLE
     }
 
     private final PeerOpManager opMngr;
     private final BootstrapGlobal.Request req;
-    private final VodAddress src;
+    private final DecoratedAddress src;
     private Phase phase;
     private BootstrapGlobal.Response resp;
 
-    public BootstrapGlobalOp(PeerOpManager opMngr, BootstrapGlobal.Request req, VodAddress src) {
+    public BootstrapGlobalOp(PeerOpManager opMngr, BootstrapGlobal.Request req, DecoratedAddress src) {
         this.opMngr = opMngr;
         this.req = req;
         this.src = src;
@@ -69,29 +66,16 @@ public class BootstrapGlobalOp implements Operation {
         if (phase == Phase.GET_SYSTEM_SAMPLE && peerResp instanceof PMGetOverlaySample.Response) {
             PMGetOverlaySample.Response phase1Resp = (PMGetOverlaySample.Response) peerResp;
             if (phase1Resp.status == ReqStatus.SUCCESS) {
-                phase = Phase.JOIN_SYSTEM;
-                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getPeerAddress().getId(), Util.encodeVodAddress(Unpooled.buffer(), src).array()));
-                resp = req.success(processOverlaySample(phase1Resp.overlaySample));
-            } else {
-                opMngr.finish(getId(), src, req.fail());
-            }
-        } else if (phase == Phase.JOIN_SYSTEM && peerResp instanceof PMJoinOverlay.Response) {
-            PMJoinOverlay.Response phase2Resp = (PMJoinOverlay.Response) peerResp;
-            if (phase2Resp.status == ReqStatus.SUCCESS) {
+                byte[] bytes = Helper.serializeOverlayData(src, 0);
+                opMngr.sendPeerManagerReq(getId(), new PMJoinOverlay.Request(UUID.randomUUID(), 0, src.getId(), bytes));
+                resp = req.success(Helper.processOverlaySample(phase1Resp.overlaySample).keySet());
                 opMngr.finish(getId(), src, resp);
             } else {
                 opMngr.finish(getId(), src, req.fail());
             }
         } else {
+            System.exit(1);
             throw new RuntimeException("wrong phase");
         }
-    }
-
-    private Set<VodAddress> processOverlaySample(Set<byte[]> boverlaySample) {
-        Set<VodAddress> overlaySample = new HashSet<VodAddress>();
-        for (byte[] peer : boverlaySample) {
-            overlaySample.add(Util.decodeVodAddress(Unpooled.wrappedBuffer(peer)));
-        }
-        return overlaySample;
     }
 }
